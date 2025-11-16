@@ -69,3 +69,25 @@ frontend
 ├── util/ # 日付操作などのアプリケーションを通じて利用されるような便利な関数など
 ```
 - チャット機能などの一部の機能を除き、クライアントとsupabaseで直接通信するのではなくAPI Routesを利用する
+
+## コーディング規約の詳細
+### インポートパス
+- フォルダの指定には相対パス(`./`, `../`)を使用せず、可能な限り`@/`を使った絶対パスを利用する
+  - 例: `import { foo } from '@/libs/bar'`
+
+### 設定値とマジックナンバー
+- ハードコーディングは避け、定数ファイルで管理する
+- ライブラリの設定値は`libs/[ライブラリ名]/constants/`に定義する
+  - 例: `libs/react-query/constants/index.ts`で`DEFAULT_STALE_TIME`を定義
+
+### 環境変数
+- 環境変数は直接参照せず、`libs/constants/env.ts`で定数として定義し、そこから参照する
+- 実際に使用する環境変数のみを定義する（未使用のものは定義しない）
+- 例:
+```typescript
+// libs/constants/env.ts
+export const DATABASE_URL = process.env.DATABASE_URL!
+
+// 他のファイル
+import { DATABASE_URL } from '@/libs/constants/env'
+```
