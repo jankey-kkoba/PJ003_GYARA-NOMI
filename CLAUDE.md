@@ -38,13 +38,13 @@
 - hosting: vercel
 - Backend: Supabase
 - Auth: Auth.js
-- ORM: Drizzle
+- ORM: Drizzle (docs/db/index.mdを参照)
 - Test: vitest
 - Test: playwright
 - TailwindCSS
 - radix UI
 - Tanstack Query
-- hono(docs/hono.mdを参照)
+- hono(docs/lib/hono.mdを参照)
 
 # 開発規約
 - 各モジュール、コンポーネントはSOLID原則に従いコーディングする
