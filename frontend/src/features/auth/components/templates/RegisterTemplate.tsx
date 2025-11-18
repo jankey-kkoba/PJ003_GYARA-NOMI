@@ -59,18 +59,18 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
   }
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50 px-4 py-8">
+    <div className="flex min-h-screen flex-col bg-background px-4 py-8">
       <div className="mx-auto w-full max-w-md space-y-6">
         {/* ヘッダー */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">{config.title}</h1>
-          <p className="mt-2 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-foreground">{config.title}</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
             {config.description}
           </p>
         </div>
 
         {/* フォーム */}
-        <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-white p-6 shadow">
+        <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm">
           <div className="space-y-2">
             <Label htmlFor="name">お名前</Label>
             <Input
@@ -113,7 +113,7 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
           </Button>
         </form>
 
-        <p className="text-center text-xs text-gray-500">
+        <p className="text-center text-xs text-muted-foreground">
           入力した情報は後から変更できます
         </p>
       </div>
