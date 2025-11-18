@@ -8,6 +8,7 @@ import {
   sessions,
   verificationTokens,
 } from '@/libs/db/schema/auth'
+import { userService } from '@/features/user/services/userService'
 
 /**
  * Auth.jsの設定
@@ -29,6 +30,30 @@ export const authConfig: NextAuthConfig = {
     signIn: '/login',
   },
   callbacks: {
+    /**
+     * サインイン時の処理
+     * 未登録ユーザーは会員登録ページにリダイレクト
+     */
+    async signIn({ account }) {
+      if (!account) return false
+
+      // アカウントが既に存在するか確認
+      const exists = await userService.accountExists(
+        account.provider,
+        account.providerAccountId
+      )
+
+      // アカウントが存在しない場合（新規ユーザー）は会員登録ページにリダイレクト
+      if (!exists) {
+        const params = new URLSearchParams({
+          provider: account.provider,
+          providerAccountId: account.providerAccountId,
+        })
+        return `/register?${params.toString()}`
+      }
+
+      return true
+    },
     /**
      * リダイレクト時の処理
      */

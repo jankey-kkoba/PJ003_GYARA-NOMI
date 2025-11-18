@@ -13,10 +13,37 @@ import {
 import { Button } from '@/components/ui/button'
 
 /**
+ * ユーザータイプ
+ */
+type UserType = 'guest' | 'cast'
+
+/**
+ * RegisterTemplateのProps
+ */
+type RegisterTemplateProps = {
+  userType: UserType
+}
+
+/**
+ * ユーザータイプに応じた表示設定
+ */
+const userTypeConfig = {
+  guest: {
+    title: 'ゲスト会員登録',
+    description: 'ゲストとしてプロフィール情報を入力してください',
+  },
+  cast: {
+    title: 'キャスト会員登録',
+    description: 'キャストとしてプロフィール情報を入力してください',
+  },
+}
+
+/**
  * 会員登録情報入力ページのテンプレート
  * LINE認証後に表示される初期情報入力フォーム
  */
-export function RegisterTemplate() {
+export function RegisterTemplate({ userType }: RegisterTemplateProps) {
+  const config = userTypeConfig[userType]
   // モックのエリアデータ
   const areas = [
     { value: 'tokyo', label: '東京' },
@@ -36,9 +63,9 @@ export function RegisterTemplate() {
       <div className="mx-auto w-full max-w-md space-y-6">
         {/* ヘッダー */}
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900">会員登録</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{config.title}</h1>
           <p className="mt-2 text-sm text-gray-600">
-            プロフィール情報を入力してください
+            {config.description}
           </p>
         </div>
 
