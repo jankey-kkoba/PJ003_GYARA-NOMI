@@ -42,7 +42,7 @@
 - hosting: vercel
 - Backend: Supabase
 - Auth: Auth.js
-- ORM: Drizzle (docs/db/index.mdを参照)
+- ORM: Drizzle (@docs/db/index.md)
 - Test: vitest
 - Test: playwright
 - TailwindCSS
@@ -53,24 +53,30 @@
 # 開発規約
 - 各モジュール、コンポーネントはSOLID原則に従いコーディングする
 - ライブラリなどは直接インポートするのではなく後で代替が簡単になるよう、ラッピングすること
-- フロントエンドの実装に関しては以下のようなフォルダ構成で行う
 - UIとロジックを担当するファイルは分離する
 - appフォルダ内で直接ロジックやUIの描画は行わない page.tsx内でコンポーネントを呼び出すのみとする
+- クライアントとサーバーは完全に分けて実装する
+  - データの取得や更新はサーバーサイドのコンポーネントでは行わない
+  - Tanstack Queryの活用などにより通信回数を最適化する
+  - チャットなどのリアルタイムな購読については例外
+- フロントエンドの実装に関しては以下のようなフォルダ構成で行う
 ```
 frontend
-├── __tests__
-├── app/ # App Router
-├── features/ # 主にドメインに関するコンポーネントやhooks、サービスなど
-├── ├── api/
-├── ├── components/ # 内部の構造はcomponents同様[Atomic Design](https://atomicdesign.bradfrost.com/)を取り入れる
-├── ├── hooks/
-├── ├── services/
-├── ├── types/
-├── components/ # 主に共通コンポーネント([Atomic Design](https://atomicdesign.bradfrost.com/)を取り入れる)
-├── hooks/ # ドメインを跨いで利用されるもの
-├── types/ # ドメインを跨いで利用されるもの
-├── libs/ # ライブラリをラッパーするファイルや抽象化したファイル
-├── util/ # 日付操作などのアプリケーションを通じて利用されるような便利な関数など
+├── __tests__ # テストはここに書く
+├── __mocks__ # モック実装
+├── src
+    ├── app/ # App Router
+    ├── features/ # 主にドメインに関するコンポーネントやhooks、サービスなど
+        ├── api/
+        ├── components/ # 内部の構造はcomponents同様[Atomic Design](https://atomicdesign.bradfrost.com/)を取り入れる
+        ├── hooks/
+        ├── services/
+        ├── types/
+    ├── components/ # 主に共通コンポーネント([Atomic Design](https://atomicdesign.bradfrost.com/)を取り入れる)
+    ├── hooks/ # ドメインを跨いで利用されるもの
+    ├── types/ # ドメインを跨いで利用されるもの
+    ├── libs/ # ライブラリをラッパーするファイルや抽象化したファイル
+    ├── util/ # 日付操作などのアプリケーションを通じて利用されるような便利な関数など
 ```
 - チャット機能などの一部の機能を除き、クライアントとsupabaseで直接通信するのではなくAPI Routesを利用する
 
@@ -95,3 +101,19 @@ export const DATABASE_URL = process.env.DATABASE_URL!
 // 他のファイル
 import { DATABASE_URL } from '@/libs/constants/env'
 ```
+
+### 認証関連
+- 認証ロジックは`useAuth`カスタムフックで定義する
+  - 場所: `features/auth/hooks/useAuth.ts`
+  - next-authのライブラリを直接インポートせず、`useAuth`フック経由で利用する
+  - `useAuth`は以下を返す:
+    - `session`: セッション情報
+    - `status`: 認証状態
+    - `isAuthenticated`: 認証済みかどうか
+    - `isLoading`: ローディング中かどうか
+    - `user`: ユーザー情報
+    - `lineLogin()`: LINEログイン処理
+    - `logout()`: ログアウト処理
+- Auth.jsのSessionProviderは`AuthProvider`コンポーネントでラップする
+  - 場所: `features/auth/components/providers/AuthProvider.tsx`
+  - layout.tsxで全体をラップする

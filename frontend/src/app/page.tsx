@@ -1,7 +1,5 @@
+import { HomeTemplate } from '@/features/home/components/templates/HomeTemplate'
+
 export default function Home() {
-  return (
-    <div>
-      <h1>ギャラ飲みプラットフォーム</h1>
-    </div>
-  )
+  return <HomeTemplate />
 }
