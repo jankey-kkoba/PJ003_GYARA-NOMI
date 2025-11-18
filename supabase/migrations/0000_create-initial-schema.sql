@@ -59,10 +59,14 @@ CREATE TABLE "guests" (
 --> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"role" "user_role" NOT NULL,
+	"name" text,
+	"email" text,
+	"email_verified" timestamp,
+	"image" text,
+	"role" "user_role",
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
-	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "users_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
 CREATE TABLE "matchings" (

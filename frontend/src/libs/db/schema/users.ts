@@ -11,11 +11,17 @@ export const userRoleEnum = pgEnum('user_role', ['guest', 'cast', 'admin'])
 /**
  * ユーザーテーブル
  * キャスト、ゲスト共通のユーザー情報を管理
+ * Auth.jsの認証情報も含む
  */
 export const users = pgTable('users', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
-  role: userRoleEnum('role').notNull(),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text('name'),
+  email: text('email').unique(),
+  emailVerified: timestamp('email_verified', { mode: 'date' }),
+  image: text('image'),
+  role: userRoleEnum('role'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

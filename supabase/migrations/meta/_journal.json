@@ -8,6 +8,13 @@
       "when": 1763288574281,
       "tag": "0000_create-initial-schema",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1763465489361,
+      "tag": "0001_create-auth-tables",
+      "breakpoints": true
     }
   ]
 }

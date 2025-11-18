@@ -1,12 +1,29 @@
 import type { NextAuthConfig } from 'next-auth'
-// import { LINE_CLIENT_ID, LINE_CLIENT_SECRET } from '@/libs/constants/env'
-import Line from "next-auth/providers/line"
+import Line from 'next-auth/providers/line'
+import { DrizzleAdapter } from '@auth/drizzle-adapter'
+import { db } from '@/libs/db'
+import { users } from '@/libs/db/schema/users'
+import {
+  accounts,
+  sessions,
+  verificationTokens,
+} from '@/libs/db/schema/auth'
 
 /**
  * Auth.jsの設定
  * LINEログイン認証を使用
+ * Drizzleアダプターでデータベースと連携
  */
 export const authConfig: NextAuthConfig = {
+  adapter: DrizzleAdapter(db, {
+    usersTable: users,
+    accountsTable: accounts,
+    sessionsTable: sessions,
+    verificationTokensTable: verificationTokens,
+  }),
+  session: {
+    strategy: 'jwt',
+  },
   providers: [Line],
   pages: {
     signIn: '/login',
