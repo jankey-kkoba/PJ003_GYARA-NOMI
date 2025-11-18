@@ -8,7 +8,8 @@ CREATE TABLE "areas" (
 --> statement-breakpoint
 CREATE TABLE "casts" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL
+	"rank" text NOT NULL,
+	"birth_date" date NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "chat_message_read_statuses" (
@@ -53,8 +54,7 @@ CREATE TABLE "chat_rooms" (
 --> statement-breakpoint
 CREATE TABLE "guests" (
 	"id" text PRIMARY KEY NOT NULL,
-	"name" text NOT NULL,
-	"rank" text NOT NULL
+	"birth_date" date NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "users" (
