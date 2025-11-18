@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import '@/app/globals.css'
 import { AuthProvider } from '@/features/auth/components/providers/AuthProvider'
-import { ToastProvider } from '@/components/providers/ToastProvider'
+import { Toaster } from '@/components/ui/sonner'
 
 export const metadata: Metadata = {
   title: 'ギャラ飲みプラットフォーム',
@@ -17,7 +17,8 @@ export default function RootLayout({
     <html lang="ja">
       <body>
         <AuthProvider>
-          <ToastProvider>{children}</ToastProvider>
+          {children}
+          <Toaster position="top-right" richColors />
         </AuthProvider>
       </body>
     </html>

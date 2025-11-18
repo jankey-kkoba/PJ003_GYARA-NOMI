@@ -1,10 +1,10 @@
 'use client'
 
-import { Button } from '@/components/atoms/Button'
+import { Button } from '@/components/ui/button'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 
 interface LogoutButtonProps {
-  variant?: 'primary' | 'secondary' | 'outline' | 'ghost'
+  variant?: 'default' | 'secondary' | 'outline' | 'ghost' | 'destructive' | 'link'
 }
 
 /**

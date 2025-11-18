@@ -13,7 +13,7 @@ export function useAuth() {
    */
   const lineLogin = async () => {
     try {
-      await signIn('line')
+      await signIn('line', { callbackUrl: '/' })
     } catch (error) {
       console.error('ログインエラー:', error)
       throw error

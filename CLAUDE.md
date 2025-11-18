@@ -47,6 +47,7 @@
 - Test: playwright
 - TailwindCSS
 - radix UI
+- shadcn/ui（デザインシステム）
 - Tanstack Query
 - hono(docs/lib/hono.mdを参照)
 
@@ -140,6 +141,28 @@ export function useCreateUser() {
   })
 }
 ```
+
+### デザインシステム（shadcn/ui）
+- UIコンポーネントは**shadcn/ui**をベースに構築する
+  - 参照: https://ui.shadcn.com/
+  - Radix UIプリミティブをベースにしたカスタマイズ可能なコンポーネント
+- shadcn/uiコンポーネントは`components/ui/`に配置する
+  - `npx shadcn@latest add [component]`でコンポーネントを追加
+  - 追加後は自由にカスタマイズ可能
+- デザイントークン（カラー、スペーシング等）は`globals.css`の`@theme`で管理する
+- コンポーネント構成:
+  ```
+  components/
+  ├── ui/           # shadcn/uiベースのプリミティブコンポーネント
+  ├── atoms/        # 独自の基本コンポーネント
+  ├── molecules/    # 複合コンポーネント
+  └── organisms/    # 大きな機能単位のコンポーネント
+  ```
+- shadcn/uiコンポーネントを使用する際は`@/components/ui/`からインポートする
+  - 例: `import { Button } from '@/components/ui/button'`
+- 既存のRadix UIラッパー（`libs/radix-ui/`）との使い分け:
+  - 新規UIコンポーネント: shadcn/uiを優先
+  - 既存のカスタム実装: 必要に応じてshadcn/uiに移行
 
 ### 認証関連
 - 認証ロジックは`useAuth`カスタムフックで定義する

@@ -1,14 +1,13 @@
-'use client'
+import { toast } from 'sonner'
 
-import { useContext } from 'react'
-import { ToastContext } from '@/components/providers/ToastProvider'
+export type ToastType = 'success' | 'error' | 'warning' | 'info'
 
 /**
  * トースト通知を操作するためのカスタムフック
- * どのコンポーネントからでもトーストの表示・非表示が可能
+ * sonnerをラップし、どのコンポーネントからでもトースト表示が可能
  *
  * @example
- * const { showToast, showToastWithTitle, hideToast, hideAllToasts } = useToast()
+ * const { showToast } = useToast()
  *
  * // 成功トーストを表示
  * showToast('ログインに成功しました', 'success')
@@ -16,18 +15,45 @@ import { ToastContext } from '@/components/providers/ToastProvider'
  * // エラートーストを表示
  * showToast('エラーが発生しました', 'error')
  *
- * // タイトル付きトーストを表示
- * showToastWithTitle('成功', 'ログインに成功しました', 'success')
- *
  * // カスタム表示時間を指定（10秒）
  * showToast('長めに表示します', 'info', 10000)
  */
 export function useToast() {
-  const context = useContext(ToastContext)
+  /**
+   * トーストを表示する
+   */
+  const showToast = (message: string, type: ToastType = 'info', duration?: number) => {
+    console.log(`Showing toast: [${type}] ${message}`)
+    const options = duration ? { duration } : undefined
 
-  if (!context) {
-    throw new Error('useToast must be used within a ToastProvider')
+    switch (type) {
+      case 'success':
+        toast.success(message, options)
+        break
+      case 'error':
+        toast.error(message, options)
+        break
+      case 'warning':
+        toast.warning(message, options)
+        break
+      case 'info':
+      default:
+        toast.info(message, options)
+        break
+    }
   }
 
-  return context
+  /**
+   * すべてのトーストを非表示にする
+   */
+  const hideAllToasts = () => {
+    toast.dismiss()
+  }
+
+  return {
+    showToast,
+    hideAllToasts,
+    // sonnerの元のtoast関数も公開（高度な使用のため）
+    toast,
+  }
 }

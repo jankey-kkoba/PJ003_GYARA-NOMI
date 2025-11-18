@@ -1,18 +1,22 @@
 'use client'
 
 import { FormEvent } from 'react'
-// import { useRouter } from 'next/navigation'
-import { Input } from '@/components/atoms/Input'
-import { Select } from '@/components/atoms/Select'
-import { Button } from '@/components/atoms/Button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { Button } from '@/components/ui/button'
 
 /**
  * 会員登録情報入力ページのテンプレート
  * LINE認証後に表示される初期情報入力フォーム
  */
 export function RegisterTemplate() {
-  // const router = useRouter()
-
   // モックのエリアデータ
   const areas = [
     { value: 'tokyo', label: '東京' },
@@ -25,16 +29,6 @@ export function RegisterTemplate() {
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     console.log('登録フォームが送信されました')
-    // const formData = new FormData(e.currentTarget)
-
-    // try {
-    //   // ここでAPIに登録情報を送信する処理を実装
-    //   // 登録完了後、ホームページへ
-    //   router.push('/')
-    // } catch (error) {
-    //   console.error('登録エラー:', error)
-    //   alert('登録に失敗しました')
-    // }
   }
 
   return (
@@ -50,29 +44,42 @@ export function RegisterTemplate() {
 
         {/* フォーム */}
         <form onSubmit={handleSubmit} className="space-y-6 rounded-lg bg-white p-6 shadow">
-          <Input
-            name="name"
-            label="お名前"
-            type="text"
-            placeholder="山田太郎"
-            required
-          />
+          <div className="space-y-2">
+            <Label htmlFor="name">お名前</Label>
+            <Input
+              id="name"
+              name="name"
+              type="text"
+              placeholder="山田太郎"
+              required
+            />
+          </div>
 
-          <Input
-            name="birthDate"
-            label="生年月日"
-            type="date"
-            required
-          />
+          <div className="space-y-2">
+            <Label htmlFor="birthDate">生年月日</Label>
+            <Input
+              id="birthDate"
+              name="birthDate"
+              type="date"
+              required
+            />
+          </div>
 
-          <Select
-            name="areaId"
-            label="活動エリア"
-            options={areas}
-            placeholder="エリアを選択してください"
-            defaultValue=""
-            required
-          />
+          <div className="space-y-2">
+            <Label htmlFor="areaId">活動エリア</Label>
+            <Select name="areaId" required>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="エリアを選択してください" />
+              </SelectTrigger>
+              <SelectContent>
+                {areas.map((area) => (
+                  <SelectItem key={area.value} value={area.value}>
+                    {area.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
           <Button type="submit" className="w-full" size="lg">
             登録する
