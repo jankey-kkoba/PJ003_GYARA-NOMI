@@ -11,4 +11,24 @@ export const authConfig: NextAuthConfig = {
   pages: {
     signIn: '/login',
   },
+  callbacks: {
+    /**
+     * ログイン成功時にクエリパラメータを付けてリダイレクト
+     */
+    async redirect({ url, baseUrl }) {
+      // ログイン後のリダイレクト時にlogin=successパラメータを追加
+      if (url === baseUrl || url === `${baseUrl}/`) {
+        return `${baseUrl}/?login=success`
+      }
+      // 同一オリジンのURLはそのまま許可
+      if (url.startsWith(baseUrl)) {
+        return url
+      }
+      // 相対URLの場合はbaseUrlを付加
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`
+      }
+      return baseUrl
+    },
+  },
 }

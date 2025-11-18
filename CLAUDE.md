@@ -102,6 +102,45 @@ export const DATABASE_URL = process.env.DATABASE_URL!
 import { DATABASE_URL } from '@/libs/constants/env'
 ```
 
+### useEffectの使用について
+- `useEffect`は可能な限り使用しない
+  - 参照: https://ja.react.dev/reference/react/useEffect
+  - Reactの公式ドキュメントにある通り、多くの場合useEffectは不要
+- 以下の場合はuseEffect以外の方法を検討する:
+  - **レンダー中に計算できるデータ**: `useMemo`を使用
+  - **ユーザーイベントの処理**: イベントハンドラで直接処理
+  - **状態のリセット**: `key`プロパティを使用
+  - **propsの変更に応じた状態更新**: レンダー中に直接計算
+- useEffectが適切な場合:
+  - 外部システムとの同期（WebSocket、サードパーティライブラリなど）
+  - コンポーネントのマウント時の一度きりの処理
+
+### APIとサーバー通信
+- サーバーとの通信には**Tanstack Query (React Query)**を使用する
+  - データの取得: `useQuery`
+  - データの更新: `useMutation`
+  - キャッシュ管理、再取得、エラーハンドリングを統一的に扱う
+- Tanstack Queryのラッパーは`libs/react-query/`に配置する
+- 直接fetchやaxiosを使用せず、Tanstack Query経由でAPI呼び出しを行う
+- 例:
+```typescript
+// features/[domain]/hooks/useXxx.ts
+import { useQuery, useMutation } from '@/libs/react-query'
+
+export function useUsers() {
+  return useQuery({
+    queryKey: ['users'],
+    queryFn: () => fetchUsers(),
+  })
+}
+
+export function useCreateUser() {
+  return useMutation({
+    mutationFn: (data: CreateUserInput) => createUser(data),
+  })
+}
+```
+
 ### 認証関連
 - 認証ロジックは`useAuth`カスタムフックで定義する
   - 場所: `features/auth/hooks/useAuth.ts`

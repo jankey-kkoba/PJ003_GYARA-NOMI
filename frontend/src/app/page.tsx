@@ -1,5 +1,12 @@
 import { HomeTemplate } from '@/features/home/components/templates/HomeTemplate'
 
-export default function Home() {
-  return <HomeTemplate />
+interface HomeProps {
+  searchParams: Promise<{ login?: string }>
+}
+
+export default async function Home({ searchParams }: HomeProps) {
+  const params = await searchParams
+  const showLoginSuccessToast = params.login === 'success'
+
+  return <HomeTemplate showLoginSuccessToast={showLoginSuccessToast} />
 }

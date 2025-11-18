@@ -1,7 +1,6 @@
 'use client'
 
-import { useSession } from 'next-auth/react'
-import { signIn, signOut } from '@/libs/auth'
+import { useSession, signIn, signOut } from 'next-auth/react'
 
 /**
  * 認証関連のカスタムフック
@@ -14,7 +13,7 @@ export function useAuth() {
    */
   const lineLogin = async () => {
     try {
-      await signIn()
+      await signIn('line')
     } catch (error) {
       console.error('ログインエラー:', error)
       throw error

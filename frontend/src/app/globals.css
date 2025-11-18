@@ -4,4 +4,30 @@
   /* LINEブランドカラー */
   --color-line: #06C755;
   --color-line-hover: #05B24D;
+
+  /* トーストアニメーション */
+  --animate-slide-in: slide-in 0.2s ease-out;
+  --animate-fade-out: fade-out 0.2s ease-in;
+}
+
+/* トーストのスライドインアニメーション */
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* トーストのフェードアウトアニメーション */
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
 }
