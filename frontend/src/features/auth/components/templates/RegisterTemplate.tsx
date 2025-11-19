@@ -1,16 +1,12 @@
 'use client'
 
 import { FormEvent } from 'react'
+import { useRouter } from 'next/navigation'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
+import { useRegisterUser } from '@/features/user/hooks/useRegisterUser'
+import { useToast } from '@/hooks/useToast'
 
 /**
  * ユーザータイプ
@@ -29,33 +25,48 @@ type RegisterTemplateProps = {
  */
 const userTypeConfig = {
   guest: {
-    title: 'ゲスト会員登録',
+    title: 'ゲストプロフィール登録',
     description: 'ゲストとしてプロフィール情報を入力してください',
   },
   cast: {
-    title: 'キャスト会員登録',
+    title: 'キャストプロフィール登録',
     description: 'キャストとしてプロフィール情報を入力してください',
   },
 }
 
 /**
- * 会員登録情報入力ページのテンプレート
- * LINE認証後に表示される初期情報入力フォーム
+ * プロフィール登録ページのテンプレート
+ * LINE認証後に表示されるプロフィール入力フォーム
  */
 export function RegisterTemplate({ userType }: RegisterTemplateProps) {
   const config = userTypeConfig[userType]
-  // モックのエリアデータ
-  const areas = [
-    { value: 'tokyo', label: '東京' },
-    { value: 'osaka', label: '大阪' },
-    { value: 'nagoya', label: '名古屋' },
-    { value: 'fukuoka', label: '福岡' },
-    { value: 'sapporo', label: '札幌' },
-  ]
+  const router = useRouter()
+  const { showToast } = useToast()
+  const { mutate, isPending } = useRegisterUser()
 
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    console.log('登録フォームが送信されました')
+
+    const formData = new FormData(e.currentTarget)
+    const name = formData.get('name') as string
+    const birthDate = formData.get('birthDate') as string
+
+    mutate(
+      {
+        name,
+        birthDate,
+        userType,
+      },
+      {
+        onSuccess: () => {
+          showToast('プロフィール登録が完了しました。', 'success')
+          router.push('/')
+        },
+        onError: (error) => {
+          showToast(`登録に失敗しました: ${error.message}`, 'error')
+        },
+      }
+    )
   }
 
   return (
@@ -92,24 +103,13 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
             />
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="areaId">活動エリア</Label>
-            <Select name="areaId" required>
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="エリアを選択してください" />
-              </SelectTrigger>
-              <SelectContent>
-                {areas.map((area) => (
-                  <SelectItem key={area.value} value={area.value}>
-                    {area.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <Button type="submit" className="w-full" size="lg">
-            登録する
+          <Button
+            type="submit"
+            className="w-full"
+            size="lg"
+            disabled={isPending}
+          >
+            {isPending ? '登録中...' : '登録する'}
           </Button>
         </form>
 

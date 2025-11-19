@@ -17,11 +17,25 @@ export const users = pgTable('users', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text('name'),
+  name: text('name'), // Auth.js互換性のため保持（実際の名前はuser_profilesで管理）
   email: text('email').unique(),
   emailVerified: timestamp('email_verified', { mode: 'date' }),
-  image: text('image'),
+  image: text('image'), // Auth.js互換性のため保持
   role: userRoleEnum('role'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+})
+
+/**
+ * ユーザープロフィールテーブル
+ * キャスト、ゲスト共通のプロフィール情報を管理
+ */
+export const userProfiles = pgTable('user_profiles', {
+  id: text('id')
+    .primaryKey()
+    .references(() => users.id),
+  name: text('name').notNull(),
+  birthDate: timestamp('birth_date', { mode: 'date' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })

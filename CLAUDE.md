@@ -42,7 +42,7 @@
 - hosting: vercel
 - Backend: Supabase
 - Auth: Auth.js
-- ORM: Drizzle (@docs/db/index.md)
+- ORM: Drizzle (@docs/db.md)
 - Test: vitest
 - Test: playwright
 - TailwindCSS
@@ -146,6 +146,10 @@ export function useCreateUser() {
 - UIコンポーネントは**shadcn/ui**をベースに構築する
   - 参照: https://ui.shadcn.com/
   - Radix UIプリミティブをベースにしたカスタマイズ可能なコンポーネント
+- **shadcn/uiコンポーネントを必ず優先して使用すること**
+  - Card、Button、Input、Select等の基本UIは必ずshadcn/uiを使用する
+  - 自前でdivとTailwindクラスでスタイリングする前に、shadcn/uiに該当コンポーネントがないか確認する
+  - コンポーネントが存在しない場合は`npx shadcn@latest add [component]`で追加する
 - shadcn/uiコンポーネントは`components/ui/`に配置する
   - `npx shadcn@latest add [component]`でコンポーネントを追加
   - 追加後は自由にカスタマイズ可能
@@ -160,6 +164,7 @@ export function useCreateUser() {
   ```
 - shadcn/uiコンポーネントを使用する際は`@/components/ui/`からインポートする
   - 例: `import { Button } from '@/components/ui/button'`
+  - 例: `import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'`
 - 既存のRadix UIラッパー（`libs/radix-ui/`）との使い分け:
   - 新規UIコンポーネント: shadcn/uiを優先
   - 既存のカスタム実装: 必要に応じてshadcn/uiに移行

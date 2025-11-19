@@ -10,10 +10,13 @@ export function useAuth() {
 
   /**
    * LINEログイン処理
+   * @param userType - 会員登録時のユーザータイプ（オプション）
    */
-  const lineLogin = async () => {
+  const lineLogin = async (userType?: 'guest' | 'cast') => {
     try {
-      await signIn('line', { callbackUrl: '/' })
+      // userTypeが指定されている場合はcallbackUrlに含める
+      const callbackUrl = userType ? `/?userType=${userType}` : '/'
+      await signIn('line', { callbackUrl })
     } catch (error) {
       console.error('ログインエラー:', error)
       throw error

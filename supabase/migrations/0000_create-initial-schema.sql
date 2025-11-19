@@ -6,12 +6,6 @@ CREATE TABLE "areas" (
 	"name" text NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "casts" (
-	"id" text PRIMARY KEY NOT NULL,
-	"rank" text NOT NULL,
-	"birth_date" date NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "chat_message_read_statuses" (
 	"message_id" text NOT NULL,
 	"user_id" text NOT NULL,
@@ -52,11 +46,6 @@ CREATE TABLE "chat_rooms" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "guests" (
-	"id" text PRIMARY KEY NOT NULL,
-	"birth_date" date NOT NULL
-);
---> statement-breakpoint
 CREATE TABLE "users" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text,
@@ -67,6 +56,14 @@ CREATE TABLE "users" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL,
 	CONSTRAINT "users_email_unique" UNIQUE("email")
+);
+--> statement-breakpoint
+CREATE TABLE "user_profiles" (
+	"id" text PRIMARY KEY NOT NULL,
+	"name" text NOT NULL,
+	"birth_date" timestamp NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "matchings" (
@@ -87,7 +84,7 @@ CREATE TABLE "matching_offers" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "casts" ADD CONSTRAINT "casts_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_read_statuses" ADD CONSTRAINT "chat_message_read_statuses_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_read_statuses" ADD CONSTRAINT "chat_message_read_statuses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_texts" ADD CONSTRAINT "chat_message_texts_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -96,7 +93,6 @@ ALTER TABLE "chat_messages" ADD CONSTRAINT "chat_messages_sender_id_users_id_fk"
 ALTER TABLE "chat_room_members" ADD CONSTRAINT "chat_room_members_room_id_chat_rooms_id_fk" FOREIGN KEY ("room_id") REFERENCES "public"."chat_rooms"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_room_members" ADD CONSTRAINT "chat_room_members_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_rooms" ADD CONSTRAINT "chat_rooms_created_by_users_id_fk" FOREIGN KEY ("created_by") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "guests" ADD CONSTRAINT "guests_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matchings" ADD CONSTRAINT "matchings_host_id_users_id_fk" FOREIGN KEY ("host_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matching_offers" ADD CONSTRAINT "matching_offers_matching_id_matchings_id_fk" FOREIGN KEY ("matching_id") REFERENCES "public"."matchings"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "matching_offers" ADD CONSTRAINT "matching_offers_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;

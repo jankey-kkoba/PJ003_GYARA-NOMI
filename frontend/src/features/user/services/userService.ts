@@ -1,6 +1,6 @@
 import { eq, and } from 'drizzle-orm'
 import { db } from '@/libs/db'
-import { users } from '@/libs/db/schema/users'
+import { users, userProfiles } from '@/libs/db/schema/users'
 import { accounts } from '@/libs/db/schema/auth'
 
 /**
@@ -53,5 +53,54 @@ export const userService = {
   async accountExists(provider: string, providerAccountId: string) {
     const account = await this.findAccountByProvider(provider, providerAccountId)
     return account !== null
+  },
+
+  /**
+   * ユーザープロフィールが存在するか確認
+   * @param userId - ユーザーID
+   * @returns 存在する場合はtrue
+   */
+  async hasProfile(userId: string) {
+    const result = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.id, userId))
+      .limit(1)
+
+    return result.length > 0
+  },
+
+  /**
+   * プロフィール登録（トランザクション）
+   * プロフィール作成とユーザーロール更新を同時に実行
+   * @param userId - ユーザーID
+   * @param input - プロフィールデータとユーザータイプ
+   * @returns 作成されたプロフィール情報
+   */
+  async registerProfile(
+    userId: string,
+    input: { name: string; birthDate: string; userType: 'guest' | 'cast' }
+  ) {
+    const result = await db.transaction(async (tx) => {
+      // プロフィールを作成
+      const [profile] = await tx
+        .insert(userProfiles)
+        .values({
+          id: userId,
+          name: input.name,
+          birthDate: new Date(input.birthDate),
+        })
+        .returning()
+
+      // ユーザーのロールを更新
+      await tx
+        .update(users)
+        .set({ role: input.userType, updatedAt: new Date() })
+        .where(eq(users.id, userId))
+
+      return profile
+    })
+
+    return result
   },
 }

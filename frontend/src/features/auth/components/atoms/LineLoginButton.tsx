@@ -11,7 +11,7 @@ export function LineLoginButton() {
   const { lineLogin } = useAuth()
   return (
     <Button
-      onClick={lineLogin}
+      onClick={() => lineLogin()}
       className="w-full bg-line text-white hover:bg-line-hover focus-visible:ring-line"
       size="lg"
     >

@@ -10,21 +10,17 @@ export default auth((req) => {
   const { pathname } = req.nextUrl
 
   // 公開ルート（認証不要）
-  const publicRoutes = ['/login', '/register']
+  const publicRoutes = [
+    '/login',
+    '/sign-up',
+    '/register',
+  ]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
   // 未認証で保護されたルートにアクセスした場合
   if (!isAuthenticated && !isPublicRoute) {
     const loginUrl = new URL('/login', req.url)
     return NextResponse.redirect(loginUrl)
-  }
-
-  // 認証済みでログインページにアクセスした場合
-  if (isAuthenticated && isPublicRoute) {
-    const homeUrl = new URL('/', req.url)
-    // ログイン成功フラグを追加
-    homeUrl.searchParams.set('login', 'success')
-    return NextResponse.redirect(homeUrl)
   }
 
   return NextResponse.next()
