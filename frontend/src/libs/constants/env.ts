@@ -22,5 +22,5 @@ export const AUTH_SECRET = process.env.AUTH_SECRET!
 /**
  * LINE OAuth 関連の環境変数
  */
-export const LINE_CLIENT_ID = process.env.LINE_CLIENT_ID!
-export const LINE_CLIENT_SECRET = process.env.LINE_CLIENT_SECRET!
+export const LINE_CLIENT_ID = process.env.AUTH_LINE_ID!
+export const LINE_CLIENT_SECRET = process.env.AUTH_LINE_SECRET!

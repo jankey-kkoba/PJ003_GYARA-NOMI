@@ -1,13 +1,6 @@
 import type { NextAuthConfig } from 'next-auth'
 import Line from 'next-auth/providers/line'
-import { DrizzleAdapter } from '@auth/drizzle-adapter'
-import { db } from '@/libs/db'
-import { users } from '@/libs/db/schema/users'
-import {
-  accounts,
-  sessions,
-  verificationTokens,
-} from '@/libs/db/schema/auth'
+import { CustomAdapter } from '@/libs/auth/adapter'
 
 /**
  * Auth.jsの設定
@@ -15,12 +8,7 @@ import {
  * Drizzleアダプターでデータベースと連携
  */
 export const authConfig: NextAuthConfig = {
-  adapter: DrizzleAdapter(db, {
-    usersTable: users,
-    accountsTable: accounts,
-    sessionsTable: sessions,
-    verificationTokensTable: verificationTokens,
-  }),
+  adapter: CustomAdapter(),
   session: {
     strategy: 'jwt',
   },

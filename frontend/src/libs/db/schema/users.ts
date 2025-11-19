@@ -17,10 +17,8 @@ export const users = pgTable('users', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
-  name: text('name'), // Auth.js互換性のため保持（実際の名前はuser_profilesで管理）
   email: text('email').unique(),
   emailVerified: timestamp('email_verified', { mode: 'date' }),
-  image: text('image'), // Auth.js互換性のため保持
   role: userRoleEnum('role'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

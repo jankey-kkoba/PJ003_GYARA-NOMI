@@ -1,9 +1,16 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
+import { HTTPException } from 'hono/http-exception'
+import { verifyAuth, initAuthConfig, type AuthConfig } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
+import Line from 'next-auth/providers/line'
 import { userService } from '@/features/user/services/userService'
-import { auth } from '@/libs/auth'
+import {
+  AUTH_SECRET,
+  LINE_CLIENT_ID,
+  LINE_CLIENT_SECRET,
+} from '@/libs/constants/env'
 
 /**
  * プロフィール登録リクエストのスキーマ
@@ -20,47 +27,67 @@ const registerProfileSchema = z.object({
 const app = new Hono().basePath('/api/users')
 
 /**
+ * Auth.js設定の初期化
+ */
+app.use(
+  '*',
+  initAuthConfig((): AuthConfig => ({
+    secret: AUTH_SECRET,
+    providers: [
+      Line({
+        clientId: LINE_CLIENT_ID,
+        clientSecret: LINE_CLIENT_SECRET,
+      }),
+    ],
+  }))
+)
+
+/**
+ * エラーハンドラー
+ * HTTPExceptionをJSON形式でレスポンス
+ */
+app.onError((err, c) => {
+  if (err instanceof HTTPException) {
+    return c.json({ success: false, error: err.message }, err.status)
+  }
+  console.error('Unexpected error:', err)
+  return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
+})
+
+/**
  * プロフィール登録エンドポイント
  * 認証済みユーザーのプロフィールを登録する
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const route = app.post(
   '/register',
+  verifyAuth(),
   zValidator('json', registerProfileSchema),
   async (c) => {
-    // セッションからユーザーIDを取得
-    const session = await auth()
-    if (!session?.user?.id) {
-      return c.json({ success: false, error: '認証が必要です' }, 401)
+    // 認証済みユーザー情報を取得
+    const authUser = c.get('authUser')
+    const userId = authUser.session?.user?.id
+
+    if (!userId) {
+      throw new HTTPException(401, { message: '認証が必要です' })
     }
 
     const data = c.req.valid('json')
-    const userId = session.user.id
 
-    try {
-      // プロフィールが既に存在するか確認
-      const hasProfile = await userService.hasProfile(userId)
-      if (hasProfile) {
-        return c.json({ success: false, error: 'プロフィールは既に登録されています' }, 400)
-      }
-
-      // プロフィール作成とロール更新をトランザクションで実行
-      const profile = await userService.registerProfile(userId, {
-        name: data.name,
-        birthDate: data.birthDate,
-        userType: data.userType,
-      })
-
-      return c.json({ success: true, profile }, 201)
-    } catch (error) {
-      console.error('Profile registration error:', error)
-
-      if (error instanceof Error) {
-        return c.json({ success: false, error: error.message }, 400)
-      }
-
-      return c.json({ success: false, error: '登録に失敗しました' }, 500)
+    // プロフィールが既に存在するか確認
+    const hasProfile = await userService.hasProfile(userId)
+    if (hasProfile) {
+      throw new HTTPException(400, { message: 'プロフィールは既に登録されています' })
     }
+
+    // プロフィール作成とロール更新をトランザクションで実行
+    const profile = await userService.registerProfile(userId, {
+      name: data.name,
+      birthDate: data.birthDate,
+      userType: data.userType,
+    })
+
+    return c.json({ success: true, profile }, 201)
   }
 )
 

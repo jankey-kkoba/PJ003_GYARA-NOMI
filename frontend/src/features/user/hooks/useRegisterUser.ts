@@ -23,9 +23,11 @@ export function useRegisterUser() {
 
       if (!res.ok) {
         const errorData = await res.json()
-        throw new Error(
-          'error' in errorData ? errorData.error : '登録に失敗しました'
-        )
+        const errorMessage =
+          'error' in errorData && typeof errorData.error === 'string'
+            ? errorData.error
+            : '登録に失敗しました'
+        throw new Error(errorMessage)
       }
 
       return res.json()
