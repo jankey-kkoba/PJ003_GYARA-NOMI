@@ -13,7 +13,6 @@ export default auth((req) => {
   const publicRoutes = [
     '/login',
     '/sign-up',
-    '/register',
   ]
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
