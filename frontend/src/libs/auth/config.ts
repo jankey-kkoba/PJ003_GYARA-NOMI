@@ -1,6 +1,10 @@
 import type { NextAuthConfig } from 'next-auth'
 import Line from 'next-auth/providers/line'
 import { CustomAdapter } from '@/libs/auth/adapter'
+import {
+  LINE_CLIENT_ID,
+  LINE_CLIENT_SECRET,
+} from '@/libs/constants/env'
 
 /**
  * Auth.jsの設定
@@ -12,7 +16,12 @@ export const authConfig: NextAuthConfig = {
   session: {
     strategy: 'jwt',
   },
-  providers: [Line],
+  providers: [
+    Line({
+      clientId: LINE_CLIENT_ID,
+      clientSecret: LINE_CLIENT_SECRET,
+    })
+  ],
   pages: {
     signIn: '/login',
   },
