@@ -9,6 +9,9 @@ export default defineConfig({
     // ブラウザ環境で process.env を使用可能にする
     'process.env': {},
   },
+  optimizeDeps: {
+    include: ['hono', 'hono/http-exception', '@hono/zod-validator', 'zod'],
+  },
   test: {
     // グローバル設定
     globals: true,
