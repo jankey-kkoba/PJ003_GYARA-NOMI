@@ -57,7 +57,8 @@ const route = app.post(
   async (c) => {
     // 認証済みユーザー情報を取得
     const authUser = c.get('authUser')
-    const userId = authUser.session?.user?.id
+    // ユーザーIDを取得
+    const userId = authUser.token?.id as string | undefined
 
     if (!userId) {
       throw new HTTPException(401, { message: '認証が必要です' })

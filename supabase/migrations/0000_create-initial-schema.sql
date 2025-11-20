@@ -59,7 +59,7 @@ CREATE TABLE "users" (
 CREATE TABLE "user_profiles" (
 	"id" text PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
-	"birth_date" timestamp NOT NULL,
+	"birth_date" date NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );

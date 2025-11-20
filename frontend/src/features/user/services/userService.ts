@@ -88,7 +88,7 @@ export const userService = {
         .values({
           id: userId,
           name: input.name,
-          birthDate: new Date(input.birthDate),
+          birthDate: input.birthDate,
         })
         .returning()
 

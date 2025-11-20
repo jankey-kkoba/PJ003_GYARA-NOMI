@@ -1,4 +1,4 @@
-import { pgTable, text, timestamp, pgEnum } from 'drizzle-orm/pg-core'
+import { pgTable, text, timestamp, date, pgEnum } from 'drizzle-orm/pg-core'
 
 /**
  * ユーザーロールのenum
@@ -33,7 +33,7 @@ export const userProfiles = pgTable('user_profiles', {
     .primaryKey()
     .references(() => users.id),
   name: text('name').notNull(),
-  birthDate: timestamp('birth_date', { mode: 'date' }).notNull(),
+  birthDate: date('birth_date', { mode: 'string' }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 })
