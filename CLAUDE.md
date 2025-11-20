@@ -184,3 +184,96 @@ export function useCreateUser() {
 - Auth.jsのSessionProviderは`AuthProvider`コンポーネントでラップする
   - 場所: `features/auth/components/providers/AuthProvider.tsx`
   - layout.tsxで全体をラップする
+
+### テスト戦略
+Testing Trophy（https://kentcdodds.com/blog/the-testing-trophy-and-testing-classifications）の考え方に基づき、Integration テストを最重視する戦略を採用する。
+
+#### テストの種類と比率
+```
+        E2E          ← 5-10%: 重要なユーザーフローのみ
+    Integration      ← 60-70%: 最も重点を置く（confidence / cost のバランス最良）
+      Unit           ← 20-25%: ユーティリティや複雑なロジックのみ
+      Static         ← 100%: TypeScript / ESLint
+```
+
+#### テストツールの使い分け
+| テスト種別 | ツール | 用途 |
+|-----------|--------|------|
+| Unit | Vitest (jsdom) | 純粋関数、ユーティリティ、Zodスキーマ |
+| Component/Integration | **Vitest Browser Mode** | コンポーネント統合、API統合、認証フロー |
+| E2E | Playwright | 複数ページにまたがるユーザージャーニー |
+
+#### Vitest Browser Mode の採用理由
+- **実ブラウザ環境**: jsdom のシミュレーションではなく、実際のブラウザで CSS レンダリング・イベント処理を検証
+- **高い信頼性**: Testing Trophy の核心である「confidence（確信）」を最大化
+- **ツール統一**: Playwright を E2E と共有し、ブラウザのインストールが1回で済む
+- **モバイル対応**: 実際のレスポンシブ動作を確認可能
+
+#### テストファイルの配置
+```
+frontend/src/__tests__/
+├── setup.ts                    # グローバルセットアップ
+├── utils/                      # テストユーティリティ
+├── unit/                       # Vitest (jsdom) - 純粋関数のみ
+│   ├── utils/
+│   │   └── cn.test.ts
+│   └── features/
+│       └── user/
+│           └── validation.test.ts
+├── integration/                # Vitest Browser Mode
+│   ├── api/
+│   │   └── users.test.ts
+│   ├── features/
+│   │   ├── auth/
+│   │   │   └── register-flow.test.tsx
+│   │   └── user/
+│   └── auth/
+│       └── adapter.test.ts
+└── e2e/                        # Playwright
+    ├── auth/
+    │   └── login-flow.spec.ts
+    └── routing/
+        └── protected-routes.spec.ts
+```
+
+#### テストの原則
+1. **ユーザー視点でテストを書く**
+   - 実装詳細（state, props）ではなく、ユーザーが見るもの（表示、操作結果）をテスト
+   - `getByRole`, `getByLabelText` 等のアクセシビリティベースのクエリを優先
+
+2. **モックは最小限に**
+   - 外部 API（LINE OAuth 等）のみモック
+   - DB は可能な限りテスト用 DB を使用
+   - React Query の実際の動作を活用
+
+3. **書くべきテスト**
+   - ビジネスロジックの検証
+   - ユーザーフローの動作確認
+   - エラーハンドリング
+   - バリデーション
+
+4. **書くべきでないテスト**
+   - shadcn/ui コンポーネントの単体テスト（既にテスト済み）
+   - シンプルな props 受け渡し
+   - 実装詳細の検証
+
+#### 優先してテストすべき機能
+1. **認証・ユーザー管理**: useAuth, CustomAdapter, 登録フロー
+2. **API エンドポイント**: バリデーション、認証チェック、エラーハンドリング
+3. **フォームコンポーネント**: RegisterTemplate, LoginTemplate
+4. **保護されたルート**: 認証状態によるリダイレクト
+
+#### テスト実行コマンド
+```bash
+# Unit + Integration テスト
+npm run test
+
+# E2E テスト
+npm run test:e2e
+
+# ウォッチモード
+npm run test -- --watch
+
+# カバレッジ
+npm run test -- --coverage
+```
