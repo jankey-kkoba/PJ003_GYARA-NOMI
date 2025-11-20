@@ -267,8 +267,14 @@ frontend/__tests__/
 
 #### テスト実行コマンド
 ```bash
-# Unit + Integration テスト
+# ブラウザ環境テスト（Unit + Integration）
 npm run test
+
+# Node.js環境テスト（DB操作テスト）
+npm run test:node
+
+# すべてのテスト
+npm run test:all
 
 # E2E テスト
 npm run test:e2e
@@ -279,3 +285,17 @@ npm run test -- --watch
 # カバレッジ
 npm run test -- --coverage
 ```
+
+#### テスト環境の使い分け
+- **ブラウザ環境（Vitest Browser Mode）**: コンポーネント、hooks、APIモックを使用するテスト
+- **Node.js環境**: DB操作など Node.js 固有の機能を使うテスト（`vitest.node.config.ts`を使用）
+
+Node.js環境のテスト実行にはローカルSupabaseの起動が必要：
+```bash
+# supabaseのディレクトリに移動
+supabase start
+```
+
+#### テストでのエイリアス
+- `@/`: `src/` ディレクトリ
+- `@tests/`: `__tests__/` ディレクトリ（テストファイル間のインポート用）
