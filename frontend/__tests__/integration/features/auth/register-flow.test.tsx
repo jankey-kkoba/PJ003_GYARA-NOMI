@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { RegisterTemplate } from '@/features/auth/components/templates/RegisterTemplate'
-import { TestProviders } from '@/__tests__/utils'
+import { TestProviders } from '@tests/utils'
 
 // next/navigation のモック
 vi.mock('next/navigation', () => ({

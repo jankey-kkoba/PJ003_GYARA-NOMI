@@ -210,8 +210,10 @@ Testing Trophy（https://kentcdodds.com/blog/the-testing-trophy-and-testing-clas
 - **モバイル対応**: 実際のレスポンシブ動作を確認可能
 
 #### テストファイルの配置
+テストは `frontend/__tests__/` に配置する（`src` 外に置くことでソースコードとの明確な分離を実現）。
+
 ```
-frontend/src/__tests__/
+frontend/__tests__/
 ├── setup.ts                    # グローバルセットアップ
 ├── utils/                      # テストユーティリティ
 ├── unit/                       # Vitest (jsdom) - 純粋関数のみ

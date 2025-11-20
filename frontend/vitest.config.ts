@@ -10,16 +10,25 @@ export default defineConfig({
     'process.env': {},
   },
   optimizeDeps: {
-    include: ['hono', 'hono/http-exception', '@hono/zod-validator', 'zod'],
+    include: [
+      'hono',
+      'hono/http-exception',
+      '@hono/zod-validator',
+      'zod',
+      'next-auth/react',
+      'react',
+      'react-dom',
+      '@tanstack/react-query',
+    ],
   },
   test: {
     // グローバル設定
     globals: true,
-    setupFiles: ['./src/__tests__/setup.ts'],
+    setupFiles: ['./__tests__/setup.ts'],
 
     // テストファイルのパターン
-    include: ['src/__tests__/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['src/__tests__/e2e/**/*'],
+    include: ['__tests__/**/*.{test,spec}.{ts,tsx}'],
+    exclude: ['__tests__/e2e/**/*'],
 
     // Browser Mode 設定
     browser: {
@@ -33,6 +42,7 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
+      '@tests': path.resolve(__dirname, './__tests__'),
     },
   },
 })
