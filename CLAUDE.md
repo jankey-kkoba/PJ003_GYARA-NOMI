@@ -222,9 +222,12 @@ frontend/__tests__/
 │   └── features/
 │       └── user/
 │           └── validation.test.ts
-├── integration/                # Vitest Browser Mode
+├── integration/                # Vitest Browser Mode & Node.js
 │   ├── api/
 │   │   └── users.test.ts
+│   ├── services/              # サービス層テスト（Node.js環境）
+│   │   ├── user-service.test.ts
+│   │   └── cast-service.test.ts
 │   ├── features/
 │   │   ├── auth/
 │   │   │   └── register-flow.test.tsx
@@ -238,6 +241,11 @@ frontend/__tests__/
         └── protected-routes.spec.ts
 ```
 
+**サービス層テストの配置ルール**:
+- サービス層のテストは `__tests__/integration/services/` 配下に集約する
+- ファイル名は `[domain]-service.test.ts` の形式にする（例: `user-service.test.ts`, `cast-service.test.ts`）
+- これにより vitest.node.config.ts の設定が簡潔になり、サービス層テストの管理が容易になる
+
 #### テストの原則
 1. **ユーザー視点でテストを書く**
    - 実装詳細（state, props）ではなく、ユーザーが見るもの（表示、操作結果）をテスト
@@ -247,6 +255,9 @@ frontend/__tests__/
    - 外部 API（LINE OAuth 等）のみモック
    - DB は可能な限りテスト用 DB を使用
    - React Query の実際の動作を活用
+   - **サービス層のテスト**: DBをモックせず、実際のテスト用DBを使用する（例: `user-service.test.ts`）
+     - API層のテスト: サービスをモックして、APIロジック（認証、バリデーション等）に焦点を当てる
+     - サービス層のテスト: 実DBを使用して、DBクエリとビジネスロジックを統合的にテストする
 
 3. **書くべきテスト**
    - ビジネスロジックの検証

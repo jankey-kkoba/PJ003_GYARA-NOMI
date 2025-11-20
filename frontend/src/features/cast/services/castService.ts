@@ -4,6 +4,7 @@ import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
 import { areas } from '@/libs/db/schema/areas'
 import type { CastListItem } from '@/features/cast/types'
+import { calculateAge } from '@/utils/date'
 
 /**
  * キャストサービス
@@ -45,16 +46,7 @@ export const castService = {
 
     // 年齢を計算
     const castsWithAge: CastListItem[] = casts.map((cast) => {
-      const birthDate = new Date(cast.birthDate)
-      const today = new Date()
-      let age = today.getFullYear() - birthDate.getFullYear()
-      const monthDiff = today.getMonth() - birthDate.getMonth()
-      if (
-        monthDiff < 0 ||
-        (monthDiff === 0 && today.getDate() < birthDate.getDate())
-      ) {
-        age--
-      }
+      const age = calculateAge(new Date(cast.birthDate))
 
       return {
         id: cast.id,

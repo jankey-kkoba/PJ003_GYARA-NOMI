@@ -56,8 +56,11 @@ describe('cn', () => {
   })
 
   it('複雑な組み合わせを処理する', () => {
-    const variant = 'primary'
-    const size = 'lg'
+    type Variant = 'primary' | 'secondary'
+    type Size = 'sm' | 'lg'
+
+    const variant = 'primary' as Variant
+    const size = 'lg' as Size
 
     expect(
       cn(

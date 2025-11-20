@@ -32,7 +32,7 @@ export default defineConfig({
     include: ['__tests__/**/*.{test,spec}.{ts,tsx}'],
     exclude: [
       '__tests__/e2e/**/*',
-      '__tests__/integration/features/user/user-service.test.ts',
+      '__tests__/integration/services/**/*.test.ts'
     ],
 
     // Browser Mode 設定

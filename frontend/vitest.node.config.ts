@@ -19,7 +19,9 @@ export default defineConfig(({ mode }) => {
       globals: true,
 
       // テストファイルのパターン（DB操作テストのみ）
-      include: ['__tests__/integration/features/user/user-service.test.ts'],
+      include: [
+        '__tests__/integration/services/**/*.test.ts'
+      ],
 
       // Node.js環境（jsdom不要）
       environment: 'node',

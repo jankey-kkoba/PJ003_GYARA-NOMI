@@ -26,7 +26,7 @@ export function CastCard({ cast }: CastCardProps) {
     <Link href={`/casts/${cast.id}`} className="block">
       <Card className="overflow-hidden transition-shadow hover:shadow-lg">
         {/* 画像エリア（今後実装予定） */}
-        <div className="aspect-[3/4] bg-muted flex items-center justify-center">
+        <div className="aspect-3/4 bg-muted flex items-center justify-center">
           <span className="text-muted-foreground text-sm">画像未設定</span>
         </div>
 

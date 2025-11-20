@@ -23,7 +23,7 @@ USING (
   is_active = true
   AND EXISTS (
     SELECT 1 FROM users
-    WHERE users.id = auth.uid()
+    WHERE users.id = auth.uid()::text
     AND users.role = 'guest'
   )
 );
@@ -33,7 +33,7 @@ CREATE POLICY "cast_can_view_own_cast_profile"
 ON cast_profiles
 FOR SELECT
 TO authenticated
-USING (id = auth.uid());
+USING (id = auth.uid()::text);
 
 -- ============================================================
 -- user_profiles テーブルのポリシー
@@ -47,7 +47,7 @@ TO authenticated
 USING (
   EXISTS (
     SELECT 1 FROM users
-    WHERE users.id = auth.uid()
+    WHERE users.id = auth.uid()::text
     AND users.role = 'guest'
   )
   AND EXISTS (
@@ -62,7 +62,7 @@ CREATE POLICY "user_can_view_own_profile"
 ON user_profiles
 FOR SELECT
 TO authenticated
-USING (id = auth.uid());
+USING (id = auth.uid()::text);
 
 -- ============================================================
 -- areas テーブルのポリシー
