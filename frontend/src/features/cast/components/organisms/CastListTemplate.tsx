@@ -46,9 +46,9 @@ export function CastListTemplate() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {/* キャスト一覧グリッド */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
         {data.casts.map((cast) => (
           <CastCard key={cast.id} cast={cast} />
         ))}

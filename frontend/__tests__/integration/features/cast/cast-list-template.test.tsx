@@ -180,8 +180,8 @@ describe('CastListTemplate', () => {
         </TestWrapper>
       )
 
-      await expect.element(page.getByText('テストキャスト1')).toBeInTheDocument()
-      await expect.element(page.getByText('テストキャスト2')).toBeInTheDocument()
+      // 名前は7文字制限で省略表示される（2つのキャストがいるため.first()を使用）
+      await expect.element(page.getByText('テストキャスト...').first()).toBeInTheDocument()
       await expect.element(page.getByText('25歳')).toBeInTheDocument()
       await expect.element(page.getByText('28歳')).toBeInTheDocument()
     })
