@@ -1,16 +1,11 @@
 import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { HTTPException } from 'hono/http-exception'
-import { verifyAuth, initAuthConfig, type AuthConfig } from '@hono/auth-js'
+import { verifyAuth } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
-import Line from 'next-auth/providers/line'
 import { userService } from '@/features/user/services/userService'
 import { registerProfileSchema } from '@/features/user/schemas/registerProfile'
-import {
-  AUTH_SECRET,
-  LINE_CLIENT_ID,
-  LINE_CLIENT_SECRET,
-} from '@/libs/constants/env'
+import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 
 /**
  * ユーザーAPI
@@ -20,18 +15,7 @@ const app = new Hono().basePath('/api/users')
 /**
  * Auth.js設定の初期化
  */
-app.use(
-  '*',
-  initAuthConfig((): AuthConfig => ({
-    secret: AUTH_SECRET,
-    providers: [
-      Line({
-        clientId: LINE_CLIENT_ID,
-        clientSecret: LINE_CLIENT_SECRET,
-      }),
-    ],
-  }))
-)
+app.use('*', honoAuthMiddleware)
 
 /**
  * エラーハンドラー
