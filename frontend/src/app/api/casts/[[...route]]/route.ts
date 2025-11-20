@@ -2,8 +2,10 @@ import { Hono } from 'hono'
 import { handle } from 'hono/vercel'
 import { HTTPException } from 'hono/http-exception'
 import { verifyAuth } from '@hono/auth-js'
+import { zValidator } from '@hono/zod-validator'
 import { castService } from '@/features/cast/services/castService'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
+import { castListQuerySchema } from '@/features/cast/schemas/castListQuery'
 
 /**
  * キャストAPI
@@ -32,7 +34,7 @@ app.onError((err, c) => {
  * 認証済みのゲストユーザーのみがアクセス可能
  */
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const route = app.get('/', verifyAuth(), async (c) => {
+const route = app.get('/', zValidator('query', castListQuerySchema), verifyAuth(), async (c) => {
   // 認証済みユーザー情報を取得
   const authUser = c.get('authUser')
   const token = authUser.token
@@ -48,16 +50,8 @@ const route = app.get('/', verifyAuth(), async (c) => {
     })
   }
 
-  // クエリパラメータから page と limit を取得
-  const page = Number(c.req.query('page')) || 1
-  const limit = Number(c.req.query('limit')) || 12
-
-  // バリデーション
-  if (page < 1 || limit < 1 || limit > 100) {
-    throw new HTTPException(400, {
-      message: '無効なページネーションパラメータです',
-    })
-  }
+  // バリデーション済みのクエリパラメータを取得
+  const { page, limit } = c.req.valid('query')
 
   // キャスト一覧を取得
   const { casts, total } = await castService.getCastList({ page, limit })
