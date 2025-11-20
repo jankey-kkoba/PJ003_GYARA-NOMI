@@ -3,23 +3,14 @@ import { handle } from 'hono/vercel'
 import { HTTPException } from 'hono/http-exception'
 import { verifyAuth, initAuthConfig, type AuthConfig } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
 import Line from 'next-auth/providers/line'
 import { userService } from '@/features/user/services/userService'
+import { registerProfileSchema } from '@/features/user/schemas/registerProfile'
 import {
   AUTH_SECRET,
   LINE_CLIENT_ID,
   LINE_CLIENT_SECRET,
 } from '@/libs/constants/env'
-
-/**
- * プロフィール登録リクエストのスキーマ
- */
-const registerProfileSchema = z.object({
-  name: z.string().min(1, '名前は必須です'),
-  birthDate: z.string().min(1, '生年月日は必須です'),
-  userType: z.enum(['guest', 'cast']),
-})
 
 /**
  * ユーザーAPI

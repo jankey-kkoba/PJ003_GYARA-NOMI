@@ -9,7 +9,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { Hono } from 'hono'
 import { HTTPException } from 'hono/http-exception'
 import { zValidator } from '@hono/zod-validator'
-import { z } from 'zod'
+import { registerProfileSchema } from '@/features/user/schemas/registerProfile'
 
 // userService のモック
 const mockUserService = {
@@ -27,15 +27,6 @@ vi.mock('@/libs/constants/env', () => ({
   LINE_CLIENT_ID: 'test-client-id',
   LINE_CLIENT_SECRET: 'test-client-secret',
 }))
-
-/**
- * プロフィール登録リクエストのスキーマ
- */
-const registerProfileSchema = z.object({
-  name: z.string().min(1, '名前は必須です'),
-  birthDate: z.string().min(1, '生年月日は必須です'),
-  userType: z.enum(['guest', 'cast']),
-})
 
 /**
  * テスト用の認証ユーザー型
