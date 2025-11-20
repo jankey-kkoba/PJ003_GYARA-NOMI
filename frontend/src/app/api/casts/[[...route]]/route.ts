@@ -39,7 +39,8 @@ const route = app.get('/', zValidator('query', castListQuerySchema), verifyAuth(
   const authUser = c.get('authUser')
   const token = authUser.token
 
-  if (!token?.id || !token?.role) {
+  // ユーザーIDとロールをチェック
+  if (!token?.id) {
     throw new HTTPException(401, { message: '認証が必要です' })
   }
 

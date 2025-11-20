@@ -11,11 +11,13 @@ function toAdapterUser(user: {
   id: string
   email: string | null
   emailVerified: Date | null
+  role: 'guest' | 'cast' | 'admin' | null
 }): AdapterUser {
   return {
     id: user.id,
     email: user.email ?? '',
     emailVerified: user.emailVerified,
+    role: user.role,
   }
 }
 

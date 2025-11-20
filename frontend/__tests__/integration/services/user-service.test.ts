@@ -2,67 +2,32 @@
  * userService Integration テスト
  *
  * ローカルSupabaseを使用してユーザーサービスのDB操作を検証
- * 実際のトランザクションとクエリの動作をテスト
+ * seed.sqlで用意されたテストデータを使用
+ *
+ * 前提条件:
+ * - supabase db reset を実行してseed.sqlが適用されていること
+ * - seed.sqlで定義されたユーザーデータが存在すること
+ *
+ * 注意:
+ * - 一部のテストは新規ユーザーを作成する（registerProfile等）
+ * - クリーンアップは行わないため、テストごとにsupabase db resetを推奨
  */
 
-import { describe, it, expect, beforeEach, afterEach, afterAll } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { eq } from 'drizzle-orm'
 import { db } from '@/libs/db'
 import { users, userProfiles } from '@/libs/db/schema/users'
 import { accounts } from '@/libs/db/schema/auth'
 import { userService } from '@/features/user/services/userService'
 
-// テスト用のユーザーIDプレフィックス（クリーンアップ用）
+// 新規作成データのプレフィックス（クリーンアップ用）
 const TEST_PREFIX = 'test-user-service-'
 
-// テストデータの作成ヘルパー
-async function createTestUser(id: string, email?: string) {
-  const [user] = await db
-    .insert(users)
-    .values({
-      id: `${TEST_PREFIX}${id}`,
-      email: email || `${id}@test.example.com`,
-      emailVerified: null,
-    })
-    .returning()
-  return user
-}
-
-async function createTestAccount(userId: string, provider: string, providerAccountId: string) {
-  await db.insert(accounts).values({
-    userId,
-    type: 'oauth',
-    provider,
-    providerAccountId,
-  })
-}
-
-async function createTestProfile(userId: string, name: string, birthDate: string) {
-  const [profile] = await db
-    .insert(userProfiles)
-    .values({
-      id: userId,
-      name,
-      birthDate,
-    })
-    .returning()
-  return profile
-}
-
-// テストデータのクリーンアップ
+// 新規作成したデータのクリーンアップ
 async function cleanupTestData() {
-  // テストプレフィックスを持つデータを削除
-  // 外部キー制約のため、accounts → userProfiles → users の順で削除
+  const testUsers = await db.select({ id: users.id }).from(users).where(eq(users.id, users.id))
 
-  // accountsの削除
-  const testUsers = await db
-    .select({ id: users.id })
-    .from(users)
-    .where(eq(users.id, users.id))
-
-  const testUserIds = testUsers
-    .filter(u => u.id.startsWith(TEST_PREFIX))
-    .map(u => u.id)
+  const testUserIds = testUsers.filter((u) => u.id.startsWith(TEST_PREFIX)).map((u) => u.id)
 
   for (const userId of testUserIds) {
     await db.delete(accounts).where(eq(accounts.userId, userId))
@@ -80,21 +45,25 @@ describe('userService Integration', () => {
     await cleanupTestData()
   })
 
-  afterAll(async () => {
-    await cleanupTestData()
-  })
-
   describe('findAccountByProvider', () => {
-    it('存在するアカウントを取得できる', async () => {
-      const user = await createTestUser('find-account-1')
-      await createTestAccount(user.id, 'line', 'line-123')
-
-      const result = await userService.findAccountByProvider('line', 'line-123')
+    it('存在するアカウントを取得できる (seed data)', async () => {
+      // seed.sqlで用意されたゲストユーザー
+      const result = await userService.findAccountByProvider('line', 'seed-line-guest-001')
 
       expect(result).not.toBeNull()
-      expect(result?.userId).toBe(user.id)
+      expect(result?.userId).toBe('seed-user-guest-001')
       expect(result?.provider).toBe('line')
-      expect(result?.providerAccountId).toBe('line-123')
+      expect(result?.providerAccountId).toBe('seed-line-guest-001')
+    })
+
+    it('存在するキャストのアカウントを取得できる (seed data)', async () => {
+      // seed.sqlで用意されたキャストユーザー
+      const result = await userService.findAccountByProvider('line', 'seed-line-cast-001')
+
+      expect(result).not.toBeNull()
+      expect(result?.userId).toBe('seed-user-cast-001')
+      expect(result?.provider).toBe('line')
+      expect(result?.providerAccountId).toBe('seed-line-cast-001')
     })
 
     it('存在しないアカウントはnullを返す', async () => {
@@ -104,39 +73,57 @@ describe('userService Integration', () => {
     })
 
     it('異なるプロバイダーのアカウントは取得しない', async () => {
-      const user = await createTestUser('find-account-2')
-      await createTestAccount(user.id, 'google', 'google-123')
-
-      const result = await userService.findAccountByProvider('line', 'google-123')
+      // seed.sqlで用意されたGoogleアカウント
+      const result = await userService.findAccountByProvider('line', 'seed-google-account-001')
 
       expect(result).toBeNull()
+    })
+
+    it('Googleプロバイダーで正しく取得できる', async () => {
+      // seed.sqlで用意されたGoogleアカウント
+      const result = await userService.findAccountByProvider('google', 'seed-google-account-001')
+
+      expect(result).not.toBeNull()
+      expect(result?.userId).toBe('seed-user-google-001')
+      expect(result?.provider).toBe('google')
     })
   })
 
   describe('findUserById', () => {
-    it('存在するユーザーを取得できる', async () => {
-      const user = await createTestUser('find-user-1', 'finduser@test.com')
-
-      const result = await userService.findUserById(user.id)
+    it('存在するゲストユーザーを取得できる (seed data)', async () => {
+      const result = await userService.findUserById('seed-user-guest-001')
 
       expect(result).not.toBeNull()
-      expect(result?.id).toBe(user.id)
-      expect(result?.email).toBe('finduser@test.com')
+      expect(result?.id).toBe('seed-user-guest-001')
+      expect(result?.email).toBe('seed-guest-001@test.example.com')
+      expect(result?.role).toBe('guest')
+    })
+
+    it('存在するキャストユーザーを取得できる (seed data)', async () => {
+      const result = await userService.findUserById('seed-user-cast-001')
+
+      expect(result).not.toBeNull()
+      expect(result?.id).toBe('seed-user-cast-001')
+      expect(result?.email).toBe('seed-cast-001@test.example.com')
+      expect(result?.role).toBe('cast')
     })
 
     it('存在しないユーザーはnullを返す', async () => {
-      const result = await userService.findUserById(`${TEST_PREFIX}non-existent`)
+      const result = await userService.findUserById('non-existent-user-id')
 
       expect(result).toBeNull()
     })
   })
 
   describe('accountExists', () => {
-    it('アカウントが存在する場合はtrueを返す', async () => {
-      const user = await createTestUser('account-exists-1')
-      await createTestAccount(user.id, 'line', 'line-exists-123')
+    it('アカウントが存在する場合はtrueを返す (seed data)', async () => {
+      const result = await userService.accountExists('line', 'seed-line-guest-001')
 
-      const result = await userService.accountExists('line', 'line-exists-123')
+      expect(result).toBe(true)
+    })
+
+    it('キャストのアカウントが存在する場合はtrueを返す (seed data)', async () => {
+      const result = await userService.accountExists('line', 'seed-line-cast-001')
 
       expect(result).toBe(true)
     })
@@ -149,19 +136,28 @@ describe('userService Integration', () => {
   })
 
   describe('hasProfile', () => {
-    it('プロフィールが存在する場合はtrueを返す', async () => {
-      const user = await createTestUser('has-profile-1')
-      await createTestProfile(user.id, 'テストユーザー', '1990-01-01')
-
-      const result = await userService.hasProfile(user.id)
+    it('プロフィールが存在する場合はtrueを返す (seed data)', async () => {
+      // seed.sqlで用意されたプロフィール登録済みゲスト
+      const result = await userService.hasProfile('seed-user-guest-001')
 
       expect(result).toBe(true)
     })
 
-    it('プロフィールが存在しない場合はfalseを返す', async () => {
-      const user = await createTestUser('has-profile-2')
+    it('キャストのプロフィールが存在する場合はtrueを返す (seed data)', async () => {
+      const result = await userService.hasProfile('seed-user-cast-001')
 
-      const result = await userService.hasProfile(user.id)
+      expect(result).toBe(true)
+    })
+
+    it('プロフィールが存在しない場合はfalseを返す (seed data)', async () => {
+      // seed.sqlで用意されたプロフィール未登録ゲスト
+      const result = await userService.hasProfile('seed-user-guest-no-profile')
+
+      expect(result).toBe(false)
+    })
+
+    it('存在しないユーザーIDはfalseを返す', async () => {
+      const result = await userService.hasProfile('non-existent-user-id')
 
       expect(result).toBe(false)
     })
@@ -169,7 +165,15 @@ describe('userService Integration', () => {
 
   describe('registerProfile', () => {
     it('プロフィールを作成してロールを更新する', async () => {
-      const user = await createTestUser('register-profile-1')
+      // 新規ユーザーを作成（テスト用）
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-001`,
+          email: 'register-001@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
 
       const result = await userService.registerProfile(user.id, {
         name: '新規ユーザー',
@@ -189,7 +193,14 @@ describe('userService Integration', () => {
     })
 
     it('キャストタイプでプロフィールを作成できる', async () => {
-      const user = await createTestUser('register-profile-2')
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-002`,
+          email: 'register-002@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
 
       const result = await userService.registerProfile(user.id, {
         name: 'キャストユーザー',
@@ -204,7 +215,14 @@ describe('userService Integration', () => {
     })
 
     it('日本語の名前を正しく保存できる', async () => {
-      const user = await createTestUser('register-profile-3')
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-003`,
+          email: 'register-003@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
 
       const result = await userService.registerProfile(user.id, {
         name: '山田花子',
@@ -216,7 +234,14 @@ describe('userService Integration', () => {
     })
 
     it('hasProfileがtrueを返すようになる', async () => {
-      const user = await createTestUser('register-profile-4')
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-004`,
+          email: 'register-004@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
 
       // 登録前はfalse
       expect(await userService.hasProfile(user.id)).toBe(false)
@@ -232,7 +257,14 @@ describe('userService Integration', () => {
     })
 
     it('重複登録はエラーになる（主キー制約）', async () => {
-      const user = await createTestUser('register-profile-5')
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-005`,
+          email: 'register-005@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
 
       // 1回目の登録
       await userService.registerProfile(user.id, {
@@ -253,7 +285,7 @@ describe('userService Integration', () => {
 
     it('存在しないユーザーIDでエラーになる（外部キー制約）', async () => {
       await expect(
-        userService.registerProfile(`${TEST_PREFIX}non-existent-user`, {
+        userService.registerProfile('non-existent-user-id', {
           name: 'テストユーザー',
           birthDate: '1990-01-01',
           userType: 'guest',

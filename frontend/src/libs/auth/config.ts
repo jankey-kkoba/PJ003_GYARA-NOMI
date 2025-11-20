@@ -1,6 +1,7 @@
 import type { NextAuthConfig } from 'next-auth'
 import Line from 'next-auth/providers/line'
 import { CustomAdapter } from '@/libs/auth/adapter'
+import { userService } from '@/features/user/services/userService'
 import {
   LINE_CLIENT_ID,
   LINE_CLIENT_SECRET,
@@ -28,21 +29,34 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     /**
      * JWTコールバック
-     * セッションにユーザーIDを含める
+     * トークンにユーザーIDとロールを含める
      */
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
+      // 初回ログイン時: userオブジェクトからIDとロールを設定
       if (user) {
         token.id = user.id
+        token.role = user.role
       }
+
+      // トークン更新時: DBから最新のロール情報を取得
+      // ユーザーがプロフィール登録などでロールが変更された可能性がある
+      if (trigger === 'update' || !token.role) {
+        const dbUser = await userService.findUserById(token.id)
+        if (dbUser) {
+          token.role = dbUser.role
+        }
+      }
+
       return token
     },
     /**
      * セッションコールバック
-     * セッションにユーザーIDを含める
+     * セッションにユーザーIDとロールを含める
      */
     async session({ session, token }) {
       if (token && session.user) {
-        session.user.id = token.id as string
+        session.user.id = token.id
+        session.user.role = token.role
       }
       return session
     },

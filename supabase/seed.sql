@@ -1,0 +1,189 @@
+-- ================================================================================
+-- テスト用シードデータ
+-- ================================================================================
+-- このファイルはローカル開発およびテスト環境で使用するテストデータを定義します
+-- 各テストはこのデータを参照することで、テストごとのデータ作成処理を削減できます
+--
+-- 使い方:
+--   supabase db reset (マイグレーション実行後、自動的に seed.sql が実行されます)
+--   または
+--   psql -d postgres -f supabase/seed.sql
+--
+-- データ命名規則:
+--   - ID: seed-{domain}-{purpose}-{連番}
+--   - Email: seed-{purpose}@test.example.com
+--   例: seed-user-guest-001, seed-guest-001@test.example.com
+-- ================================================================================
+
+-- ================================================================================
+-- エリアマスタ
+-- ================================================================================
+INSERT INTO areas (id, name) VALUES
+  ('seed-area-shibuya', '渋谷'),
+  ('seed-area-shinjuku', '新宿'),
+  ('seed-area-roppongi', '六本木'),
+  ('seed-area-ginza', '銀座');
+
+-- ================================================================================
+-- ゲストユーザー (user_role = 'guest')
+-- ================================================================================
+-- 基本的なゲストユーザー（プロフィール登録済み）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-guest-001', 'seed-guest-001@test.example.com', NULL, 'guest', NOW(), NOW()),
+  ('seed-user-guest-002', 'seed-guest-002@test.example.com', NULL, 'guest', NOW(), NOW()),
+  ('seed-user-guest-003', 'seed-guest-003@test.example.com', NULL, 'guest', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-guest-001', '田中太郎', '1990-05-15', NOW(), NOW()),
+  ('seed-user-guest-002', '佐藤一郎', '1985-08-20', NOW(), NOW()),
+  ('seed-user-guest-003', '鈴木次郎', '1995-03-10', NOW(), NOW());
+
+-- LINEアカウント連携済みゲスト
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-guest-001', 'oauth', 'line', 'seed-line-guest-001'),
+  ('seed-user-guest-002', 'oauth', 'line', 'seed-line-guest-002');
+
+-- プロフィール未登録のゲスト（認証のみ完了）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-guest-no-profile', 'seed-guest-no-profile@test.example.com', NULL, NULL, NOW(), NOW());
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-guest-no-profile', 'oauth', 'line', 'seed-line-guest-no-profile');
+
+-- ================================================================================
+-- キャストユーザー (user_role = 'cast')
+-- ================================================================================
+-- アクティブなキャスト（プロフィール登録済み、is_active=true）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-cast-001', 'seed-cast-001@test.example.com', NULL, 'cast', NOW(), NOW()),
+  ('seed-user-cast-002', 'seed-cast-002@test.example.com', NULL, 'cast', NOW(), NOW()),
+  ('seed-user-cast-003', 'seed-cast-003@test.example.com', NULL, 'cast', NOW(), NOW()),
+  ('seed-user-cast-004', 'seed-cast-004@test.example.com', NULL, 'cast', NOW(), NOW()),
+  ('seed-user-cast-005', 'seed-cast-005@test.example.com', NULL, 'cast', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-cast-001', '山田花子', '1998-04-12', NOW(), NOW()),
+  ('seed-user-cast-002', '佐々木美咲', '1997-11-23', NOW(), NOW()),
+  ('seed-user-cast-003', '高橋彩', '1999-07-08', NOW(), NOW()),
+  ('seed-user-cast-004', '伊藤舞', '1996-02-14', NOW(), NOW()),
+  ('seed-user-cast-005', '渡辺優奈', '2000-09-30', NOW(), NOW());
+
+INSERT INTO cast_profiles (id, bio, rank, area_id, is_active, created_at, updated_at) VALUES
+  ('seed-user-cast-001', 'よろしくお願いします！楽しい時間を過ごしましょう♪', 1, 'seed-area-shibuya', TRUE, NOW(), NOW()),
+  ('seed-user-cast-002', 'お酒が大好きです！いろんなお店を知っています', 2, 'seed-area-shinjuku', TRUE, NOW(), NOW()),
+  ('seed-user-cast-003', 'ゆっくりお話ししましょう', 1, 'seed-area-roppongi', TRUE, NOW(), NOW()),
+  ('seed-user-cast-004', 'カラオケ大好きです🎤', 3, 'seed-area-ginza', TRUE, NOW(), NOW()),
+  ('seed-user-cast-005', '明るく元気に頑張ります！', 1, NULL, TRUE, NOW(), NOW());
+
+-- LINEアカウント連携済みキャスト
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-cast-001', 'oauth', 'line', 'seed-line-cast-001'),
+  ('seed-user-cast-002', 'oauth', 'line', 'seed-line-cast-002'),
+  ('seed-user-cast-003', 'oauth', 'line', 'seed-line-cast-003'),
+  ('seed-user-cast-004', 'oauth', 'line', 'seed-line-cast-004'),
+  ('seed-user-cast-005', 'oauth', 'line', 'seed-line-cast-005');
+
+-- 非アクティブなキャスト（テスト用: is_active=false）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-cast-inactive', 'seed-cast-inactive@test.example.com', NULL, 'cast', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-cast-inactive', '非アクティブキャスト', '1998-01-01', NOW(), NOW());
+
+INSERT INTO cast_profiles (id, bio, rank, area_id, is_active, created_at, updated_at) VALUES
+  ('seed-user-cast-inactive', '現在休止中', 1, 'seed-area-shibuya', FALSE, NOW(), NOW());
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-cast-inactive', 'oauth', 'line', 'seed-line-cast-inactive');
+
+-- プロフィール未登録のキャスト（認証のみ完了）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-cast-no-profile', 'seed-cast-no-profile@test.example.com', NULL, NULL, NOW(), NOW());
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-cast-no-profile', 'oauth', 'line', 'seed-line-cast-no-profile');
+
+-- ================================================================================
+-- ページネーションテスト用キャスト（20件）
+-- ================================================================================
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at)
+SELECT
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0'),
+  'seed-cast-page-' || LPAD(n::text, 3, '0') || '@test.example.com',
+  NULL,
+  'cast',
+  NOW(),
+  NOW()
+FROM generate_series(1, 20) AS n;
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at)
+SELECT
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0'),
+  'ページネーションキャスト' || n,
+  '1995-01-01',
+  NOW(),
+  NOW()
+FROM generate_series(1, 20) AS n;
+
+INSERT INTO cast_profiles (id, bio, rank, area_id, is_active, created_at, updated_at)
+SELECT
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0'),
+  'ページネーションテスト用',
+  n, -- ランクは連番
+  CASE
+    WHEN n % 4 = 1 THEN 'seed-area-shibuya'
+    WHEN n % 4 = 2 THEN 'seed-area-shinjuku'
+    WHEN n % 4 = 3 THEN 'seed-area-roppongi'
+    ELSE NULL
+  END,
+  TRUE,
+  NOW(),
+  NOW()
+FROM generate_series(1, 20) AS n;
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id)
+SELECT
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0'),
+  'oauth',
+  'line',
+  'seed-line-cast-page-' || LPAD(n::text, 3, '0')
+FROM generate_series(1, 20) AS n;
+
+-- ================================================================================
+-- エッジケーステスト用データ
+-- ================================================================================
+-- bioが空文字のキャスト
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-cast-empty-bio', 'seed-cast-empty-bio@test.example.com', NULL, 'cast', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-cast-empty-bio', 'Bio空白キャスト', '1998-01-01', NOW(), NOW());
+
+INSERT INTO cast_profiles (id, bio, rank, area_id, is_active, created_at, updated_at) VALUES
+  ('seed-user-cast-empty-bio', '', 1, NULL, TRUE, NOW(), NOW());
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-cast-empty-bio', 'oauth', 'line', 'seed-line-cast-empty-bio');
+
+-- ================================================================================
+-- 認証テスト用データ
+-- ================================================================================
+-- 異なるプロバイダーのアカウント（Googleアカウント）
+INSERT INTO users (id, email, email_verified, role, created_at, updated_at) VALUES
+  ('seed-user-google-001', 'seed-google-001@test.example.com', NULL, 'guest', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-google-001', 'Googleユーザー', '1990-01-01', NOW(), NOW());
+
+INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
+  ('seed-user-google-001', 'oauth', 'google', 'seed-google-account-001');
+
+-- ================================================================================
+-- 完了
+-- ================================================================================
+-- データ挿入が完了しました
+-- 以下のデータが利用可能です:
+-- - ゲストユーザー: 4件（プロフィール登録済み3件、未登録1件）
+-- - キャストユーザー: 27件（アクティブ25件、非アクティブ1件、未登録1件）
+-- - エリア: 4件
+-- - ページネーション用キャスト: 20件
