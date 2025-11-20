@@ -19,6 +19,7 @@ export default defineConfig({
       'react',
       'react-dom',
       '@tanstack/react-query',
+      'next/link',
     ],
   },
   test: {
