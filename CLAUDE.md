@@ -315,3 +315,6 @@ supabase start
 - タスクの管理は主にGithubのIssueとProjectを使用して行う
 - Github CLIが使用可能である
 - .github/ISSUE_TEMPLATEにテンプレートをおいているので作成する際はこれを元に作成すること
+- .github/ISSUE_TEMPLATE/feature_request.mdを使用する場合
+  - 作業にあたって、テンプレートをもとにTODOセクションに実行計画を記載すること
+  - # 詳細 のセクションは管理者が記入するので記入しない
