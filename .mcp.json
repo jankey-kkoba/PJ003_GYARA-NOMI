@@ -16,6 +16,21 @@
       "args": [
         "@playwright/mcp@latest"
       ]
+    },
+    "serena": {
+      "type": "stdio",
+      "command": "uvx",
+      "args": [
+        "--from",
+        "git+https://github.com/oraios/serena",
+        "serena",
+        "start-mcp-server",
+        "--context",
+        "ide-assistant",
+        "--project",
+        "/Users/kentaroukoba/Documents/JANKEY/code/PJ003_GYARA-NOMI"
+      ],
+      "env": {}
     }
   }
 }
