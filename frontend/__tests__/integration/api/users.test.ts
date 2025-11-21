@@ -3,22 +3,21 @@
  *
  * Testing Trophy の Integration テストとして、
  * API エンドポイントのバリデーション、認証、エラーハンドリングを検証する
+ *
+ * 実際の API コードを使用し、認証ミドルウェアのみをモックする
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
-import { registerProfileSchema } from '@/features/user/schemas/registerProfile'
+import { createUsersApp } from '@/app/api/users/[[...route]]/route'
+import { createMockAuthMiddleware, type MockAuthToken } from '@tests/utils/mock-auth'
+import { userService } from '@/features/user/services/userService'
 
 // userService のモック
-const mockUserService = {
-  hasProfile: vi.fn(),
-  registerProfile: vi.fn(),
-}
-
 vi.mock('@/features/user/services/userService', () => ({
-  userService: mockUserService,
+  userService: {
+    hasProfile: vi.fn(),
+    registerProfile: vi.fn(),
+  },
 }))
 
 // 環境変数のモック
@@ -28,69 +27,25 @@ vi.mock('@/libs/constants/env', () => ({
   LINE_CLIENT_SECRET: 'test-client-secret',
 }))
 
+// モック化された userService を取得
+const mockUserService = vi.mocked(userService)
+
 /**
- * テスト用の認証ユーザー型
+ * テスト用の認証検証ミドルウェア（何もしない）
  */
-type MockAuthUser = {
-  session?: {
-    user?: {
-      id?: string
-    }
-  }
+const noopVerifyAuth = async (_c: unknown, next: () => Promise<void>) => {
+  await next()
 }
 
 /**
- * テスト用の簡易 Hono アプリ
- * 実際の API と同じロジックを持つが、認証ミドルウェアをモック可能にする
+ * テスト用アプリを作成
+ * 実際の API コードを使用し、認証ミドルウェアのみをモック
  */
-function createTestApp(mockAuthUser?: MockAuthUser) {
-  const app = new Hono<{ Variables: { authUser: MockAuthUser } }>().basePath('/api/users')
-
-  // エラーハンドラー
-  app.onError((err, c) => {
-    if (err instanceof HTTPException) {
-      return c.json({ success: false, error: err.message }, err.status)
-    }
-    console.error('Unexpected error:', err)
-    return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
+function createTestApp(token?: MockAuthToken) {
+  const { app } = createUsersApp({
+    authMiddleware: createMockAuthMiddleware(token),
+    verifyAuthMiddleware: noopVerifyAuth,
   })
-
-  // 認証ミドルウェアのモック
-  app.use('*', async (c, next) => {
-    if (mockAuthUser) {
-      c.set('authUser', mockAuthUser)
-    }
-    await next()
-  })
-
-  // プロフィール登録エンドポイント
-  app.post('/register', zValidator('json', registerProfileSchema), async (c) => {
-    // 認証済みユーザー情報を取得
-    const authUser = c.get('authUser')
-    const userId = authUser?.session?.user?.id
-
-    if (!userId) {
-      throw new HTTPException(401, { message: '認証が必要です' })
-    }
-
-    const data = c.req.valid('json')
-
-    // プロフィールが既に存在するか確認
-    const hasProfile = await mockUserService.hasProfile(userId)
-    if (hasProfile) {
-      throw new HTTPException(400, { message: 'プロフィールは既に登録されています' })
-    }
-
-    // プロフィール作成とロール更新をトランザクションで実行
-    const profile = await mockUserService.registerProfile(userId, {
-      name: data.name,
-      birthDate: data.birthDate,
-      userType: data.userType,
-    })
-
-    return c.json({ success: true, profile }, 201)
-  })
-
   return app
 }
 
@@ -101,7 +56,7 @@ describe('POST /api/users/register', () => {
 
   describe('認証チェック', () => {
     it('認証されていない場合は 401 エラーを返す', async () => {
-      const app = createTestApp() // authUser なし
+      const app = createTestApp() // token なし
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -119,8 +74,8 @@ describe('POST /api/users/register', () => {
       expect(body.error).toBe('認証が必要です')
     })
 
-    it('セッションにユーザー ID がない場合は 401 エラーを返す', async () => {
-      const app = createTestApp({ session: { user: {} } })
+    it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
+      const app = createTestApp({ role: 'guest' }) // id なし
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -139,10 +94,10 @@ describe('POST /api/users/register', () => {
   })
 
   describe('バリデーション', () => {
-    const validAuthUser = { session: { user: { id: 'test-user-id' } } }
+    const validToken = { id: 'test-user-id', role: 'guest' as const }
 
     it('名前が空の場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -158,7 +113,7 @@ describe('POST /api/users/register', () => {
     })
 
     it('生年月日が空の場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -174,7 +129,7 @@ describe('POST /api/users/register', () => {
     })
 
     it('userType が不正な場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -190,7 +145,7 @@ describe('POST /api/users/register', () => {
     })
 
     it('必須フィールドが欠けている場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/users/register', {
         method: 'POST',
@@ -206,16 +161,18 @@ describe('POST /api/users/register', () => {
   })
 
   describe('正常系', () => {
-    const validAuthUser = { session: { user: { id: 'test-user-id' } } }
+    const validToken = { id: 'test-user-id', role: 'guest' as const }
 
     it('ゲストとしてプロフィールを登録できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(false)
       mockUserService.registerProfile.mockResolvedValue({
         id: 'test-user-id',
         name: 'テストユーザー',
-        birthDate: new Date('1990-01-01'),
+        birthDate: '1990-01-01',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
 
       const res = await app.request('/api/users/register', {
@@ -244,13 +201,15 @@ describe('POST /api/users/register', () => {
     })
 
     it('キャストとしてプロフィールを登録できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(false)
       mockUserService.registerProfile.mockResolvedValue({
         id: 'test-user-id',
         name: 'キャストユーザー',
-        birthDate: new Date('1995-05-05'),
+        birthDate: '1995-05-05',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
 
       const res = await app.request('/api/users/register', {
@@ -276,10 +235,10 @@ describe('POST /api/users/register', () => {
   })
 
   describe('エラーハンドリング', () => {
-    const validAuthUser = { session: { user: { id: 'test-user-id' } } }
+    const validToken = { id: 'test-user-id', role: 'guest' as const }
 
     it('プロフィールが既に存在する場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(true)
 
@@ -303,7 +262,7 @@ describe('POST /api/users/register', () => {
     })
 
     it('DB エラーが発生した場合は 500 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(false)
       mockUserService.registerProfile.mockRejectedValue(new Error('DB connection failed'))
@@ -326,16 +285,18 @@ describe('POST /api/users/register', () => {
   })
 
   describe('境界値テスト', () => {
-    const validAuthUser = { session: { user: { id: 'test-user-id' } } }
+    const validToken = { id: 'test-user-id', role: 'guest' as const }
 
     it('最小長の名前で登録できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(false)
       mockUserService.registerProfile.mockResolvedValue({
         id: 'test-user-id',
         name: 'あ',
-        birthDate: new Date('1990-01-01'),
+        birthDate: '1990-01-01',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
 
       const res = await app.request('/api/users/register', {
@@ -352,13 +313,15 @@ describe('POST /api/users/register', () => {
     })
 
     it('日本語の名前で登録できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockUserService.hasProfile.mockResolvedValue(false)
       mockUserService.registerProfile.mockResolvedValue({
         id: 'test-user-id',
         name: '山田太郎',
-        birthDate: new Date('1990-01-01'),
+        birthDate: '1990-01-01',
+        createdAt: new Date(),
+        updatedAt: new Date(),
       })
 
       const res = await app.request('/api/users/register', {

@@ -17,9 +17,8 @@ export const authenticatedSession: Session = {
   expires: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
   user: {
     id: 'test-user-id',
-    name: 'Test User',
     email: 'test@example.com',
-    image: null,
+    role: 'guest',
   },
 }
 
@@ -66,4 +65,31 @@ export function resetAuthMocks() {
   mockSignOut.mockReset()
   mockUseSession.mockReset()
   setSessionStatus('unauthenticated')
+}
+
+/**
+ * Hono API テスト用の認証トークン型
+ */
+export type MockAuthToken = {
+  id?: string
+  role?: 'guest' | 'cast' | 'admin'
+}
+
+/**
+ * Hono API テスト用のモック認証ミドルウェアを作成
+ * verifyAuth() が authUser を context にセットする動作をエミュレート
+ *
+ * @param token モックする認証トークン（undefined の場合は未認証）
+ */
+export function createMockAuthMiddleware(token?: MockAuthToken) {
+  return async (c: { set: (key: string, value: unknown) => void }, next: () => Promise<void>) => {
+    // Auth.js の設定情報（verifyAuth が参照する）
+    c.set('authConfig', {
+      secret: 'test-secret',
+      providers: [],
+    })
+    // authUser をセット（verifyAuth() が期待する形式）
+    c.set('authUser', token ? { token } : { token: null })
+    await next()
+  }
 }

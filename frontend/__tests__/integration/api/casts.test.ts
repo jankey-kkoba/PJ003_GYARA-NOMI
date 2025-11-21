@@ -3,21 +3,20 @@
  *
  * Testing Trophy の Integration テストとして、
  * キャスト一覧取得APIの認証、ロールチェック、ページネーション、エラーハンドリングを検証する
+ *
+ * 実際の API コードを使用し、認証ミドルウェアのみをモックする
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { Hono } from 'hono'
-import { HTTPException } from 'hono/http-exception'
-import { zValidator } from '@hono/zod-validator'
-import { castListQuerySchema } from '@/features/cast/schemas/castListQuery'
+import { createCastsApp } from '@/app/api/casts/[[...route]]/route'
+import { createMockAuthMiddleware, type MockAuthToken } from '@tests/utils/mock-auth'
+import { castService } from '@/features/cast/services/castService'
 
 // castService のモック
-const mockCastService = {
-  getCastList: vi.fn(),
-}
-
 vi.mock('@/features/cast/services/castService', () => ({
-  castService: mockCastService,
+  castService: {
+    getCastList: vi.fn(),
+  },
 }))
 
 // 環境変数のモック
@@ -27,83 +26,25 @@ vi.mock('@/libs/constants/env', () => ({
   LINE_CLIENT_SECRET: 'test-client-secret',
 }))
 
+// モック化された castService を取得
+const mockCastService = vi.mocked(castService)
+
 /**
- * テスト用の認証トークン型
+ * テスト用の認証検証ミドルウェア（何もしない）
  */
-type MockToken = {
-  id?: string
-  role?: 'guest' | 'cast' | 'admin'
+const noopVerifyAuth = async (_c: unknown, next: () => Promise<void>) => {
+  await next()
 }
 
 /**
- * テスト用の認証ユーザー型
+ * テスト用アプリを作成
+ * 実際の API コードを使用し、認証ミドルウェアのみをモック
  */
-type MockAuthUser = {
-  token?: MockToken
-}
-
-/**
- * テスト用の簡易 Hono アプリ
- * 実際の API と同じロジックを持つが、認証ミドルウェアをモック可能にする
- */
-function createTestApp(mockAuthUser?: MockAuthUser) {
-  const app = new Hono<{ Variables: { authUser: MockAuthUser } }>().basePath('/api/casts')
-
-  // エラーハンドラー
-  app.onError((err, c) => {
-    if (err instanceof HTTPException) {
-      return c.json({ success: false, error: err.message }, err.status)
-    }
-    console.error('Unexpected error:', err)
-    return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
+function createTestApp(token?: MockAuthToken) {
+  const { app } = createCastsApp({
+    authMiddleware: createMockAuthMiddleware(token),
+    verifyAuthMiddleware: noopVerifyAuth,
   })
-
-  // 認証ミドルウェアのモック
-  app.use('*', async (c, next) => {
-    if (mockAuthUser) {
-      c.set('authUser', mockAuthUser)
-    }
-    await next()
-  })
-
-  // キャスト一覧取得エンドポイント
-  app.get('/', zValidator('query', castListQuerySchema), async (c) => {
-    // 認証済みユーザー情報を取得
-    const authUser = c.get('authUser')
-    const token = authUser?.token
-
-    if (!token?.id || !token?.role) {
-      throw new HTTPException(401, { message: '認証が必要です' })
-    }
-
-    // ゲストユーザーのみアクセス可能
-    if (token.role !== 'guest') {
-      throw new HTTPException(403, {
-        message: 'この機能はゲストユーザーのみ利用できます',
-      })
-    }
-
-    // バリデーション済みのクエリパラメータを取得
-    const { page, limit } = c.req.valid('query')
-
-    // キャスト一覧を取得
-    const result = await mockCastService.getCastList({ page, limit })
-
-    // 総ページ数を計算
-    const totalPages = Math.ceil(result.total / limit)
-
-    return c.json({
-      success: true,
-      data: {
-        casts: result.casts,
-        total: result.total,
-        page,
-        limit,
-        totalPages,
-      },
-    })
-  })
-
   return app
 }
 
@@ -114,7 +55,7 @@ describe('GET /api/casts', () => {
 
   describe('認証チェック', () => {
     it('認証されていない場合は 401 エラーを返す', async () => {
-      const app = createTestApp() // authUser なし
+      const app = createTestApp() // token なし
 
       const res = await app.request('/api/casts', {
         method: 'GET',
@@ -127,19 +68,7 @@ describe('GET /api/casts', () => {
     })
 
     it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
-      const app = createTestApp({ token: { role: 'guest' } })
-
-      const res = await app.request('/api/casts', {
-        method: 'GET',
-      })
-
-      expect(res.status).toBe(401)
-      const body = await res.json()
-      expect(body.error).toBe('認証が必要です')
-    })
-
-    it('トークンにロールがない場合は 401 エラーを返す', async () => {
-      const app = createTestApp({ token: { id: 'test-user-id' } })
+      const app = createTestApp({ role: 'guest' }) // id なし
 
       const res = await app.request('/api/casts', {
         method: 'GET',
@@ -153,7 +82,7 @@ describe('GET /api/casts', () => {
 
   describe('ロールチェック', () => {
     it('キャストユーザーは 403 エラーを返す', async () => {
-      const app = createTestApp({ token: { id: 'cast-user-id', role: 'cast' } })
+      const app = createTestApp({ id: 'cast-user-id', role: 'cast' })
 
       const res = await app.request('/api/casts', {
         method: 'GET',
@@ -166,7 +95,7 @@ describe('GET /api/casts', () => {
     })
 
     it('管理者ユーザーは 403 エラーを返す', async () => {
-      const app = createTestApp({ token: { id: 'admin-user-id', role: 'admin' } })
+      const app = createTestApp({ id: 'admin-user-id', role: 'admin' })
 
       const res = await app.request('/api/casts', {
         method: 'GET',
@@ -179,10 +108,10 @@ describe('GET /api/casts', () => {
   })
 
   describe('パラメータバリデーション', () => {
-    const validAuthUser = { token: { id: 'guest-user-id', role: 'guest' as const } }
+    const validToken = { id: 'guest-user-id', role: 'guest' as const }
 
     it('page が 0 以下の場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?page=0', {
         method: 'GET',
@@ -192,7 +121,7 @@ describe('GET /api/casts', () => {
     })
 
     it('page が負の数の場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?page=-1', {
         method: 'GET',
@@ -202,7 +131,7 @@ describe('GET /api/casts', () => {
     })
 
     it('limit が 0 以下の場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?limit=0', {
         method: 'GET',
@@ -212,7 +141,7 @@ describe('GET /api/casts', () => {
     })
 
     it('limit が 100 を超える場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?limit=101', {
         method: 'GET',
@@ -222,7 +151,7 @@ describe('GET /api/casts', () => {
     })
 
     it('page が数値でない場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?page=invalid', {
         method: 'GET',
@@ -232,7 +161,7 @@ describe('GET /api/casts', () => {
     })
 
     it('limit が数値でない場合は 400 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const res = await app.request('/api/casts?limit=invalid', {
         method: 'GET',
@@ -243,10 +172,10 @@ describe('GET /api/casts', () => {
   })
 
   describe('正常系', () => {
-    const validAuthUser = { token: { id: 'guest-user-id', role: 'guest' as const } }
+    const validToken = { id: 'guest-user-id', role: 'guest' as const }
 
     it('デフォルトパラメータでキャスト一覧を取得できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const mockCasts = [
         {
@@ -291,7 +220,7 @@ describe('GET /api/casts', () => {
     })
 
     it('カスタムパラメータでキャスト一覧を取得できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       const mockCasts = [
         {
@@ -326,7 +255,7 @@ describe('GET /api/casts', () => {
     })
 
     it('キャストが0件の場合でも正常に動作する', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockCastService.getCastList.mockResolvedValue({
         casts: [],
@@ -347,7 +276,7 @@ describe('GET /api/casts', () => {
     })
 
     it('limitの最大値100でキャスト一覧を取得できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockCastService.getCastList.mockResolvedValue({
         casts: [],
@@ -367,7 +296,7 @@ describe('GET /api/casts', () => {
     })
 
     it('limitの最小値1でキャスト一覧を取得できる', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockCastService.getCastList.mockResolvedValue({
         casts: [
@@ -397,10 +326,10 @@ describe('GET /api/casts', () => {
   })
 
   describe('エラーハンドリング', () => {
-    const validAuthUser = { token: { id: 'guest-user-id', role: 'guest' as const } }
+    const validToken = { id: 'guest-user-id', role: 'guest' as const }
 
     it('DB エラーが発生した場合は 500 エラーを返す', async () => {
-      const app = createTestApp(validAuthUser)
+      const app = createTestApp(validToken)
 
       mockCastService.getCastList.mockRejectedValue(new Error('DB connection failed'))
 

@@ -14,7 +14,7 @@
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
-import { eq } from 'drizzle-orm'
+import { eq, like } from 'drizzle-orm'
 import { db } from '@/libs/db'
 import { users, userProfiles } from '@/libs/db/schema/users'
 import { accounts } from '@/libs/db/schema/auth'
@@ -25,14 +25,17 @@ const TEST_PREFIX = 'test-user-service-'
 
 // 新規作成したデータのクリーンアップ
 async function cleanupTestData() {
-  const testUsers = await db.select({ id: users.id }).from(users).where(eq(users.id, users.id))
+  // LIKE演算子でテストプレフィックスに一致するユーザーを効率的に検索
+  const testUsers = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(like(users.id, `${TEST_PREFIX}%`))
 
-  const testUserIds = testUsers.filter((u) => u.id.startsWith(TEST_PREFIX)).map((u) => u.id)
-
-  for (const userId of testUserIds) {
-    await db.delete(accounts).where(eq(accounts.userId, userId))
-    await db.delete(userProfiles).where(eq(userProfiles.id, userId))
-    await db.delete(users).where(eq(users.id, userId))
+  // 外部キー制約があるため、依存テーブルから先に削除
+  for (const { id } of testUsers) {
+    await db.delete(accounts).where(eq(accounts.userId, id))
+    await db.delete(userProfiles).where(eq(userProfiles.id, id))
+    await db.delete(users).where(eq(users.id, id))
   }
 }
 
