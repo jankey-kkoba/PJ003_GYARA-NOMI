@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import type { CastListItem } from '@/features/cast/types'
+import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
 
 /**
  * キャストカードのプロパティ
@@ -26,8 +27,12 @@ export function CastCard({ cast }: CastCardProps) {
     <Link href={`/casts/${cast.id}`} className="block">
       <Card className="overflow-hidden transition-shadow hover:shadow-lg gap-1 py-0 md:gap-6 md:py-6">
         {/* 画像エリア（今後実装予定） */}
-        <div className="aspect-square bg-muted flex items-center justify-center">
+        <div className="aspect-square bg-muted flex items-center justify-center relative">
           <span className="text-muted-foreground text-xs">画像未設定</span>
+          <FavoriteButton
+            castId={cast.id}
+            className="absolute top-1 right-1 md:top-2 md:right-2"
+          />
         </div>
 
         {/* カード情報 */}

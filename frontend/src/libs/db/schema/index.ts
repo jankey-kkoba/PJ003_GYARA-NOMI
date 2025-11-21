@@ -9,6 +9,7 @@ export * from '@/libs/db/schema/auth'
 // ユーザー関連
 export * from '@/libs/db/schema/users'
 export * from '@/libs/db/schema/cast-profiles'
+export * from '@/libs/db/schema/favorites'
 
 // エリア
 export * from '@/libs/db/schema/areas'

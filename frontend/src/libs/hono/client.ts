@@ -1,6 +1,7 @@
 import { hc } from 'hono/client'
 import type { UsersAppType } from '@/app/api/users/[[...route]]/route'
 import type { CastsAppType } from '@/app/api/casts/[[...route]]/route'
+import type { FavoritesAppType } from '@/app/api/favorites/[[...route]]/route'
 
 /**
  * Honoクライアントのベースオプション
@@ -22,3 +23,9 @@ export const usersClient = hc<UsersAppType>('/', clientOptions)
  * 型安全なRPCクライアント
  */
 export const castsClient = hc<CastsAppType>('/', clientOptions)
+
+/**
+ * お気に入りAPIクライアント
+ * 型安全なRPCクライアント
+ */
+export const favoritesClient = hc<FavoritesAppType>('/', clientOptions)

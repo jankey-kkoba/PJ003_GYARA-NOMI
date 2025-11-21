@@ -13,12 +13,24 @@ import type { CastListResponse } from '@/features/cast/types'
 
 // Hono クライアントのモック
 const mockGet = vi.fn()
+const mockFavoriteGet = vi.fn()
 
 vi.mock('@/libs/hono/client', () => ({
   castsClient: {
     api: {
       casts: {
         $get: mockGet,
+      },
+    },
+  },
+  favoritesClient: {
+    api: {
+      favorites: {
+        ':castId': {
+          $get: mockFavoriteGet,
+          $post: vi.fn(),
+          $delete: vi.fn(),
+        },
       },
     },
   },
@@ -74,6 +86,11 @@ describe('CastListTemplate', () => {
     vi.clearAllMocks()
     // 各テストで新しい QueryClient を作成してキャッシュをクリア
     queryClient = createTestQueryClient()
+    // お気に入り状態のデフォルトモック
+    mockFavoriteGet.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { isFavorite: false } }),
+    })
   })
 
   describe('ローディング状態', () => {

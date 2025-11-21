@@ -10,6 +10,7 @@ import {
   CardTitle,
 } from '@/components/ui/card'
 import { useCastDetail } from '@/features/cast/hooks/useCastDetail'
+import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
 
 type CastDetailTemplateProps = {
   castId: string
@@ -52,8 +53,12 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
 
       <Card>
         {/* 画像エリア（今後実装予定） */}
-        <div className="aspect-video bg-muted flex items-center justify-center">
+        <div className="aspect-video bg-muted flex items-center justify-center relative">
           <span className="text-muted-foreground">画像未設定</span>
+          <FavoriteButton
+            castId={castId}
+            className="absolute top-2 right-2"
+          />
         </div>
 
         <CardHeader>

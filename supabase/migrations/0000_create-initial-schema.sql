@@ -125,6 +125,13 @@ CREATE TABLE "cast_reviews" (
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+CREATE TABLE "favorites" (
+	"guest_id" text NOT NULL,
+	"cast_id" text NOT NULL,
+	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
+	CONSTRAINT "favorites_guest_id_cast_id_pk" PRIMARY KEY("guest_id","cast_id")
+);
+--> statement-breakpoint
 ALTER TABLE "user_profiles" ADD CONSTRAINT "user_profiles_id_users_id_fk" FOREIGN KEY ("id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_read_statuses" ADD CONSTRAINT "chat_message_read_statuses_message_id_chat_messages_id_fk" FOREIGN KEY ("message_id") REFERENCES "public"."chat_messages"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "chat_message_read_statuses" ADD CONSTRAINT "chat_message_read_statuses_user_id_users_id_fk" FOREIGN KEY ("user_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
@@ -144,4 +151,6 @@ ALTER TABLE "solo_matchings" ADD CONSTRAINT "solo_matchings_cast_id_users_id_fk"
 ALTER TABLE "solo_matchings" ADD CONSTRAINT "solo_matchings_chat_room_id_chat_rooms_id_fk" FOREIGN KEY ("chat_room_id") REFERENCES "public"."chat_rooms"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cast_reviews" ADD CONSTRAINT "cast_reviews_matching_id_solo_matchings_id_fk" FOREIGN KEY ("matching_id") REFERENCES "public"."solo_matchings"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "cast_reviews" ADD CONSTRAINT "cast_reviews_guest_id_users_id_fk" FOREIGN KEY ("guest_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
-ALTER TABLE "cast_reviews" ADD CONSTRAINT "cast_reviews_cast_id_users_id_fk" FOREIGN KEY ("cast_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;
+ALTER TABLE "cast_reviews" ADD CONSTRAINT "cast_reviews_cast_id_users_id_fk" FOREIGN KEY ("cast_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "favorites" ADD CONSTRAINT "favorites_guest_id_users_id_fk" FOREIGN KEY ("guest_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
+ALTER TABLE "favorites" ADD CONSTRAINT "favorites_cast_id_users_id_fk" FOREIGN KEY ("cast_id") REFERENCES "public"."users"("id") ON DELETE no action ON UPDATE no action;

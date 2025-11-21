@@ -20,6 +20,7 @@ vi.mock('next/navigation', () => ({
 
 // Hono クライアントのモック
 const mockGetById = vi.fn()
+const mockFavoriteGet = vi.fn()
 
 vi.mock('@/libs/hono/client', () => ({
   castsClient: {
@@ -27,6 +28,17 @@ vi.mock('@/libs/hono/client', () => ({
       casts: {
         ':castId': {
           $get: mockGetById,
+        },
+      },
+    },
+  },
+  favoritesClient: {
+    api: {
+      favorites: {
+        ':castId': {
+          $get: mockFavoriteGet,
+          $post: vi.fn(),
+          $delete: vi.fn(),
         },
       },
     },
@@ -66,6 +78,11 @@ describe('CastDetailTemplate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     queryClient = createTestQueryClient()
+    // お気に入り状態のデフォルトモック
+    mockFavoriteGet.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: { isFavorite: false } }),
+    })
   })
 
   describe('ローディング状態', () => {
