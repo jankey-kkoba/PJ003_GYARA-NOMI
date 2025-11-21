@@ -32,3 +32,6 @@ export default auth((req) => {
 export const config = {
   matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
+
+// Node.jsランタイムを使用（postgres.jsがEdgeランタイムで動作しないため）
+export const runtime = 'nodejs'
