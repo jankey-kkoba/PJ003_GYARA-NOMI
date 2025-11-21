@@ -200,4 +200,51 @@ describe('castService Integration', () => {
       })
     })
   })
+
+  describe('getCastById', () => {
+    describe('正常系', () => {
+      it('存在するキャストの詳細を取得できる', async () => {
+        const cast = await castService.getCastById('seed-user-cast-001')
+
+        expect(cast).not.toBeNull()
+        expect(cast?.id).toBe('seed-user-cast-001')
+        expect(cast?.name).toBe('山田花子')
+        expect(cast?.age).toBeGreaterThan(0)
+        expect(cast?.bio).toBe('よろしくお願いします！楽しい時間を過ごしましょう♪')
+        expect(cast?.rank).toBe(1)
+        expect(cast?.areaName).toBe('渋谷')
+      })
+
+      it('エリアがnullのキャストも取得できる', async () => {
+        const cast = await castService.getCastById('seed-user-cast-005')
+
+        expect(cast).not.toBeNull()
+        expect(cast?.areaName).toBeNull()
+      })
+
+      it('非アクティブなキャストも取得できる', async () => {
+        // getCastByIdはis_activeをチェックしない（詳細ページではIDで直接アクセスを想定）
+        const cast = await castService.getCastById('seed-user-cast-inactive')
+
+        // 非アクティブキャストもDBには存在するが、getCastByIdでは取得可能
+        // 注: アクセス制御はAPI層で行う想定
+        expect(cast).not.toBeNull()
+      })
+    })
+
+    describe('異常系', () => {
+      it('存在しないIDの場合はnullを返す', async () => {
+        const cast = await castService.getCastById('nonexistent-id')
+
+        expect(cast).toBeNull()
+      })
+
+      it('空文字のIDの場合はnullを返す', async () => {
+        const cast = await castService.getCastById('')
+
+        expect(cast).toBeNull()
+      })
+    })
+
+  })
 })

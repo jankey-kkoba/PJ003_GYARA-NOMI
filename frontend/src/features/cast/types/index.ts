@@ -33,3 +33,23 @@ export type CastListQuery = {
   page?: number
   limit?: number
 }
+
+/**
+ * キャスト詳細情報
+ */
+export type CastDetail = {
+  id: string
+  name: string
+  age: number
+  bio: string | null
+  rank: number
+  areaName: string | null
+  // 今後、画像等が追加される予定
+}
+
+/**
+ * キャスト詳細取得のレスポンス
+ */
+export type CastDetailResponse = {
+  cast: CastDetail
+}

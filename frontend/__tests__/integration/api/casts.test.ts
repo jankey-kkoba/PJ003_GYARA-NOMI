@@ -16,6 +16,7 @@ import { castService } from '@/features/cast/services/castService'
 vi.mock('@/features/cast/services/castService', () => ({
   castService: {
     getCastList: vi.fn(),
+    getCastById: vi.fn(),
   },
 }))
 
@@ -334,6 +335,108 @@ describe('GET /api/casts', () => {
       mockCastService.getCastList.mockRejectedValue(new Error('DB connection failed'))
 
       const res = await app.request('/api/casts', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(500)
+      const body = await res.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+  })
+})
+
+describe('GET /api/casts/:castId', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('認証チェック', () => {
+    it('認証されていない場合は 401 エラーを返す', async () => {
+      const app = createTestApp() // token なし
+
+      const res = await app.request('/api/casts/cast-123', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(401)
+      const body = await res.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('認証が必要です')
+    })
+  })
+
+  describe('ロールチェック', () => {
+    it('キャストユーザーは 403 エラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-user-id', role: 'cast' })
+
+      const res = await app.request('/api/casts/cast-123', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(403)
+      const body = await res.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('この機能はゲストユーザーのみ利用できます')
+    })
+  })
+
+  describe('正常系', () => {
+    const validToken = { id: 'guest-user-id', role: 'guest' as const }
+
+    it('キャスト詳細を取得できる', async () => {
+      const app = createTestApp(validToken)
+
+      const mockCast = {
+        id: 'cast-123',
+        name: 'テストキャスト',
+        age: 25,
+        bio: '自己紹介文です',
+        rank: 1,
+        areaName: '渋谷',
+      }
+
+      mockCastService.getCastById.mockResolvedValue(mockCast)
+
+      const res = await app.request('/api/casts/cast-123', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(200)
+      const body = await res.json()
+      expect(body.success).toBe(true)
+      expect(body.data.cast.id).toBe('cast-123')
+      expect(body.data.cast.name).toBe('テストキャスト')
+      expect(body.data.cast.age).toBe(25)
+
+      expect(mockCastService.getCastById).toHaveBeenCalledWith('cast-123')
+    })
+  })
+
+  describe('エラーハンドリング', () => {
+    const validToken = { id: 'guest-user-id', role: 'guest' as const }
+
+    it('キャストが見つからない場合は 404 エラーを返す', async () => {
+      const app = createTestApp(validToken)
+
+      mockCastService.getCastById.mockResolvedValue(null)
+
+      const res = await app.request('/api/casts/nonexistent-id', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(404)
+      const body = await res.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('キャストが見つかりません')
+    })
+
+    it('DB エラーが発生した場合は 500 エラーを返す', async () => {
+      const app = createTestApp(validToken)
+
+      mockCastService.getCastById.mockRejectedValue(new Error('DB connection failed'))
+
+      const res = await app.request('/api/casts/cast-123', {
         method: 'GET',
       })
 

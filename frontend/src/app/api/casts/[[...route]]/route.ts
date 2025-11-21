@@ -35,12 +35,52 @@ export function createCastsApp(options: CreateCastsAppOptions = {}) {
     return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
   })
 
-  // キャスト一覧取得エンドポイント
-  const route = app.get(
-    '/',
-    zValidator('query', castListQuerySchema),
-    verifyAuthMiddleware,
-    async (c) => {
+  const route = app
+    // キャスト一覧取得エンドポイント
+    .get(
+      '/',
+      zValidator('query', castListQuerySchema),
+      verifyAuthMiddleware,
+      async (c) => {
+        // 認証済みユーザー情報を取得
+        const authUser = c.get('authUser')
+        const token = authUser.token
+
+        // ユーザーIDとロールをチェック
+        if (!token?.id) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
+
+        // ゲストユーザーのみアクセス可能
+        if (token.role !== 'guest') {
+          throw new HTTPException(403, {
+            message: 'この機能はゲストユーザーのみ利用できます',
+          })
+        }
+
+        // バリデーション済みのクエリパラメータを取得
+        const { page, limit } = c.req.valid('query')
+
+        // キャスト一覧を取得
+        const { casts, total } = await castService.getCastList({ page, limit })
+
+        // 総ページ数を計算
+        const totalPages = Math.ceil(total / limit)
+
+        return c.json({
+          success: true,
+          data: {
+            casts,
+            total,
+            page,
+            limit,
+            totalPages,
+          },
+        })
+      }
+    )
+    // キャスト詳細取得エンドポイント
+    .get('/:castId', verifyAuthMiddleware, async (c) => {
       // 認証済みユーザー情報を取得
       const authUser = c.get('authUser')
       const token = authUser.token
@@ -57,27 +97,18 @@ export function createCastsApp(options: CreateCastsAppOptions = {}) {
         })
       }
 
-      // バリデーション済みのクエリパラメータを取得
-      const { page, limit } = c.req.valid('query')
+      const castId = c.req.param('castId')
+      const cast = await castService.getCastById(castId)
 
-      // キャスト一覧を取得
-      const { casts, total } = await castService.getCastList({ page, limit })
-
-      // 総ページ数を計算
-      const totalPages = Math.ceil(total / limit)
+      if (!cast) {
+        throw new HTTPException(404, { message: 'キャストが見つかりません' })
+      }
 
       return c.json({
         success: true,
-        data: {
-          casts,
-          total,
-          page,
-          limit,
-          totalPages,
-        },
+        data: { cast },
       })
-    }
-  )
+    })
 
   return { app, route }
 }

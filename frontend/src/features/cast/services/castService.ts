@@ -3,7 +3,7 @@ import { db } from '@/libs/db'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
 import { areas } from '@/libs/db/schema/areas'
-import type { CastListItem } from '@/features/cast/types'
+import type { CastListItem, CastDetail } from '@/features/cast/types'
 import { calculateAge } from '@/utils/date'
 
 /**
@@ -61,6 +61,43 @@ export const castService = {
     return {
       casts: castsWithAge,
       total: count,
+    }
+  },
+
+  /**
+   * キャスト詳細を取得
+   * @param castId - キャストID
+   * @returns キャスト詳細情報（存在しない場合はnull）
+   */
+  async getCastById(castId: string): Promise<CastDetail | null> {
+    const [cast] = await db
+      .select({
+        id: castProfiles.id,
+        name: userProfiles.name,
+        birthDate: userProfiles.birthDate,
+        bio: castProfiles.bio,
+        rank: castProfiles.rank,
+        areaName: areas.name,
+      })
+      .from(castProfiles)
+      .innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
+      .leftJoin(areas, eq(castProfiles.areaId, areas.id))
+      .where(eq(castProfiles.id, castId))
+      .limit(1)
+
+    if (!cast) {
+      return null
+    }
+
+    const age = calculateAge(new Date(cast.birthDate))
+
+    return {
+      id: cast.id,
+      name: cast.name,
+      age,
+      bio: cast.bio,
+      rank: cast.rank,
+      areaName: cast.areaName,
     }
   },
 }
