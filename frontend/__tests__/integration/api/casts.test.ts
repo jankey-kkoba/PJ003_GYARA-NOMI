@@ -170,6 +170,36 @@ describe('GET /api/casts', () => {
 
       expect(res.status).toBe(400)
     })
+
+    it('minAge が 18 未満の場合は 400 エラーを返す', async () => {
+      const app = createTestApp(validToken)
+
+      const res = await app.request('/api/casts?minAge=17', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('maxAge が 18 未満の場合は 400 エラーを返す', async () => {
+      const app = createTestApp(validToken)
+
+      const res = await app.request('/api/casts?maxAge=17', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(400)
+    })
+
+    it('minAge が数値でない場合は 400 エラーを返す', async () => {
+      const app = createTestApp(validToken)
+
+      const res = await app.request('/api/casts?minAge=invalid', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(400)
+    })
   })
 
   describe('正常系', () => {
@@ -323,6 +353,69 @@ describe('GET /api/casts', () => {
       expect(body.data.totalPages).toBe(100) // 100 / 1 = 100
 
       expect(mockCastService.getCastList).toHaveBeenCalledWith({ page: 1, limit: 1 })
+    })
+
+    it('minAgeパラメータを指定してキャスト一覧を取得できる', async () => {
+      const app = createTestApp(validToken)
+
+      mockCastService.getCastList.mockResolvedValue({
+        casts: [],
+        total: 10,
+      })
+
+      const res = await app.request('/api/casts?minAge=20', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(200)
+      expect(mockCastService.getCastList).toHaveBeenCalledWith({
+        page: 1,
+        limit: 12,
+        minAge: 20,
+        maxAge: undefined,
+      })
+    })
+
+    it('maxAgeパラメータを指定してキャスト一覧を取得できる', async () => {
+      const app = createTestApp(validToken)
+
+      mockCastService.getCastList.mockResolvedValue({
+        casts: [],
+        total: 10,
+      })
+
+      const res = await app.request('/api/casts?maxAge=30', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(200)
+      expect(mockCastService.getCastList).toHaveBeenCalledWith({
+        page: 1,
+        limit: 12,
+        minAge: undefined,
+        maxAge: 30,
+      })
+    })
+
+    it('minAgeとmaxAgeの両方を指定してキャスト一覧を取得できる', async () => {
+      const app = createTestApp(validToken)
+
+      mockCastService.getCastList.mockResolvedValue({
+        casts: [],
+        total: 5,
+      })
+
+      const res = await app.request('/api/casts?minAge=20&maxAge=30', {
+        method: 'GET',
+      })
+
+      expect(res.status).toBe(200)
+      expect(mockCastService.getCastList).toHaveBeenCalledWith({
+        page: 1,
+        limit: 12,
+        minAge: 20,
+        maxAge: 30,
+      })
     })
   })
 

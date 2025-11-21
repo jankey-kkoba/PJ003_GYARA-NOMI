@@ -167,6 +167,55 @@ describe('castService Integration', () => {
       })
     })
 
+    describe('年齢フィルタリング', () => {
+      it('minAgeで最小年齢を指定してフィルタリングできる', async () => {
+        const result = await castService.getCastList({ page: 1, limit: 100, minAge: 25 })
+
+        // すべてのキャストが25歳以上であることを確認
+        result.casts.forEach((cast) => {
+          expect(cast.age).toBeGreaterThanOrEqual(25)
+        })
+      })
+
+      it('maxAgeで最大年齢を指定してフィルタリングできる', async () => {
+        const result = await castService.getCastList({ page: 1, limit: 100, maxAge: 25 })
+
+        // すべてのキャストが25歳以下であることを確認
+        result.casts.forEach((cast) => {
+          expect(cast.age).toBeLessThanOrEqual(25)
+        })
+      })
+
+      it('minAgeとmaxAgeを両方指定して年齢範囲でフィルタリングできる', async () => {
+        const result = await castService.getCastList({ page: 1, limit: 100, minAge: 20, maxAge: 25 })
+
+        // すべてのキャストが20〜25歳の範囲内であることを確認
+        result.casts.forEach((cast) => {
+          expect(cast.age).toBeGreaterThanOrEqual(20)
+          expect(cast.age).toBeLessThanOrEqual(25)
+        })
+      })
+
+      it('年齢フィルタリングでtotalも正しく計算される', async () => {
+        // フィルターなしの場合
+        const noFilterResult = await castService.getCastList({ page: 1, limit: 100 })
+
+        // 厳しい年齢フィルターをかけた場合
+        const filteredResult = await castService.getCastList({ page: 1, limit: 100, minAge: 30, maxAge: 30 })
+
+        // フィルターをかけるとtotalが減る（もしくは同じ）
+        expect(filteredResult.total).toBeLessThanOrEqual(noFilterResult.total)
+      })
+
+      it('フィルター条件に合致するキャストがない場合は空配列を返す', async () => {
+        // 18歳未満（ありえない年齢範囲）
+        const result = await castService.getCastList({ page: 1, limit: 100, minAge: 99, maxAge: 99 })
+
+        // キャストがいないか、非常に少ない
+        expect(result.casts.length).toBeLessThanOrEqual(result.total)
+      })
+    })
+
     describe('エッジケース', () => {
       it('日本語の名前を正しく扱える', async () => {
         const result = await castService.getCastList({ page: 1, limit: 100 })

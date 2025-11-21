@@ -4,17 +4,30 @@ import { useState } from 'react'
 import { useCastList } from '@/features/cast/hooks/useCastList'
 import { CastCard } from '@/features/cast/components/molecules/CastCard'
 import { Pagination } from '@/components/molecules/Pagination'
+import {
+  CastFilterDialog,
+  type CastFilterValues,
+} from '@/features/cast/components/molecules/CastFilterDialog'
 import { CASTS_PER_PAGE } from '@/features/cast/constants'
 
 /**
  * キャスト一覧テンプレートコンポーネント
- * キャスト一覧の表示とページネーションを管理
+ * キャスト一覧の表示とページネーション・フィルタリングを管理
  */
 export function CastListTemplate() {
   const [page, setPage] = useState(1)
+  const [filter, setFilter] = useState<CastFilterValues>({})
+
+  const handleFilterApply = (values: CastFilterValues) => {
+    setFilter(values)
+    setPage(1) // フィルター変更時はページを1にリセット
+  }
+
   const { data, isLoading, error } = useCastList({
     page,
     limit: CASTS_PER_PAGE,
+    minAge: filter.minAge,
+    maxAge: filter.maxAge,
   })
 
   if (isLoading) {
@@ -47,6 +60,11 @@ export function CastListTemplate() {
 
   return (
     <div className="space-y-6">
+      {/* フィルターボタン */}
+      <div className="flex justify-end">
+        <CastFilterDialog values={filter} onApply={handleFilterApply} />
+      </div>
+
       {/* キャスト一覧グリッド */}
       <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
         {data.casts.map((cast) => (

@@ -1,4 +1,4 @@
-import { eq, sql } from 'drizzle-orm'
+import { eq, sql, and, gte, lte, type SQL } from 'drizzle-orm'
 import { db } from '@/libs/db'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
@@ -13,12 +13,38 @@ import { calculateAge } from '@/utils/date'
 export const castService = {
   /**
    * アクティブなキャスト一覧を取得（ページネーション対応）
-   * @param options - ページネーションオプション
+   * @param options - ページネーション・フィルタリングオプション
    * @returns キャスト一覧と総数
    */
-  async getCastList(options: { page: number; limit: number }) {
-    const { page, limit } = options
+  async getCastList(options: {
+    page: number
+    limit: number
+    minAge?: number
+    maxAge?: number
+  }) {
+    const { page, limit, minAge, maxAge } = options
     const offset = (page - 1) * limit
+
+    // WHERE条件を構築
+    const conditions: SQL[] = [eq(castProfiles.isActive, true)]
+
+    // 年齢フィルタリング（生年月日から計算）
+    // minAge歳以上 = 生年月日がminAge年前の今日以前
+    // maxAge歳以下 = 生年月日がmaxAge+1年前の今日より後
+    const today = new Date()
+    if (minAge !== undefined) {
+      const maxBirthDate = new Date(today)
+      maxBirthDate.setFullYear(maxBirthDate.getFullYear() - minAge)
+      conditions.push(lte(userProfiles.birthDate, maxBirthDate.toISOString().split('T')[0]))
+    }
+    if (maxAge !== undefined) {
+      const minBirthDate = new Date(today)
+      minBirthDate.setFullYear(minBirthDate.getFullYear() - maxAge - 1)
+      minBirthDate.setDate(minBirthDate.getDate() + 1)
+      conditions.push(gte(userProfiles.birthDate, minBirthDate.toISOString().split('T')[0]))
+    }
+
+    const whereClause = and(...conditions)
 
     // キャスト一覧を取得
     const casts = await db
@@ -33,7 +59,7 @@ export const castService = {
       .from(castProfiles)
       .innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
       .leftJoin(areas, eq(castProfiles.areaId, areas.id))
-      .where(eq(castProfiles.isActive, true))
+      .where(whereClause)
       .limit(limit)
       .offset(offset)
       .orderBy(castProfiles.createdAt)
@@ -42,7 +68,8 @@ export const castService = {
     const [{ count }] = await db
       .select({ count: sql<number>`count(*)::int` })
       .from(castProfiles)
-      .where(eq(castProfiles.isActive, true))
+      .innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
+      .where(whereClause)
 
     // 年齢を計算
     const castsWithAge: CastListItem[] = casts.map((cast) => {

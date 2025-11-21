@@ -29,6 +29,24 @@ export const castListQuerySchema = z.object({
         .min(1, '表示件数は1以上である必要があります')
         .max(100, '表示件数は100以下である必要があります')
     ),
+
+  /**
+   * 最小年齢（18以上）
+   */
+  minAge: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined))
+    .pipe(z.number().int().min(18, '最小年齢は18以上である必要があります').optional()),
+
+  /**
+   * 最大年齢（18以上）
+   */
+  maxAge: z
+    .string()
+    .optional()
+    .transform((val) => (val ? Number(val) : undefined))
+    .pipe(z.number().int().min(18, '最大年齢は18以上である必要があります').optional()),
 })
 
 /**

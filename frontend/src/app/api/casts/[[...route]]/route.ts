@@ -59,10 +59,10 @@ export function createCastsApp(options: CreateCastsAppOptions = {}) {
         }
 
         // バリデーション済みのクエリパラメータを取得
-        const { page, limit } = c.req.valid('query')
+        const { page, limit, minAge, maxAge } = c.req.valid('query')
 
         // キャスト一覧を取得
-        const { casts, total } = await castService.getCastList({ page, limit })
+        const { casts, total } = await castService.getCastList({ page, limit, minAge, maxAge })
 
         // 総ページ数を計算
         const totalPages = Math.ceil(total / limit)

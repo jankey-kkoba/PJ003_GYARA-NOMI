@@ -9,6 +9,8 @@ import { CASTS_PER_PAGE } from '@/features/cast/constants'
 type UseCastListParams = {
   page?: number
   limit?: number
+  minAge?: number
+  maxAge?: number
 }
 
 /**
@@ -17,17 +19,19 @@ type UseCastListParams = {
  * @returns query オブジェクト
  */
 export function useCastList(params: UseCastListParams = {}) {
-  const { page = 1, limit = CASTS_PER_PAGE } = params
+  const { page = 1, limit = CASTS_PER_PAGE, minAge, maxAge } = params
 
   return useQuery({
-    queryKey: ['casts', 'list', page, limit],
+    queryKey: ['casts', 'list', page, limit, minAge, maxAge],
     queryFn: async (): Promise<CastListResponse> => {
-      const res = await castsClient.api.casts.$get({
-        query: {
-          page: String(page),
-          limit: String(limit),
-        },
-      })
+      const query: Record<string, string> = {
+        page: String(page),
+        limit: String(limit),
+      }
+      if (minAge !== undefined) query.minAge = String(minAge)
+      if (maxAge !== undefined) query.maxAge = String(maxAge)
+
+      const res = await castsClient.api.casts.$get({ query })
 
       if (!res.ok) {
         const errorData = await res.json()
