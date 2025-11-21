@@ -7,7 +7,7 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import { page } from 'vitest/browser'
+import { page, userEvent } from 'vitest/browser'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { CastListResponse } from '@/features/cast/types'
 
@@ -402,6 +402,157 @@ describe('CastListTemplate', () => {
       expect(mockGet).toHaveBeenCalledTimes(1)
       expect(mockGet).toHaveBeenCalledWith({
         query: { page: '1', limit: '12' },
+      })
+    })
+  })
+
+  describe('フィルター機能', () => {
+    it('絞り込みボタンが表示される', async () => {
+      const mockData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-1',
+            name: 'キャスト1',
+            age: 25,
+            bio: '自己紹介',
+            rank: 1,
+            areaName: '渋谷',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      mockGet.mockResolvedValue(createMockResponse(mockData))
+
+      render(
+        <TestWrapper>
+          <CastListTemplate />
+        </TestWrapper>
+      )
+
+      await expect
+        .element(page.getByRole('button', { name: /絞り込み/ }))
+        .toBeInTheDocument()
+    })
+
+    it('年齢フィルターを適用するとAPIが再取得される', async () => {
+      const mockData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-1',
+            name: 'キャスト1',
+            age: 25,
+            bio: '自己紹介',
+            rank: 1,
+            areaName: '渋谷',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      const filteredData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-2',
+            name: 'フィルター後',
+            age: 22,
+            bio: '自己紹介2',
+            rank: 2,
+            areaName: '新宿',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      mockGet.mockResolvedValueOnce(createMockResponse(mockData))
+
+      render(
+        <TestWrapper>
+          <CastListTemplate />
+        </TestWrapper>
+      )
+
+      // 初期表示を待つ
+      await expect.element(page.getByText('キャスト1')).toBeInTheDocument()
+
+      // フィルター後のレスポンスを設定
+      mockGet.mockResolvedValueOnce(createMockResponse(filteredData))
+
+      // 絞り込みダイアログを開く
+      await page.getByRole('button', { name: /絞り込み/ }).click()
+
+      // 年齢を入力
+      const minAgeInput = page.getByPlaceholder('18')
+      const maxAgeInput = page.getByPlaceholder('99')
+      await userEvent.clear(minAgeInput)
+      await userEvent.type(minAgeInput, '20')
+      await userEvent.clear(maxAgeInput)
+      await userEvent.type(maxAgeInput, '25')
+
+      // 適用
+      await page.getByRole('button', { name: '適用' }).click()
+
+      // フィルター後のデータが表示される
+      await expect.element(page.getByText('フィルター後')).toBeInTheDocument()
+
+      // APIがフィルターパラメータ付きで呼ばれる
+      expect(mockGet).toHaveBeenLastCalledWith({
+        query: { page: '1', limit: '12', minAge: '20', maxAge: '25' },
+      })
+    })
+
+    it('フィルターリセット時にフィルターなしで再取得される', async () => {
+      const mockData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-1',
+            name: 'キャスト1',
+            age: 25,
+            bio: '自己紹介',
+            rank: 1,
+            areaName: '渋谷',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      mockGet.mockResolvedValue(createMockResponse(mockData))
+
+      render(
+        <TestWrapper>
+          <CastListTemplate />
+        </TestWrapper>
+      )
+
+      await expect.element(page.getByText('キャスト1')).toBeInTheDocument()
+
+      // フィルターを適用
+      await page.getByRole('button', { name: /絞り込み/ }).click()
+      const minAgeInput = page.getByPlaceholder('18')
+      await userEvent.clear(minAgeInput)
+      await userEvent.type(minAgeInput, '20')
+      await page.getByRole('button', { name: '適用' }).click()
+
+      // リセット
+      await page.getByRole('button', { name: /絞り込み/ }).click()
+      await page.getByRole('button', { name: /リセット/ }).click()
+
+      // フィルターなしで呼ばれる
+      await vi.waitFor(() => {
+        const lastCall = mockGet.mock.calls[mockGet.mock.calls.length - 1]
+        expect(lastCall).toEqual([{ query: { page: '1', limit: '12' } }])
       })
     })
   })
