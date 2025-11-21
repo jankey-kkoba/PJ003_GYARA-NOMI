@@ -1,12 +1,24 @@
 'use client'
 
-import { FormEvent } from 'react'
 import { useRouter } from 'next/navigation'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Button } from '@/components/ui/button'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
 import { useRegisterUser } from '@/features/user/hooks/useRegisterUser'
 import { useToast } from '@/hooks/useToast'
+import {
+  registerProfileSchema,
+  type RegisterProfileInput,
+} from '@/features/user/schemas/registerProfile'
 
 /**
  * ユーザータイプ
@@ -44,29 +56,25 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
   const { showToast } = useToast()
   const { mutate, isPending } = useRegisterUser()
 
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
+  const form = useForm<RegisterProfileInput>({
+    resolver: zodResolver(registerProfileSchema),
+    defaultValues: {
+      name: '',
+      birthDate: '',
+      userType,
+    },
+  })
 
-    const formData = new FormData(e.currentTarget)
-    const name = formData.get('name') as string
-    const birthDate = formData.get('birthDate') as string
-
-    mutate(
-      {
-        name,
-        birthDate,
-        userType,
+  const onSubmit = (data: RegisterProfileInput) => {
+    mutate(data, {
+      onSuccess: () => {
+        showToast('プロフィール登録が完了しました。', 'success')
+        router.push('/')
       },
-      {
-        onSuccess: () => {
-          showToast('プロフィール登録が完了しました。', 'success')
-          router.push('/')
-        },
-        onError: (error) => {
-          showToast(`登録に失敗しました: ${error.message}`, 'error')
-        },
-      }
-    )
+      onError: (error) => {
+        showToast(`登録に失敗しました: ${error.message}`, 'error')
+      },
+    })
   }
 
   return (
@@ -81,37 +89,49 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
         </div>
 
         {/* フォーム */}
-        <form onSubmit={handleSubmit} className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm">
-          <div className="space-y-2">
-            <Label htmlFor="name">お名前</Label>
-            <Input
-              id="name"
-              name="name"
-              type="text"
-              placeholder="山田太郎"
-              required
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="birthDate">生年月日</Label>
-            <Input
-              id="birthDate"
-              name="birthDate"
-              type="date"
-              required
-            />
-          </div>
-
-          <Button
-            type="submit"
-            className="w-full"
-            size="lg"
-            disabled={isPending}
+        <Form {...form}>
+          <form
+            onSubmit={form.handleSubmit(onSubmit)}
+            className="space-y-6 rounded-lg border border-border bg-card p-6 shadow-sm"
           >
-            {isPending ? '登録中...' : '登録する'}
-          </Button>
-        </form>
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>お名前</FormLabel>
+                  <FormControl>
+                    <Input placeholder="山田太郎" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="birthDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>生年月日</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button
+              type="submit"
+              className="w-full"
+              size="lg"
+              disabled={isPending}
+            >
+              {isPending ? '登録中...' : '登録する'}
+            </Button>
+          </form>
+        </Form>
 
         <p className="text-center text-xs text-muted-foreground">
           入力した情報は後から変更できます

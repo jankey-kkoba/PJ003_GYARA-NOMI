@@ -105,7 +105,6 @@ describe('RegisterTemplate', () => {
 
       const nameInput = page.getByLabelText('お名前')
       await expect.element(nameInput).toBeVisible()
-      await expect.element(nameInput).toHaveAttribute('type', 'text')
     })
 
     it('生年月日入力フィールドが表示される', async () => {
@@ -193,6 +192,70 @@ describe('RegisterTemplate', () => {
         }),
         expect.any(Object)
       )
+    })
+  })
+
+  describe('バリデーションエラー表示', () => {
+    it('名前が空のまま送信するとエラーメッセージが表示される', async () => {
+      render(
+        <TestProviders>
+          <RegisterTemplate userType="guest" />
+        </TestProviders>
+      )
+
+      // 生年月日のみ入力して送信
+      await page.getByLabelText('生年月日').fill('1990-01-01')
+      await page.getByRole('button', { name: '登録する' }).click()
+
+      // エラーメッセージが赤文字で表示される
+      await expect
+        .element(page.getByText('名前は必須です'))
+        .toBeVisible()
+
+      // mutateは呼ばれない
+      expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('生年月日が空のまま送信するとエラーメッセージが表示される', async () => {
+      render(
+        <TestProviders>
+          <RegisterTemplate userType="guest" />
+        </TestProviders>
+      )
+
+      // 名前のみ入力して送信
+      await page.getByLabelText('お名前').fill('テストユーザー')
+      await page.getByRole('button', { name: '登録する' }).click()
+
+      // エラーメッセージが赤文字で表示される
+      await expect
+        .element(page.getByText('生年月日は必須です'))
+        .toBeVisible()
+
+      // mutateは呼ばれない
+      expect(mockMutate).not.toHaveBeenCalled()
+    })
+
+    it('両方空の場合は両方のエラーメッセージが表示される', async () => {
+      render(
+        <TestProviders>
+          <RegisterTemplate userType="guest" />
+        </TestProviders>
+      )
+
+      // 何も入力せず送信
+      await page.getByRole('button', { name: '登録する' }).click()
+
+      // 両方のエラーメッセージが表示される
+      await expect
+        .element(page.getByText('名前は必須です'))
+        .toBeVisible()
+      await expect
+        .element(page.getByText('生年月日は必須です'))
+        .toBeVisible()
+
+      // mutateは呼ばれない
+      expect(mockMutate).not.toHaveBeenCalled()
     })
   })
 
