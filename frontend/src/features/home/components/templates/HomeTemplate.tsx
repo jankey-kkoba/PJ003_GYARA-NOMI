@@ -1,5 +1,8 @@
 'use client'
 
+import Link from 'next/link'
+
+import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/features/auth/components/atoms/LogoutButton'
 
 /**
@@ -16,7 +19,13 @@ export function HomeTemplate() {
           </h1>
           <p className="mb-4 text-gray-600">ようこそ</p>
 
-          <LogoutButton variant="outline" />
+          <div className="space-y-3">
+            <Button asChild className="w-full">
+              <Link href="/casts">キャスト一覧を見る</Link>
+            </Button>
+
+            <LogoutButton variant="outline" className="w-full" />
+          </div>
         </div>
       </div>
     </div>
