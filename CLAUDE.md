@@ -310,3 +310,8 @@ supabase start
 #### テストでのエイリアス
 - `@/`: `src/` ディレクトリ
 - `@tests/`: `__tests__/` ディレクトリ（テストファイル間のインポート用）
+
+### Github ISSUEを使用したタスク管理について
+- タスクの管理は主にGithubのIssueとProjectを使用して行う
+- Github CLIが使用可能である
+- .github/ISSUE_TEMPLATEにテンプレートをおいているので作成する際はこれを元に作成すること
