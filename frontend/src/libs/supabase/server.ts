@@ -17,15 +17,6 @@ export async function createClient() {
   const cookieStore = await cookies()
   const session = await auth()
 
-  // デバッグ: セッション情報を確認
-  console.log('[Supabase Client] Session:', {
-    hasSession: !!session,
-    userId: session?.user?.id,
-    role: session?.user?.role,
-    hasSupabaseToken: !!session?.supabaseAccessToken,
-    tokenPreview: session?.supabaseAccessToken?.substring(0, 50),
-  })
-
   const client = createServerClient(
     NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY,

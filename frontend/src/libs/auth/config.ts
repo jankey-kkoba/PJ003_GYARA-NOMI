@@ -67,21 +67,6 @@ export const authConfig: NextAuthConfig = {
 
       token.supabaseAccessToken = supabaseAccessToken
 
-      // デバッグ: トークン生成を確認
-      // トークンをデコードして内容を確認（デバッグ用）
-      const parts = supabaseAccessToken.split('.')
-      if (parts.length === 3) {
-        const payload = JSON.parse(
-          Buffer.from(parts[1], 'base64').toString('utf-8')
-        )
-        console.log('[Auth.js JWT] Generated Supabase token:', {
-          userId: token.id,
-          role: token.role,
-          tokenPreview: supabaseAccessToken.substring(0, 50),
-          decodedPayload: payload,
-        })
-      }
-
       return token
     },
     /**
