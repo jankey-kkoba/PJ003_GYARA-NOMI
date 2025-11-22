@@ -2,9 +2,11 @@ import { Hono, type MiddlewareHandler } from 'hono'
 import { handle } from 'hono/vercel'
 import { HTTPException } from 'hono/http-exception'
 import { verifyAuth } from '@hono/auth-js'
+import { zValidator } from '@hono/zod-validator'
 import { photoService } from '@/features/cast-profile-photo/services/photoService'
 import { storageService } from '@/features/cast-profile-photo/services/storageService'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
+import { uploadPhotoSchema, updatePhotoSchema } from '@/features/cast-profile-photo/schemas/photoSchemas'
 
 type CreatePhotosAppOptions = {
   /** Auth.js設定の初期化ミドルウェア */
@@ -36,72 +38,57 @@ export function createPhotosApp(options: CreatePhotosAppOptions = {}) {
 
   const route = app
     // プロフィール写真をアップロード
-    .post('/', verifyAuthMiddleware, async (c) => {
-      const authUser = c.get('authUser')
-      const token = authUser.token
+    .post(
+      '/',
+      verifyAuthMiddleware,
+      zValidator('form', uploadPhotoSchema),
+      async (c) => {
+        const authUser = c.get('authUser')
+        const token = authUser.token
 
-      // ユーザーIDとロールをチェック
-      if (!token?.id) {
-        throw new HTTPException(401, { message: '認証が必要です' })
-      }
+        // ユーザーIDとロールをチェック
+        if (!token?.id) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
 
-      // キャストユーザーのみアクセス可能
-      if (token.role !== 'cast') {
-        throw new HTTPException(403, {
-          message: 'この機能はキャストユーザーのみ利用できます',
+        // キャストユーザーのみアクセス可能
+        if (token.role !== 'cast') {
+          throw new HTTPException(403, {
+            message: 'この機能はキャストユーザーのみ利用できます',
+          })
+        }
+
+        // バリデーション済みのファイルを取得
+        const { file } = c.req.valid('form')
+        const castProfileId = token.id
+
+        // Storageにアップロード
+        const { photoUrl, publicUrl } = await storageService.uploadPhoto(
+          castProfileId,
+          file
+        )
+
+        // 次の表示順序を取得
+        const displayOrder = await photoService.getNextDisplayOrder(castProfileId)
+
+        // DBに保存
+        const photo = await photoService.createPhoto({
+          castProfileId,
+          photoUrl,
+          displayOrder,
         })
-      }
 
-      // フォームデータから画像ファイルを取得
-      const formData = await c.req.formData()
-      const file = formData.get('file') as File | null
-
-      if (!file) {
-        throw new HTTPException(400, { message: '画像ファイルが必要です' })
-      }
-
-      // ファイルタイプをチェック
-      const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-      if (!allowedTypes.includes(file.type)) {
-        throw new HTTPException(400, {
-          message: '許可されていないファイル形式です。PNG、JPEG、WEBPのみアップロード可能です',
-        })
-      }
-
-      // ファイルサイズをチェック（5MB）
-      const maxSize = 5 * 1024 * 1024
-      if (file.size > maxSize) {
-        throw new HTTPException(400, { message: 'ファイルサイズは5MB以下にしてください' })
-      }
-
-      const castProfileId = token.id
-
-      // Storageにアップロード
-      const { photoUrl, publicUrl } = await storageService.uploadPhoto(
-        castProfileId,
-        file
-      )
-
-      // 次の表示順序を取得
-      const displayOrder = await photoService.getNextDisplayOrder(castProfileId)
-
-      // DBに保存
-      const photo = await photoService.createPhoto({
-        castProfileId,
-        photoUrl,
-        displayOrder,
-      })
-
-      return c.json({
-        success: true,
-        data: {
-          photo: {
-            ...photo,
-            publicUrl,
+        return c.json({
+          success: true,
+          data: {
+            photo: {
+              ...photo,
+              publicUrl,
+            },
           },
-        },
-      })
-    })
+        })
+      }
+    )
     // 特定のキャストの写真一覧を取得
     .get('/:castId', verifyAuthMiddleware, async (c) => {
       const authUser = c.get('authUser')
@@ -173,60 +160,61 @@ export function createPhotosApp(options: CreatePhotosAppOptions = {}) {
       })
     })
     // プロフィール写真の表示順を更新
-    .put('/:photoId', verifyAuthMiddleware, async (c) => {
-      const authUser = c.get('authUser')
-      const token = authUser.token
+    .put(
+      '/:photoId',
+      verifyAuthMiddleware,
+      zValidator('json', updatePhotoSchema),
+      async (c) => {
+        const authUser = c.get('authUser')
+        const token = authUser.token
 
-      // ユーザーIDとロールをチェック
-      if (!token?.id) {
-        throw new HTTPException(401, { message: '認証が必要です' })
-      }
+        // ユーザーIDとロールをチェック
+        if (!token?.id) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
 
-      // キャストユーザーのみアクセス可能
-      if (token.role !== 'cast') {
-        throw new HTTPException(403, {
-          message: 'この機能はキャストユーザーのみ利用できます',
+        // キャストユーザーのみアクセス可能
+        if (token.role !== 'cast') {
+          throw new HTTPException(403, {
+            message: 'この機能はキャストユーザーのみ利用できます',
+          })
+        }
+
+        const photoId = c.req.param('photoId')
+        const castProfileId = token.id
+        const { displayOrder } = c.req.valid('json')
+
+        // 写真情報を取得
+        const photos = await photoService.getPhotosByCastId(castProfileId)
+        const photo = photos.find((p) => p.id === photoId)
+
+        if (!photo) {
+          throw new HTTPException(404, { message: '写真が見つかりません' })
+        }
+
+        // 自分の写真かチェック
+        if (photo.castProfileId !== castProfileId) {
+          throw new HTTPException(403, {
+            message: '他のユーザーの写真は更新できません',
+          })
+        }
+
+        // 表示順を更新
+        const updatedPhoto = await photoService.updatePhoto(photoId, {
+          displayOrder,
         })
-      }
 
-      const photoId = c.req.param('photoId')
-      const castProfileId = token.id
-      const body = await c.req.json()
-
-      if (typeof body.displayOrder !== 'number') {
-        throw new HTTPException(400, { message: 'displayOrderが必要です' })
-      }
-
-      // 写真情報を取得
-      const photos = await photoService.getPhotosByCastId(castProfileId)
-      const photo = photos.find((p) => p.id === photoId)
-
-      if (!photo) {
-        throw new HTTPException(404, { message: '写真が見つかりません' })
-      }
-
-      // 自分の写真かチェック
-      if (photo.castProfileId !== castProfileId) {
-        throw new HTTPException(403, {
-          message: '他のユーザーの写真は更新できません',
-        })
-      }
-
-      // 表示順を更新
-      const updatedPhoto = await photoService.updatePhoto(photoId, {
-        displayOrder: body.displayOrder,
-      })
-
-      return c.json({
-        success: true,
-        data: {
-          photo: {
-            ...updatedPhoto,
-            publicUrl: storageService.getPublicUrl(updatedPhoto.photoUrl),
+        return c.json({
+          success: true,
+          data: {
+            photo: {
+              ...updatedPhoto,
+              publicUrl: storageService.getPublicUrl(updatedPhoto.photoUrl),
+            },
           },
-        },
-      })
-    })
+        })
+      }
+    )
 
   return { app, route }
 }

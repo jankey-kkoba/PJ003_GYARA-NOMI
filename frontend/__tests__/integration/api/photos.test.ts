@@ -158,8 +158,6 @@ describe('/api/casts/photos', () => {
         })
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body.error).toBe('画像ファイルが必要です')
       })
 
       it('許可されていないファイルタイプの場合は 400 エラーを返す', async () => {
@@ -174,8 +172,6 @@ describe('/api/casts/photos', () => {
         })
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body.error).toContain('許可されていないファイル形式です')
       })
 
       it('ファイルサイズが大きすぎる場合は 400 エラーを返す', async () => {
@@ -194,8 +190,6 @@ describe('/api/casts/photos', () => {
         })
 
         expect(res.status).toBe(400)
-        const body = await res.json()
-        expect(body.error).toContain('ファイルサイズは5MB以下')
       })
     })
 
