@@ -65,6 +65,7 @@ const TEST_PREFIX = 'test-photo-api-'
 
 // 新規作成したデータのクリーンアップ
 async function cleanupTestData() {
+  // TEST_PREFIXで始まるIDの写真を削除
   const testPhotos = await db
     .select({ id: castProfilePhotos.id })
     .from(castProfilePhotos)
@@ -73,6 +74,11 @@ async function cleanupTestData() {
   for (const { id } of testPhotos) {
     await db.delete(castProfilePhotos).where(eq(castProfilePhotos.id, id))
   }
+
+  // seed-user-cast-003は「写真なし」のテストケース用なので、全ての写真を削除
+  await db
+    .delete(castProfilePhotos)
+    .where(eq(castProfilePhotos.castProfileId, 'seed-user-cast-003'))
 }
 
 describe('/api/casts/photos', () => {

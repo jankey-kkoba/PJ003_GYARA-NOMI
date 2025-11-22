@@ -28,11 +28,12 @@ export default defineConfig({
     setupFiles: ['./__tests__/setup.ts'],
 
     // テストファイルのパターン
-    // DB操作テストはNode.js環境で実行するため除外
+    // DB操作テストとAPI統合テストはNode.js環境で実行するため除外
     include: ['__tests__/**/*.{test,spec}.{ts,tsx}'],
     exclude: [
       '__tests__/e2e/**/*',
-      '__tests__/integration/services/**/*.test.ts'
+      '__tests__/integration/services/**/*.test.ts',
+      '__tests__/integration/api/**/*.test.ts'
     ],
 
     // Browser Mode 設定
