@@ -18,9 +18,10 @@ export default defineConfig(({ mode }) => {
       // グローバル設定
       globals: true,
 
-      // テストファイルのパターン（DB操作テストのみ）
+      // テストファイルのパターン（DB操作テストとAPI統合テスト）
       include: [
-        '__tests__/integration/services/**/*.test.ts'
+        '__tests__/integration/services/**/*.test.ts',
+        '__tests__/integration/api/**/*.test.ts'
       ],
 
       // Node.js環境（jsdom不要）

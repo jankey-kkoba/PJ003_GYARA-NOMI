@@ -179,6 +179,21 @@ INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
   ('seed-user-google-001', 'oauth', 'google', 'seed-google-account-001');
 
 -- ================================================================================
+-- キャストプロフィール写真テスト用データ
+-- ================================================================================
+-- seed-user-cast-001: 3枚の写真（表示順テスト用）
+INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, created_at, updated_at) VALUES
+  ('seed-photo-cast-001-1', 'seed-user-cast-001', 'seed-user-cast-001/photo1.jpg', 0, NOW(), NOW()),
+  ('seed-photo-cast-001-2', 'seed-user-cast-001', 'seed-user-cast-001/photo2.jpg', 1, NOW(), NOW()),
+  ('seed-photo-cast-001-3', 'seed-user-cast-001', 'seed-user-cast-001/photo3.jpg', 2, NOW(), NOW());
+
+-- seed-user-cast-002: 1枚の写真
+INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, created_at, updated_at) VALUES
+  ('seed-photo-cast-002-1', 'seed-user-cast-002', 'seed-user-cast-002/photo1.jpg', 0, NOW(), NOW());
+
+-- seed-user-cast-003: 写真なし（テスト用）
+
+-- ================================================================================
 -- 完了
 -- ================================================================================
 -- データ挿入が完了しました
@@ -187,3 +202,4 @@ INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
 -- - キャストユーザー: 27件（アクティブ25件、非アクティブ1件、未登録1件）
 -- - エリア: 4件
 -- - ページネーション用キャスト: 20件
+-- - キャストプロフィール写真: 4件
