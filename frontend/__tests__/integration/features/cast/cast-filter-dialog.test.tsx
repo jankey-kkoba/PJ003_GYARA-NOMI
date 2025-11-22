@@ -10,7 +10,7 @@ import { page, userEvent } from 'vitest/browser'
 import { CastFilterDialog, type CastFilterValues } from '@/features/cast/components/molecules/CastFilterDialog'
 
 describe('CastFilterDialog', () => {
-  let onApply: ReturnType<typeof vi.fn>
+  let onApply: (values: CastFilterValues) => void
 
   beforeEach(() => {
     onApply = vi.fn()
