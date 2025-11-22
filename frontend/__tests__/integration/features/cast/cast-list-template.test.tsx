@@ -173,6 +173,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介1',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
           {
             id: 'cast-2',
@@ -181,6 +182,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介2',
             rank: 2,
             areaName: '新宿',
+            thumbnailUrl: null,
           },
         ],
         total: 2,
@@ -211,6 +213,7 @@ describe('CastListTemplate', () => {
         bio: `自己紹介${String(i + 1).padStart(3, '0')}`,
         rank: i + 1,
         areaName: 'エリア',
+        thumbnailUrl: null,
       }))
 
       const mockData: CastListResponse = {
@@ -233,6 +236,70 @@ describe('CastListTemplate', () => {
       await expect.element(page.getByText('キャスト001')).toBeInTheDocument()
       await expect.element(page.getByText('キャスト012')).toBeInTheDocument()
     })
+
+    it('サムネイル画像がある場合、画像を表示する', async () => {
+      const mockData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-1',
+            name: 'テストキャスト',
+            age: 25,
+            bio: '自己紹介',
+            rank: 1,
+            areaName: '渋谷',
+            thumbnailUrl: 'https://example.com/storage/v1/object/public/cast-profile-photos/test.jpg',
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      mockGet.mockResolvedValue(createMockResponse(mockData))
+
+      render(
+        <TestWrapper>
+          <CastListTemplate />
+        </TestWrapper>
+      )
+
+      // 画像が表示されることを確認
+      await expect.element(page.getByAltText('テストキャストのプロフィール写真')).toBeInTheDocument()
+      // 「画像未設定」プレースホルダーは表示されない
+      await expect.element(page.getByText('画像未設定')).not.toBeInTheDocument()
+    })
+
+    it('サムネイル画像がない場合、プレースホルダーを表示する', async () => {
+      const mockData: CastListResponse = {
+        casts: [
+          {
+            id: 'cast-1',
+            name: 'テストキャスト',
+            age: 25,
+            bio: '自己紹介',
+            rank: 1,
+            areaName: '渋谷',
+            thumbnailUrl: null,
+          },
+        ],
+        total: 1,
+        page: 1,
+        limit: 12,
+        totalPages: 1,
+      }
+
+      mockGet.mockResolvedValue(createMockResponse(mockData))
+
+      render(
+        <TestWrapper>
+          <CastListTemplate />
+        </TestWrapper>
+      )
+
+      // 「画像未設定」プレースホルダーが表示されることを確認
+      await expect.element(page.getByText('画像未設定')).toBeInTheDocument()
+    })
   })
 
   describe('ページネーション', () => {
@@ -246,6 +313,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 25,
@@ -279,6 +347,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介1',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 25,
@@ -297,6 +366,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介13',
             rank: 13,
             areaName: '新宿',
+            thumbnailUrl: null,
           },
         ],
         total: 25,
@@ -345,6 +415,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 5,
@@ -380,6 +451,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 1,
@@ -417,6 +489,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 1,
@@ -448,6 +521,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 1,
@@ -465,6 +539,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介2',
             rank: 2,
             areaName: '新宿',
+            thumbnailUrl: null,
           },
         ],
         total: 1,
@@ -520,6 +595,7 @@ describe('CastListTemplate', () => {
             bio: '自己紹介',
             rank: 1,
             areaName: '渋谷',
+            thumbnailUrl: null,
           },
         ],
         total: 1,

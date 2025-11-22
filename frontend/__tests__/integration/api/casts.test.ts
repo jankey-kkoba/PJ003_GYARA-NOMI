@@ -216,6 +216,7 @@ describe('GET /api/casts', () => {
           bio: '自己紹介1',
           rank: 1,
           areaName: 'エリア1',
+          thumbnailUrl: null,
         },
         {
           id: 'cast-2',
@@ -224,6 +225,7 @@ describe('GET /api/casts', () => {
           bio: '自己紹介2',
           rank: 2,
           areaName: 'エリア2',
+          thumbnailUrl: null,
         },
       ]
 
@@ -261,6 +263,7 @@ describe('GET /api/casts', () => {
           bio: '自己紹介3',
           rank: 3,
           areaName: 'エリア3',
+          thumbnailUrl: null,
         },
       ]
 
@@ -338,6 +341,7 @@ describe('GET /api/casts', () => {
             bio: '自己紹介1',
             rank: 1,
             areaName: 'エリア1',
+            thumbnailUrl: null,
           },
         ],
         total: 100,

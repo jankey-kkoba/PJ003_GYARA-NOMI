@@ -21,6 +21,7 @@ vi.mock('next/navigation', () => ({
 // Hono クライアントのモック
 const mockGetById = vi.fn()
 const mockFavoriteGet = vi.fn()
+const mockPhotosGet = vi.fn()
 
 vi.mock('@/libs/hono/client', () => ({
   castsClient: {
@@ -38,6 +39,18 @@ vi.mock('@/libs/hono/client', () => ({
         ':castId': {
           $get: mockFavoriteGet,
           $post: vi.fn(),
+          $delete: vi.fn(),
+        },
+      },
+    },
+  },
+  photosClient: {
+    api: {
+      casts: {
+        photos: {
+          $get: mockPhotosGet,
+          $post: vi.fn(),
+          $put: vi.fn(),
           $delete: vi.fn(),
         },
       },
@@ -82,6 +95,11 @@ describe('CastDetailTemplate', () => {
     mockFavoriteGet.mockResolvedValue({
       ok: true,
       json: async () => ({ success: true, data: { isFavorite: false } }),
+    })
+    // プロフィール写真のデフォルトモック（写真なし）
+    mockPhotosGet.mockResolvedValue({
+      ok: true,
+      json: async () => ({ success: true, data: [] }),
     })
   })
 

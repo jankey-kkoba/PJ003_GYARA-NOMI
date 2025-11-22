@@ -12,7 +12,7 @@ export type CastListItem = {
   bio: string | null
   rank: number
   areaName: string | null
-  // 今後、画像が追加される予定
+  thumbnailUrl: string | null // 代表写真の公開URL
 }
 
 /**

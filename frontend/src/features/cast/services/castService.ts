@@ -3,8 +3,20 @@ import { db } from '@/libs/db'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
 import { areas } from '@/libs/db/schema/areas'
+import { castProfilePhotos } from '@/libs/db/schema/cast-profile-photos'
 import type { CastListItem, CastDetail } from '@/features/cast/types'
 import { calculateAge } from '@/utils/date'
+import { STORAGE_BUCKET_NAME } from '@/features/cast-profile-photo/constants'
+import { NEXT_PUBLIC_SUPABASE_URL } from '@/libs/constants/env'
+
+/**
+ * Supabase Storageの公開URLを生成
+ * @param photoUrl - ストレージのパス
+ * @returns 公開URL
+ */
+function getPublicUrl(photoUrl: string): string {
+  return `${NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/${STORAGE_BUCKET_NAME}/${photoUrl}`
+}
 
 /**
  * キャストサービス
@@ -46,7 +58,7 @@ export const castService = {
 
     const whereClause = and(...conditions)
 
-    // キャスト一覧を取得
+    // キャスト一覧を取得（代表写真も含む）
     const casts = await db
       .select({
         id: castProfiles.id,
@@ -55,10 +67,18 @@ export const castService = {
         bio: castProfiles.bio,
         rank: castProfiles.rank,
         areaName: areas.name,
+        thumbnailPhotoUrl: castProfilePhotos.photoUrl,
       })
       .from(castProfiles)
       .innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
       .leftJoin(areas, eq(castProfiles.areaId, areas.id))
+      .leftJoin(
+        castProfilePhotos,
+        and(
+          eq(castProfilePhotos.castProfileId, castProfiles.id),
+          eq(castProfilePhotos.displayOrder, 0)
+        )
+      )
       .where(whereClause)
       .limit(limit)
       .offset(offset)
@@ -71,9 +91,15 @@ export const castService = {
       .innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
       .where(whereClause)
 
-    // 年齢を計算
+    // 年齢を計算し、サムネイルURLを生成
     const castsWithAge: CastListItem[] = casts.map((cast) => {
       const age = calculateAge(new Date(cast.birthDate))
+      const thumbnailUrl = cast.thumbnailPhotoUrl ? getPublicUrl(cast.thumbnailPhotoUrl) : null
+
+      // デバッグログ
+      if (cast.thumbnailPhotoUrl) {
+        console.log('[castService.getCastList] Cast:', cast.id, 'photoUrl:', cast.thumbnailPhotoUrl, 'publicUrl:', thumbnailUrl)
+      }
 
       return {
         id: cast.id,
@@ -82,6 +108,7 @@ export const castService = {
         bio: cast.bio,
         rank: cast.rank,
         areaName: cast.areaName,
+        thumbnailUrl,
       }
     })
 

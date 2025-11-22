@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import {
   Card,
   CardContent,
@@ -26,9 +27,19 @@ export function CastCard({ cast }: CastCardProps) {
   return (
     <Link href={`/casts/${cast.id}`} className="block">
       <Card className="overflow-hidden transition-shadow hover:shadow-lg gap-1 py-0 md:gap-6 md:py-6">
-        {/* 画像エリア（今後実装予定） */}
+        {/* 画像エリア */}
         <div className="aspect-square bg-muted flex items-center justify-center relative">
-          <span className="text-muted-foreground text-xs">画像未設定</span>
+          {cast.thumbnailUrl ? (
+            <Image
+              src={cast.thumbnailUrl}
+              alt={`${cast.name}のプロフィール写真`}
+              fill
+              className="object-cover"
+              unoptimized
+            />
+          ) : (
+            <span className="text-muted-foreground text-xs">画像未設定</span>
+          )}
           <FavoriteButton
             castId={cast.id}
             className="absolute top-1 right-1 md:top-2 md:right-2"
