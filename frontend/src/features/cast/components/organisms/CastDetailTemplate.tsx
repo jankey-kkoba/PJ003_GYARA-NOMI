@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { useCastDetail } from '@/features/cast/hooks/useCastDetail'
 import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
+import { PhotoGallery } from '@/features/cast-profile-photo/components/molecules/PhotoGallery'
 
 type CastDetailTemplateProps = {
   castId: string
@@ -52,23 +53,28 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
       </Button>
 
       <Card>
-        {/* 画像エリア（今後実装予定） */}
-        <div className="aspect-video bg-muted flex items-center justify-center relative">
-          <span className="text-muted-foreground">画像未設定</span>
-          <FavoriteButton
-            castId={castId}
-            className="absolute top-2 right-2"
-          />
-        </div>
-
+        {/* プロフィール情報 */}
         <CardHeader>
-          <CardTitle className="text-2xl">{cast.name}</CardTitle>
-          <CardDescription className="text-lg">
-            {cast.age}歳 {cast.areaName && `・ ${cast.areaName}`}
-          </CardDescription>
+          <div className="flex items-start justify-between">
+            <div>
+              <CardTitle className="text-2xl">{cast.name}</CardTitle>
+              <CardDescription className="text-lg">
+                {cast.age}歳 {cast.areaName && `・ ${cast.areaName}`}
+              </CardDescription>
+            </div>
+            <FavoriteButton castId={castId} />
+          </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-6">
+          {/* 写真ギャラリー */}
+          <div>
+            <h3 className="font-semibold text-sm text-muted-foreground mb-3">
+              プロフィール写真
+            </h3>
+            <PhotoGallery castId={castId} canDelete={false} />
+          </div>
+
           {/* 自己紹介 */}
           {cast.bio && (
             <div>

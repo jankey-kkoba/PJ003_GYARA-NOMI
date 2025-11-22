@@ -1,4 +1,9 @@
 import { z } from 'zod'
+import {
+  ALLOWED_IMAGE_TYPES,
+  MAX_FILE_SIZE,
+  ERROR_MESSAGES,
+} from '@/features/cast-profile-photo/constants'
 
 /**
  * プロフィール写真アップロード時のバリデーションスキーマ
@@ -7,24 +12,22 @@ export const uploadPhotoSchema = z.object({
   file: z
     .instanceof(File)
     .refine((file) => file.size > 0, {
-      message: '画像ファイルが必要です',
+      message: ERROR_MESSAGES.FILE_REQUIRED,
     })
     .refine(
       (file) => {
-        const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp']
-        return allowedTypes.includes(file.type)
+        return ALLOWED_IMAGE_TYPES.includes(file.type as typeof ALLOWED_IMAGE_TYPES[number])
       },
       {
-        message: '許可されていないファイル形式です。PNG、JPEG、WEBPのいずれかを使用してください',
+        message: ERROR_MESSAGES.INVALID_FILE_TYPE,
       }
     )
     .refine(
       (file) => {
-        const maxSize = 5 * 1024 * 1024 // 5MB
-        return file.size <= maxSize
+        return file.size <= MAX_FILE_SIZE
       },
       {
-        message: 'ファイルサイズは5MB以下にしてください',
+        message: ERROR_MESSAGES.FILE_TOO_LARGE,
       }
     ),
 })

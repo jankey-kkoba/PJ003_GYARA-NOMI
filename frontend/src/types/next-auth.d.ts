@@ -15,6 +15,8 @@ declare module 'next-auth' {
       email?: string | null
       role?: 'guest' | 'cast' | 'admin' | null
     }
+    /** SupabaseのアクセストークンRLSポリシーの評価に使用 */
+    supabaseAccessToken?: string
   }
 
   /**
@@ -34,5 +36,7 @@ declare module 'next-auth/jwt' {
   interface JWT {
     id: string
     role?: 'guest' | 'cast' | 'admin' | null
+    /** SupabaseのアクセストークンRLSポリシーの評価に使用 */
+    supabaseAccessToken?: string
   }
 }

@@ -1,14 +1,13 @@
 import { createClient } from '@/libs/supabase/server'
 import type { PhotoUploadResult } from '@/features/cast-profile-photo/types'
-
-/**
- * Supabase Storageバケット名
- */
-const BUCKET_NAME = 'cast-profile-photos'
+import { STORAGE_BUCKET_NAME } from '@/features/cast-profile-photo/constants'
 
 /**
  * キャストプロフィール写真のストレージサービス
  * Supabase Storageへの画像アップロード・削除を提供
+ *
+ * Auth.jsのセッションからSupabaseのJWTトークンを自動取得し、
+ * RLSポリシーに基づいてアクセス制御を行う
  */
 export const storageService = {
   /**
@@ -31,7 +30,7 @@ export const storageService = {
 
     // ファイルをアップロード
     const { data, error } = await supabase.storage
-      .from(BUCKET_NAME)
+      .from(STORAGE_BUCKET_NAME)
       .upload(fileName, file, {
         cacheControl: '3600',
         upsert: false,
@@ -44,7 +43,7 @@ export const storageService = {
     // 公開URLを取得
     const {
       data: { publicUrl },
-    } = supabase.storage.from(BUCKET_NAME).getPublicUrl(data.path)
+    } = supabase.storage.from(STORAGE_BUCKET_NAME).getPublicUrl(data.path)
 
     return {
       photoUrl: data.path,
@@ -59,7 +58,7 @@ export const storageService = {
   async deletePhoto(photoUrl: string): Promise<void> {
     const supabase = await createClient()
 
-    const { error } = await supabase.storage.from(BUCKET_NAME).remove([photoUrl])
+    const { error } = await supabase.storage.from(STORAGE_BUCKET_NAME).remove([photoUrl])
 
     if (error) {
       throw new Error(`画像の削除に失敗しました: ${error.message}`)
@@ -73,7 +72,7 @@ export const storageService = {
   async deletePhotos(photoUrls: string[]): Promise<void> {
     const supabase = await createClient()
 
-    const { error } = await supabase.storage.from(BUCKET_NAME).remove(photoUrls)
+    const { error } = await supabase.storage.from(STORAGE_BUCKET_NAME).remove(photoUrls)
 
     if (error) {
       throw new Error(`画像の削除に失敗しました: ${error.message}`)
@@ -90,6 +89,6 @@ export const storageService = {
     // クライアント側で使用する簡易的な実装
     // 本番環境では環境変数から取得したURLを使用
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-    return `${supabaseUrl}/storage/v1/object/public/${BUCKET_NAME}/${photoUrl}`
+    return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET_NAME}/${photoUrl}`
   },
 }

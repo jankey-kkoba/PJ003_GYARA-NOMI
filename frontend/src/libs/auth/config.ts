@@ -1,10 +1,12 @@
 import type { NextAuthConfig } from 'next-auth'
+import { SignJWT } from 'jose'
 import Line from 'next-auth/providers/line'
 import { CustomAdapter } from '@/libs/auth/adapter'
 import { userService } from '@/features/user/services/userService'
 import {
   LINE_CLIENT_ID,
   LINE_CLIENT_SECRET,
+  SUPABASE_JWT_SECRET,
 } from '@/libs/constants/env'
 
 /**
@@ -29,7 +31,7 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     /**
      * JWTコールバック
-     * トークンにユーザーIDとロールを含める
+     * トークンにユーザーIDとロールを含め、SupabaseのJWTトークンも生成
      */
     async jwt({ token, user, trigger }) {
       // 初回ログイン時: userオブジェクトからIDとロールを設定
@@ -47,16 +49,50 @@ export const authConfig: NextAuthConfig = {
         }
       }
 
+      // SupabaseのJWTトークンを生成
+      // これにより、SupabaseのRLSポリシーでAuth.jsの認証を利用可能
+      const secret = new TextEncoder().encode(SUPABASE_JWT_SECRET)
+      const supabaseAccessToken = await new SignJWT({
+        sub: token.id,
+        userId: token.id,
+        role: 'authenticated',
+        user_metadata: {
+          id: token.id,
+          role: token.role,
+        },
+      })
+        .setProtectedHeader({ alg: 'HS256' })
+        .setExpirationTime('1h')
+        .sign(secret)
+
+      token.supabaseAccessToken = supabaseAccessToken
+
+      // デバッグ: トークン生成を確認
+      // トークンをデコードして内容を確認（デバッグ用）
+      const parts = supabaseAccessToken.split('.')
+      if (parts.length === 3) {
+        const payload = JSON.parse(
+          Buffer.from(parts[1], 'base64').toString('utf-8')
+        )
+        console.log('[Auth.js JWT] Generated Supabase token:', {
+          userId: token.id,
+          role: token.role,
+          tokenPreview: supabaseAccessToken.substring(0, 50),
+          decodedPayload: payload,
+        })
+      }
+
       return token
     },
     /**
      * セッションコールバック
-     * セッションにユーザーIDとロールを含める
+     * セッションにユーザーIDとロール、SupabaseアクセストークンInclude
      */
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.id
         session.user.role = token.role
+        session.supabaseAccessToken = token.supabaseAccessToken
       }
       return session
     },
