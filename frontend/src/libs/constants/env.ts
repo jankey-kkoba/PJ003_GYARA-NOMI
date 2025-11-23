@@ -26,3 +26,5 @@ export const AUTH_SECRET = process.env.AUTH_SECRET!
  */
 export const LINE_CLIENT_ID = process.env.AUTH_LINE_ID!
 export const LINE_CLIENT_SECRET = process.env.AUTH_LINE_SECRET!
+
+export const NODE_ENV = process.env.NODE_ENV!

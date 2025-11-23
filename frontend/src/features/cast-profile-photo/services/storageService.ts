@@ -1,6 +1,7 @@
 import { createClient } from '@/libs/supabase/server'
 import type { PhotoUploadResult } from '@/features/cast-profile-photo/types'
 import { STORAGE_BUCKET_NAME } from '@/features/cast-profile-photo/constants'
+import { NEXT_PUBLIC_SUPABASE_URL } from '@/libs/constants/env'
 
 /**
  * キャストプロフィール写真のストレージサービス
@@ -88,7 +89,7 @@ export const storageService = {
     // サーバーサイドで同期的にURLを生成できないため、
     // クライアント側で使用する簡易的な実装
     // 本番環境では環境変数から取得したURLを使用
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseUrl = NEXT_PUBLIC_SUPABASE_URL
     return `${supabaseUrl}/storage/v1/object/public/${STORAGE_BUCKET_NAME}/${photoUrl}`
   },
 }

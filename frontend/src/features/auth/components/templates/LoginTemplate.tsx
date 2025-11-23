@@ -3,12 +3,14 @@
 import Link from 'next/link'
 import { LineLoginButton } from '@/features/auth/components/atoms/LineLoginButton'
 import { CredentialsLoginForm } from '@/features/auth/components/atoms/CredentialsLoginForm'
+import { NODE_ENV } from '@/libs/constants/env'
 
 /**
  * ログインページのテンプレート
  * Mobile Firstで実装
  */
 export function LoginTemplate() {
+  console.log('Current NODE_ENV:', NODE_ENV)
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-background px-4">
       <div className="w-full max-w-md space-y-8">
@@ -23,7 +25,7 @@ export function LoginTemplate() {
         </div>
 
         {/* 開発環境用ログインフォーム */}
-        {process.env.NODE_ENV === 'development' && (
+        {NODE_ENV === 'development' && (
           <CredentialsLoginForm
             title="開発環境用ログイン"
             description="E2Eテスト・手元確認用（本番では表示されません）"
