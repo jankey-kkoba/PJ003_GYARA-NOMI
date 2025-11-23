@@ -1,11 +1,9 @@
 import { createServerClient } from '@supabase/ssr'
-import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { auth } from '@/libs/auth'
 import {
   NEXT_PUBLIC_SUPABASE_URL,
   NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  SUPABASE_SERVICE_ROLE_KEY,
 } from '@/libs/constants/env'
 
 /**
@@ -47,24 +45,4 @@ export async function createClient() {
   )
 
   return client
-}
-
-/**
- * Admin用Supabaseクライアント
- * RLSをバイパスして管理者権限でSupabaseにアクセス
- *
- * 注意: このクライアントはRLSポリシーをバイパスするため、
- * 使用前に必ずアプリケーション層で適切な権限チェックを行うこと
- */
-export function createAdminClient() {
-  return createSupabaseClient(
-    NEXT_PUBLIC_SUPABASE_URL,
-    SUPABASE_SERVICE_ROLE_KEY,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  )
 }
