@@ -1,52 +1,21 @@
+今実行すべきタスクは何かをgithubから取得し、提案する
 # 前提
-- タスクを取得する際はプロジェクト番号:2、オーナー:自分(@me)で取得すること
-- 取得する際はjsonで取得し、-qや--jqなどでフィルタリングする(使い方はここを参照 https://jqlang.org/manual/)
+- 本日の日付を含むIterationが作成してある
+- 本日の日付を含むIterationにタスクが1件以上存在する
+- 週の考え方は月曜始まりとする 「今週の初日」は本日の日付を含む週の月曜日とする
 # 手順
-1. 以下の優先度に従い、プロジェクトアイテム(Issue)を取得する
-- 以下の通りイテレーション内にタスクがないか検索
-	- 今日を含むイテレーションが存在すれば今日のイテレーションからタスクを検索
-		- イテレーションが存在しない場合、今週(月曜始まりとして考える)の月曜日から日曜日までのイテレーションを作成
-	- 今日を含むイテレーションが存在しない、または存在してもイテレーション内にタスクがない場合、未来のイテレーションからタスクを検索
-	- 未来のイテレーションが存在しない、または存在してもイテレーション内にタスクがない場合、バックログ(イテレーションを持たないタスク)を検索
-- さらに、Statusフィールドでフィルタリングする（この順で優先）:
-	1. Status="Todo"または"In Progress"のタスクのみを抽出して表示
-	2. 上記が0件の場合のみ、Statusが未設定のタスクを表示
-	- **重要**: Status="Todo"/"In Progress"のタスクが1件でも存在する場合、Status未設定のタスクは表示しないこと
-2. 取得したイシューのリストを提示する際、必ずStatusフィールドの値も表示すること
-3. どれから手をつけるべきか判断し、提案する
-4. 提案に対し、着手すべきタスクが決まったら、そのタスクのステータスをIn Progressに変更し、タスクに着手する
-	- 元のStatusがIn Progressだった場合は変更する必要なし
-
-- 参考: jsonで取得した時の形式
-```json
-{
-	"items": [
-    {
-      "content": {
-        "body": "",
-        "number": 2,
-        "repository": "jankey-kkoba/PJ003_GYARA-NOMI",
-        "title": "ゲストは一覧で表示したキャストの年齢で表示内容を絞り込むことができる",
-        "type": "Issue",
-        "url": "https://github.com/jankey-kkoba/PJ003_GYARA-NOMI/issues/2"
-      },
-      "feature": "キャスト情報閲覧",
-      "id": "PVTI_lAHODTGhKs4BB5sLzghh46w",
-      "iteration": {
-        "duration": 7,
-        "iterationId": "51a3d0b6",
-        "startDate": "2025-11-17",
-        "title": "Iteration1"
-      },
-      "labels": [
-        "type:enhancement",
-      ],
-      "point": 3,
-      "repository": "https://github.com/jankey-kkoba/PJ003_GYARA-NOMI",
-      "status": "Todo",
-      "title": "ゲストは一覧で表示したキャストの年齢で表示内容を絞り込むことができる"
-    }
-	]
-}
+1. イテレーションでフィルタするために今週の初日の日付を計算し、以降のコマンド実行の際に使用する(:iterationStartDateをyyyy-mm-dd形式で置き換える)
+2. 以下のコマンドを実行し、タスクを取得する 1件以上取得できたら手順3をスキップし、手順4へ進む
+```sh
+gh project item-list 2 --owner @me --format json --limit 100 --jq '.items[] | select(.iteration.startDate == ":iterationStartDate" and (.status == "Todo" or .status == "In Progress"))'
 ```
-- Status="Todo"または"In Progress"のタスクとはitems[n].status = "Todo"またはitems[n].status = "In Progress"のものを指す
+3. 手順2で取得件数が0件の場合、以下を実行する
+```sh
+gh project item-list 2 --owner @me --format json --limit 100 --jq '.items[] | select(.iteration.startDate == ":iterationStartDate" and .status == null)'
+```
+4. 手順2または3で取得できたタスクに対し、どれから手をつけるべきか判断し、提案する
+5. ＊元のStatusがIn Progressだった場合はこの手順はスキップ 提案に対し、着手すべきタスクが決まったら、そのタスクのidを指定し以下のコマンドでステータスをIn Progressに変更する
+```sh
+gh project item-edit --project-id PVT_kwHODTGhKs4BB5sL --format json --id <item-id> --field-id PVTSSF_lAHODTGhKs4BB5sLzg0RQoA --single-select-option-id 47fc9ee4
+```
+6. タスクに着手する
