@@ -59,12 +59,16 @@ export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = 
 
     const data = c.req.valid('json')
 
-    // proposedDateを文字列からDateに変換
-    const proposedDate = new Date(data.proposedDate)
+    // proposedDateとproposedTimeOffsetMinutesの処理
+    let proposedDate: Date | undefined
+    let proposedTimeOffsetMinutes: number | undefined
 
-    // 過去の日時は拒否
-    if (proposedDate < new Date()) {
-      throw new HTTPException(400, { message: '過去の日時は指定できません' })
+    if (data.proposedTimeOffsetMinutes) {
+      // 相対時間指定の場合
+      proposedTimeOffsetMinutes = data.proposedTimeOffsetMinutes
+    } else if (data.proposedDate) {
+      // カスタム日時指定の場合（過去の日時チェックはスキーマで実施済み）
+      proposedDate = new Date(data.proposedDate)
     }
 
     // ソロマッチングを作成
@@ -72,6 +76,7 @@ export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = 
       guestId: userId,
       castId: data.castId,
       proposedDate,
+      proposedTimeOffsetMinutes,
       proposedDuration: data.proposedDuration,
       proposedLocation: data.proposedLocation,
       hourlyRate: data.hourlyRate,

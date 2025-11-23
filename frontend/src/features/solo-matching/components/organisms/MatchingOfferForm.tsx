@@ -82,7 +82,7 @@ export function MatchingOfferForm({ castId, onSuccess }: MatchingOfferFormProps)
     resolver: zodResolver(createSoloMatchingSchema),
     defaultValues: {
       castId,
-      proposedDate: '',
+      proposedTimeOffsetMinutes: 60, // デフォルト1時間後（60分）
       proposedDuration: 120, // デフォルト2時間
       proposedLocation: '',
       hourlyRate: 3000, // デフォルト3000ポイント/時間
@@ -93,15 +93,16 @@ export function MatchingOfferForm({ castId, onSuccess }: MatchingOfferFormProps)
   const handleTimeSelectModeChange = (value: string) => {
     setTimeSelectMode(value)
 
-    // カスタムモード以外の場合は、proposedDateを自動計算
+    // カスタムモード以外の場合は、proposedTimeOffsetMinutesを設定
     if (value !== 'custom') {
       const selectedOption = timeOptions.find((opt) => opt.value === value)
       if (selectedOption && selectedOption.minutes !== null) {
-        const now = new Date()
-        const proposedDate = new Date(now.getTime() + selectedOption.minutes * 60 * 1000)
-        // ISO8601形式に変換
-        form.setValue('proposedDate', proposedDate.toISOString())
+        form.setValue('proposedTimeOffsetMinutes', selectedOption.minutes)
+        form.setValue('proposedDate', undefined)
       }
+    } else {
+      // カスタムモードの場合は、proposedTimeOffsetMinutesをクリア
+      form.setValue('proposedTimeOffsetMinutes', undefined)
     }
   }
 

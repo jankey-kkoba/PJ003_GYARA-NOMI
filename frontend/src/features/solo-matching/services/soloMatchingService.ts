@@ -1,6 +1,7 @@
 import { db } from '@/libs/db'
 import { soloMatchings } from '@/libs/db/schema/solo-matchings'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
+import { addMinutesToDate } from '@/utils/date'
 
 /**
  * ソロマッチング作成の入力パラメータ
@@ -8,7 +9,8 @@ import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 export type CreateSoloMatchingParams = {
   guestId: string
   castId: string
-  proposedDate: Date
+  proposedDate?: Date
+  proposedTimeOffsetMinutes?: number
   proposedDuration: number
   proposedLocation: string
   hourlyRate: number
@@ -25,7 +27,16 @@ export const soloMatchingService = {
    * @returns 作成されたソロマッチング
    */
   async createSoloMatching(params: CreateSoloMatchingParams): Promise<SoloMatching> {
-    const { guestId, castId, proposedDate, proposedDuration, proposedLocation, hourlyRate } = params
+    const { guestId, castId, proposedDate, proposedTimeOffsetMinutes, proposedDuration, proposedLocation, hourlyRate } = params
+
+    // proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
+    const finalProposedDate = proposedTimeOffsetMinutes
+      ? addMinutesToDate(new Date(), proposedTimeOffsetMinutes)
+      : proposedDate
+
+    if (!finalProposedDate) {
+      throw new Error('proposedDate または proposedTimeOffsetMinutes のいずれかを指定してください')
+    }
 
     // 合計ポイントを計算（時給 × 時間）
     const totalPoints = Math.round((proposedDuration / 60) * hourlyRate)
@@ -35,7 +46,7 @@ export const soloMatchingService = {
       .values({
         guestId,
         castId,
-        proposedDate,
+        proposedDate: finalProposedDate,
         proposedDuration,
         proposedLocation,
         hourlyRate,

@@ -1,4 +1,4 @@
-import { differenceInYears, subYears, addDays, formatISO } from 'date-fns'
+import { differenceInYears, subYears, addDays, addMinutes, formatISO } from 'date-fns'
 
 /**
  * 誕生日から年齢を計算する
@@ -31,10 +31,29 @@ export function addDaysToDate(date: Date, days: number): Date {
 }
 
 /**
+ * 指定された分数を日付に加算する
+ * @param date - 基準日
+ * @param minutes - 加算する分数
+ * @returns 加算後の日付
+ */
+export function addMinutesToDate(date: Date, minutes: number): Date {
+  return addMinutes(date, minutes)
+}
+
+/**
  * 日付をISO 8601形式の文字列に変換する（日付部分のみ）
  * @param date - 変換する日付
  * @returns YYYY-MM-DD形式の文字列
  */
 export function formatDateOnly(date: Date): string {
   return formatISO(date, { representation: 'date' })
+}
+
+/**
+ * 日付をISO 8601形式の文字列に変換する（完全な日時）
+ * @param date - 変換する日付
+ * @returns ISO 8601形式の文字列
+ */
+export function formatDateTime(date: Date): string {
+  return formatISO(date)
 }
