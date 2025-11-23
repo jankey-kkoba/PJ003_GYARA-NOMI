@@ -2,6 +2,7 @@ import { eq, and } from 'drizzle-orm'
 import { db } from '@/libs/db'
 import { users, userProfiles } from '@/libs/db/schema/users'
 import { accounts } from '@/libs/db/schema/auth'
+import { castProfiles } from '@/libs/db/schema/cast-profiles'
 
 /**
  * ユーザーサービス
@@ -45,6 +46,21 @@ export const userService = {
   },
 
   /**
+   * メールアドレスでユーザーを検索
+   * @param email - メールアドレス
+   * @returns ユーザー情報、存在しない場合はnull
+   */
+  async findUserByEmail(email: string) {
+    const result = await db
+      .select()
+      .from(users)
+      .where(eq(users.email, email))
+      .limit(1)
+
+    return result[0] || null
+  },
+
+  /**
    * アカウントが存在するか確認
    * @param provider - プロバイダー名
    * @param providerAccountId - プロバイダーアカウントID
@@ -73,6 +89,7 @@ export const userService = {
   /**
    * プロフィール登録（トランザクション）
    * プロフィール作成とユーザーロール更新を同時に実行
+   * キャストの場合はcast_profilesも自動生成
    * @param userId - ユーザーID
    * @param input - プロフィールデータとユーザータイプ
    * @returns 作成されたプロフィール情報
@@ -97,6 +114,13 @@ export const userService = {
         .update(users)
         .set({ role: input.userType, updatedAt: new Date() })
         .where(eq(users.id, userId))
+
+      // キャストの場合、cast_profilesも自動生成
+      if (input.userType === 'cast') {
+        await tx.insert(castProfiles).values({
+          id: userId,
+        })
+      }
 
       return profile
     })

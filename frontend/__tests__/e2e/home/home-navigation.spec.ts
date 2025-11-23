@@ -6,16 +6,16 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { loginAsGuest } from '@tests/e2e/helpers/auth'
 
 test.describe('Home Navigation', () => {
   test.describe('ゲストユーザーとしてログイン済みの場合', () => {
     test.beforeEach(async ({ page }) => {
-      // ゲストユーザーとしてログイン
-      // TODO: 実際のログイン処理またはモックセッションを実装
-      await page.goto('/login')
+      // ゲストユーザーとしてログイン（Credentialsプロバイダー使用）
+      await loginAsGuest(page)
     })
 
-    test.skip('ホーム画面からキャスト一覧に遷移できる', async ({ page }) => {
+    test('ホーム画面からキャスト一覧に遷移できる', async ({ page }) => {
       // ホーム画面に移動
       await page.goto('/')
 

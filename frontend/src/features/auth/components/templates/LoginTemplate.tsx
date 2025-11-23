@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { LineLoginButton } from '@/features/auth/components/atoms/LineLoginButton'
+import { CredentialsLoginForm } from '@/features/auth/components/atoms/CredentialsLoginForm'
 
 /**
  * ログインページのテンプレート
@@ -20,6 +21,16 @@ export function LoginTemplate() {
             キャストとゲストをつなぐプラットフォーム
           </p>
         </div>
+
+        {/* 開発環境用ログインフォーム */}
+        {process.env.NODE_ENV === 'development' && (
+          <CredentialsLoginForm
+            title="開発環境用ログイン"
+            description="E2Eテスト・手元確認用（本番では表示されません）"
+            showDevHelpText={true}
+            variant="dev"
+          />
+        )}
 
         {/* ログインボタンエリア */}
         <div className="space-y-4">

@@ -18,6 +18,7 @@ import { eq, like } from 'drizzle-orm'
 import { db } from '@/libs/db'
 import { users, userProfiles } from '@/libs/db/schema/users'
 import { accounts } from '@/libs/db/schema/auth'
+import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userService } from '@/features/user/services/userService'
 
 // 新規作成データのプレフィックス（クリーンアップ用）
@@ -34,6 +35,7 @@ async function cleanupTestData() {
   // 外部キー制約があるため、依存テーブルから先に削除
   for (const { id } of testUsers) {
     await db.delete(accounts).where(eq(accounts.userId, id))
+    await db.delete(castProfiles).where(eq(castProfiles.id, id))
     await db.delete(userProfiles).where(eq(userProfiles.id, id))
     await db.delete(users).where(eq(users.id, id))
   }
@@ -215,14 +217,52 @@ describe('userService Integration', () => {
 
       const updatedUser = await userService.findUserById(user.id)
       expect(updatedUser?.role).toBe('cast')
+
+      // キャストの場合、cast_profileが自動生成されていることを確認
+      const [castProfile] = await db
+        .select()
+        .from(castProfiles)
+        .where(eq(castProfiles.id, user.id))
+        .limit(1)
+
+      expect(castProfile).not.toBeUndefined()
+      expect(castProfile.id).toBe(user.id)
+      expect(castProfile.rank).toBe(1) // デフォルト値
+      expect(castProfile.isActive).toBe(true) // デフォルト値
+    })
+
+    it('ゲストタイプの場合、cast_profileは作成されない', async () => {
+      const [user] = await db
+        .insert(users)
+        .values({
+          id: `${TEST_PREFIX}register-003`,
+          email: 'register-003@test.example.com',
+          emailVerified: null,
+        })
+        .returning()
+
+      await userService.registerProfile(user.id, {
+        name: 'ゲストユーザー',
+        birthDate: '1995-05-15',
+        userType: 'guest',
+      })
+
+      // ゲストの場合、cast_profileは作成されない
+      const [castProfile] = await db
+        .select()
+        .from(castProfiles)
+        .where(eq(castProfiles.id, user.id))
+        .limit(1)
+
+      expect(castProfile).toBeUndefined()
     })
 
     it('日本語の名前を正しく保存できる', async () => {
       const [user] = await db
         .insert(users)
         .values({
-          id: `${TEST_PREFIX}register-003`,
-          email: 'register-003@test.example.com',
+          id: `${TEST_PREFIX}register-004`,
+          email: 'register-004@test.example.com',
           emailVerified: null,
         })
         .returning()
@@ -240,8 +280,8 @@ describe('userService Integration', () => {
       const [user] = await db
         .insert(users)
         .values({
-          id: `${TEST_PREFIX}register-004`,
-          email: 'register-004@test.example.com',
+          id: `${TEST_PREFIX}register-005`,
+          email: 'register-005@test.example.com',
           emailVerified: null,
         })
         .returning()
@@ -263,8 +303,8 @@ describe('userService Integration', () => {
       const [user] = await db
         .insert(users)
         .values({
-          id: `${TEST_PREFIX}register-005`,
-          email: 'register-005@test.example.com',
+          id: `${TEST_PREFIX}register-006`,
+          email: 'register-006@test.example.com',
           emailVerified: null,
         })
         .returning()

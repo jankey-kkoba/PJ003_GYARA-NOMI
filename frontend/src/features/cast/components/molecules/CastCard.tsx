@@ -25,7 +25,11 @@ type CastCardProps = {
  */
 export function CastCard({ cast }: CastCardProps) {
   return (
-    <Link href={`/casts/${cast.id}`} className="block">
+    <Link
+      href={`/casts/${cast.id}`}
+      className="block"
+      aria-label={`${cast.name}のプロフィール`}
+    >
       <Card className="overflow-hidden transition-shadow hover:shadow-lg gap-1 py-0 md:gap-6 md:py-6">
         {/* 画像エリア */}
         <div className="aspect-square bg-muted flex items-center justify-center relative">
@@ -54,9 +58,7 @@ export function CastCard({ cast }: CastCardProps) {
           <CardDescription className="text-xs md:text-sm">
             {cast.age}歳
           </CardDescription>
-        </CardHeader>
-
-        {/* 自己紹介（2行まで表示） */}
+</CardHeader>        {/* 自己紹介（2行まで表示） */}
         {cast.bio && (
           <CardContent className="p-2 pt-0 pb-2 md:p-6 md:pt-0">
             <p className="text-xs md:text-sm text-muted-foreground line-clamp-2">

@@ -179,6 +179,28 @@ INSERT INTO accounts (user_id, type, provider, provider_account_id) VALUES
   ('seed-user-google-001', 'oauth', 'google', 'seed-google-account-001');
 
 -- ================================================================================
+-- E2Eテスト用データ（開発環境Credentialsプロバイダー用）
+-- ================================================================================
+-- E2Eテスト用ゲストユーザー
+-- パスワード: dev-password-2024 (bcryptでハッシュ化)
+INSERT INTO users (id, email, email_verified, password, role, created_at, updated_at) VALUES
+  ('seed-user-e2e-guest', 'test-guest@example.com', NULL, '$2b$10$firb/bnF1rS0ohsOTRxNC.4GPmZlgCMcM7cE81r4fB6/tvqAUMN0u', 'guest', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-e2e-guest', 'E2Eテストゲスト', '1990-01-01', NOW(), NOW());
+
+-- E2Eテスト用キャストユーザー
+-- パスワード: dev-password-2024 (bcryptでハッシュ化)
+INSERT INTO users (id, email, email_verified, password, role, created_at, updated_at) VALUES
+  ('seed-user-e2e-cast', 'test-cast@example.com', NULL, '$2b$10$firb/bnF1rS0ohsOTRxNC.4GPmZlgCMcM7cE81r4fB6/tvqAUMN0u', 'cast', NOW(), NOW());
+
+INSERT INTO user_profiles (id, name, birth_date, created_at, updated_at) VALUES
+  ('seed-user-e2e-cast', 'E2Eテストキャスト', '1995-06-15', NOW(), NOW());
+
+INSERT INTO cast_profiles (id, bio, rank, area_id, is_active, created_at, updated_at) VALUES
+  ('seed-user-e2e-cast', 'E2Eテスト用キャストです', 1, 'seed-area-shibuya', TRUE, NOW(), NOW());
+
+-- ================================================================================
 -- キャストプロフィール写真テスト用データ
 -- ================================================================================
 -- seed-user-cast-001: 3枚の写真（表示順テスト用）

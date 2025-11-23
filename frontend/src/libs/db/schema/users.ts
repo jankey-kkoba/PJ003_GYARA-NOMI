@@ -19,6 +19,7 @@ export const users = pgTable('users', {
     .$defaultFn(() => crypto.randomUUID()),
   email: text('email').unique(),
   emailVerified: timestamp('email_verified', { mode: 'date' }),
+  password: text('password'), // Credentialsログイン用のハッシュ化されたパスワード（管理者・テストユーザー用）
   role: userRoleEnum('role'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),

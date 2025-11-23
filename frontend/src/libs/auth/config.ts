@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from 'next-auth'
 import { SignJWT } from 'jose'
 import Line from 'next-auth/providers/line'
+import Credentials from 'next-auth/providers/credentials'
+import bcrypt from 'bcryptjs'
 import { CustomAdapter } from '@/libs/auth/adapter'
 import { userService } from '@/features/user/services/userService'
 import {
@@ -11,7 +13,9 @@ import {
 
 /**
  * Auth.jsの設定
- * LINEログイン認証を使用
+ * LINEログイン認証とCredentialsログインを使用
+ * - LINE: 一般ユーザー（ゲスト・キャスト）向け
+ * - Credentials: 管理者ログイン、開発/テスト環境用
  * Drizzleアダプターでデータベースと連携
  */
 export const authConfig: NextAuthConfig = {
@@ -23,7 +27,48 @@ export const authConfig: NextAuthConfig = {
     Line({
       clientId: LINE_CLIENT_ID,
       clientSecret: LINE_CLIENT_SECRET,
-    })
+    }),
+    // Credentialsプロバイダー
+    // 管理者ログイン、開発/テスト環境での認証に使用
+    Credentials({
+      id: 'credentials',
+      name: 'Credentials',
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null
+        }
+
+        // メールアドレスでユーザーを検索
+        const user = await userService.findUserByEmail(
+          credentials.email as string
+        )
+
+        if (!user || !user.password) {
+          return null
+        }
+
+        // bcryptでパスワードを検証
+        const isPasswordValid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        )
+
+        if (!isPasswordValid) {
+          return null
+        }
+
+        // Auth.jsが期待する形式でユーザー情報を返す
+        return {
+          id: user.id,
+          email: user.email,
+          role: user.role,
+        }
+      },
+    }),
   ],
   pages: {
     signIn: '/login',
