@@ -1,0 +1,94 @@
+import { Hono, type MiddlewareHandler } from 'hono'
+import { handle } from 'hono/vercel'
+import { HTTPException } from 'hono/http-exception'
+import { verifyAuth } from '@hono/auth-js'
+import { zValidator } from '@hono/zod-validator'
+import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
+import { createSoloMatchingSchema } from '@/features/solo-matching/schemas/createSoloMatching'
+import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
+import { userService } from '@/features/user/services/userService'
+
+type CreateSoloMatchingsAppOptions = {
+  /** Auth.js設定の初期化ミドルウェア */
+  authMiddleware?: MiddlewareHandler
+  /** 認証検証ミドルウェア */
+  verifyAuthMiddleware?: MiddlewareHandler
+}
+
+/**
+ * ソロマッチングAPI用Honoアプリを作成
+ * @param options 認証ミドルウェアのオプション（テスト時に差し替え可能）
+ */
+export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = {}) {
+  const { authMiddleware = honoAuthMiddleware, verifyAuthMiddleware = verifyAuth() } = options
+
+  const app = new Hono().basePath('/api/solo-matchings')
+
+  // Auth.js設定の初期化
+  app.use('*', authMiddleware)
+
+  // エラーハンドラー
+  app.onError((err, c) => {
+    if (err instanceof HTTPException) {
+      return c.json({ success: false, error: err.message }, err.status)
+    }
+    console.error('Unexpected error:', err)
+    return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
+  })
+
+  // ソロマッチングオファー作成エンドポイント
+  const route = app.post('/', verifyAuthMiddleware, zValidator('json', createSoloMatchingSchema), async (c) => {
+    // 認証済みユーザー情報を取得
+    const authUser = c.get('authUser')
+    const userId = authUser.token?.id as string | undefined
+
+    if (!userId) {
+      throw new HTTPException(401, { message: '認証が必要です' })
+    }
+
+    // ユーザー情報を取得してロールを確認
+    const user = await userService.findUserById(userId)
+    if (!user) {
+      throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+    }
+
+    // ゲストのみマッチングオファーを送信可能
+    if (user.role !== 'guest') {
+      throw new HTTPException(403, { message: 'ゲストのみマッチングオファーを送信できます' })
+    }
+
+    const data = c.req.valid('json')
+
+    // proposedDateを文字列からDateに変換
+    const proposedDate = new Date(data.proposedDate)
+
+    // 過去の日時は拒否
+    if (proposedDate < new Date()) {
+      throw new HTTPException(400, { message: '過去の日時は指定できません' })
+    }
+
+    // ソロマッチングを作成
+    const soloMatching = await soloMatchingService.createSoloMatching({
+      guestId: userId,
+      castId: data.castId,
+      proposedDate,
+      proposedDuration: data.proposedDuration,
+      proposedLocation: data.proposedLocation,
+      hourlyRate: data.hourlyRate,
+    })
+
+    return c.json({ success: true, soloMatching }, 201)
+  })
+
+  return { app, route }
+}
+
+const { app, route } = createSoloMatchingsApp()
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _route = route
+
+export type SoloMatchingsAppType = typeof route
+
+export const GET = handle(app)
+export const POST = handle(app)
