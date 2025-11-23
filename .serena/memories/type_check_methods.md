@@ -6,7 +6,7 @@
 
 ### 方法1: TypeScriptコンパイラを直接実行（推奨）
 ```bash
-cd frontend && npx tsc --noEmit
+npx tsc --noEmit
 ```
 - `--noEmit`: JavaScriptファイルを出力せず、型チェックのみ実行
 - 最も高速で型エラーのみを確認できる
