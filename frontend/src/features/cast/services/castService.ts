@@ -5,7 +5,7 @@ import { userProfiles } from '@/libs/db/schema/users'
 import { areas } from '@/libs/db/schema/areas'
 import { castProfilePhotos } from '@/libs/db/schema/cast-profile-photos'
 import type { CastListItem, CastDetail } from '@/features/cast/types'
-import { calculateAge } from '@/utils/date'
+import { calculateAge, subtractYears, addDaysToDate, formatDateOnly } from '@/utils/date'
 import { STORAGE_BUCKET_NAME } from '@/features/cast-profile-photo/constants'
 import { NEXT_PUBLIC_SUPABASE_URL } from '@/libs/constants/env'
 
@@ -45,15 +45,12 @@ export const castService = {
     // maxAge歳以下 = 生年月日がmaxAge+1年前の今日より後
     const today = new Date()
     if (minAge !== undefined) {
-      const maxBirthDate = new Date(today)
-      maxBirthDate.setFullYear(maxBirthDate.getFullYear() - minAge)
-      conditions.push(lte(userProfiles.birthDate, maxBirthDate.toISOString().split('T')[0]))
+      const maxBirthDate = subtractYears(today, minAge)
+      conditions.push(lte(userProfiles.birthDate, formatDateOnly(maxBirthDate)))
     }
     if (maxAge !== undefined) {
-      const minBirthDate = new Date(today)
-      minBirthDate.setFullYear(minBirthDate.getFullYear() - maxAge - 1)
-      minBirthDate.setDate(minBirthDate.getDate() + 1)
-      conditions.push(gte(userProfiles.birthDate, minBirthDate.toISOString().split('T')[0]))
+      const minBirthDate = addDaysToDate(subtractYears(today, maxAge + 1), 1)
+      conditions.push(gte(userProfiles.birthDate, formatDateOnly(minBirthDate)))
     }
 
     const whereClause = and(...conditions)
