@@ -252,7 +252,7 @@ describe('useRegisterUser', () => {
     it('エラーレスポンスに error フィールドがない場合、デフォルトメッセージを使用', async () => {
       mockPost.mockResolvedValue({
         ok: false,
-        json: () => Promise.resolve({ message: '不明なエラー' }),
+        json: () => Promise.resolve({}),
       })
 
       const TestWrapper = createTestWrapper()

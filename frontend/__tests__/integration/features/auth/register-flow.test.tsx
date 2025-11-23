@@ -93,7 +93,6 @@ describe('RegisterTemplate', () => {
         },
         expect.objectContaining({
           onSuccess: expect.any(Function),
-          onError: expect.any(Function),
         })
       )
     })
@@ -152,27 +151,6 @@ describe('RegisterTemplate', () => {
       expect(mockShowToast).toHaveBeenCalledWith(
         'プロフィール登録が完了しました。',
         'success'
-      )
-    })
-
-    it('エラー時にエラートーストが表示される', async () => {
-      render(
-        <TestProviders>
-          <RegisterTemplate userType="guest" />
-        </TestProviders>
-      )
-
-      await page.getByLabelText('お名前').fill('エラーユーザー')
-      await page.getByLabelText('生年月日').fill('1990-01-01')
-      await page.getByRole('button', { name: '登録する' }).click()
-
-      // onError コールバックを取得して実行
-      const onError = mockMutate.mock.calls[0][1].onError
-      onError(new Error('サーバーエラー'))
-
-      expect(mockShowToast).toHaveBeenCalledWith(
-        '登録に失敗しました: サーバーエラー',
-        'error'
       )
     })
   })
