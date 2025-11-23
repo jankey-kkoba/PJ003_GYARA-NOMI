@@ -1,6 +1,6 @@
 'use client'
 
-import { useForm } from 'react-hook-form'
+import { useForm, useWatch } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -106,8 +106,8 @@ export function MatchingOfferForm({ castId, onSuccess }: MatchingOfferFormProps)
   }
 
   // 合計ポイントを計算
-  const proposedDuration = form.watch('proposedDuration')
-  const hourlyRate = form.watch('hourlyRate')
+  const proposedDuration = useWatch({ control: form.control, name: 'proposedDuration' })
+  const hourlyRate = useWatch({ control: form.control, name: 'hourlyRate' })
   const totalPoints = useMemo(() => {
     return Math.round((proposedDuration / 60) * hourlyRate)
   }, [proposedDuration, hourlyRate])
