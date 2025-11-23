@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { favoritesClient } from '@/libs/hono/client'
+import { handleApiError, handleApiResponse } from '@/libs/react-query'
 
 /**
  * お気に入り状態を取得するフック
@@ -12,9 +13,7 @@ export function useFavoriteStatus(castId: string) {
         param: { castId },
       })
 
-      if (!res.ok) {
-        throw new Error('お気に入り状態の取得に失敗しました')
-      }
+      await handleApiError(res, 'お気に入り状態の取得に失敗しました')
 
       const result = await res.json()
       return result.data.isFavorite
@@ -35,11 +34,7 @@ export function useAddFavorite() {
         param: { castId },
       })
 
-      if (!res.ok) {
-        throw new Error('お気に入りの追加に失敗しました')
-      }
-
-      return res.json()
+      return handleApiResponse(res, 'お気に入りの追加に失敗しました')
     },
     onSuccess: (_, castId) => {
       queryClient.setQueryData(['favorites', castId], true)
@@ -59,11 +54,7 @@ export function useRemoveFavorite() {
         param: { castId },
       })
 
-      if (!res.ok) {
-        throw new Error('お気に入りの削除に失敗しました')
-      }
-
-      return res.json()
+      return handleApiResponse(res, 'お気に入りの削除に失敗しました')
     },
     onSuccess: (_, castId) => {
       queryClient.setQueryData(['favorites', castId], false)

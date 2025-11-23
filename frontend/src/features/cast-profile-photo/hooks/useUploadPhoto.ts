@@ -1,5 +1,6 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { photosClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 
 /**
  * 写真アップロード用のmutationフック
@@ -16,14 +17,7 @@ export function useUploadPhoto() {
         },
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        const errorMessage =
-          'error' in errorData && typeof errorData.error === 'string'
-            ? errorData.error
-            : '写真のアップロードに失敗しました'
-        throw new Error(errorMessage)
-      }
+      await handleApiError(res, '写真のアップロードに失敗しました')
 
       const result = await res.json()
 

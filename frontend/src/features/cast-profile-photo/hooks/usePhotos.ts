@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { photosClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { CastProfilePhoto } from '@/features/cast-profile-photo/types'
 
 /**
@@ -22,14 +23,7 @@ export function usePhotos(castId: string) {
         param: { castId },
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        const errorMessage =
-          'error' in errorData && typeof errorData.error === 'string'
-            ? errorData.error
-            : '写真一覧の取得に失敗しました'
-        throw new Error(errorMessage)
-      }
+      await handleApiError(res, '写真一覧の取得に失敗しました')
 
       const result = await res.json()
 

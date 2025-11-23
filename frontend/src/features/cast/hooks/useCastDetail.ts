@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { castsClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { CastDetail } from '@/features/cast/types'
 
 /**
@@ -15,14 +16,7 @@ export function useCastDetail(castId: string) {
         param: { castId },
       })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        const errorMessage =
-          'error' in errorData && typeof errorData.error === 'string'
-            ? errorData.error
-            : 'キャスト詳細の取得に失敗しました'
-        throw new Error(errorMessage)
-      }
+      await handleApiError(res, 'キャスト詳細の取得に失敗しました')
 
       const result = await res.json()
 

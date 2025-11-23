@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query'
 import { castsClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { CastListResponse } from '@/features/cast/types'
 import { CASTS_PER_PAGE } from '@/features/cast/constants'
 
@@ -33,14 +34,7 @@ export function useCastList(params: UseCastListParams = {}) {
 
       const res = await castsClient.api.casts.$get({ query })
 
-      if (!res.ok) {
-        const errorData = await res.json()
-        const errorMessage =
-          'error' in errorData && typeof errorData.error === 'string'
-            ? errorData.error
-            : 'キャスト一覧の取得に失敗しました'
-        throw new Error(errorMessage)
-      }
+      await handleApiError(res, 'キャスト一覧の取得に失敗しました')
 
       const result = await res.json()
 

@@ -71,9 +71,8 @@ export function RegisterTemplate({ userType }: RegisterTemplateProps) {
         showToast('プロフィール登録が完了しました。', 'success')
         router.push('/')
       },
-      onError: (error) => {
-        showToast(`登録に失敗しました: ${error.message}`, 'error')
-      },
+      // エラー時はグローバルエラーハンドラーが自動的にtoastを表示するため、
+      // onErrorでの個別処理は不要
     })
   }
 
