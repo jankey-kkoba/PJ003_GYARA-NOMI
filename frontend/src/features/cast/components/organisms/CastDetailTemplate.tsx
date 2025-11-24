@@ -12,6 +12,7 @@ import {
 import { useCastDetail } from '@/features/cast/hooks/useCastDetail'
 import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
 import { PhotoGallery } from '@/features/cast-profile-photo/components/molecules/PhotoGallery'
+import { CastDetailSkeleton } from '@/features/cast/components/molecules/CastDetailSkeleton'
 
 type CastDetailTemplateProps = {
   castId: string
@@ -25,11 +26,7 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
   const { data: cast, isLoading, error } = useCastDetail(castId)
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">読み込み中...</p>
-      </div>
-    )
+    return <CastDetailSkeleton />
   }
 
   if (error || !cast) {

@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { usePhotos } from '@/features/cast-profile-photo/hooks/usePhotos'
 import { useDeletePhoto } from '@/features/cast-profile-photo/hooks/useDeletePhoto'
+import { SectionLoading } from '@/components/molecules/SectionLoading'
 
 type PhotoGalleryProps = {
   /** キャストID */
@@ -37,11 +38,7 @@ export function PhotoGallery({ castId, canDelete = false }: PhotoGalleryProps) {
   }
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <p className="text-muted-foreground">読み込み中...</p>
-      </div>
-    )
+    return <SectionLoading minHeight="min-h-[200px]" />
   }
 
   if (error) {

@@ -104,7 +104,10 @@ describe('CastListTemplate', () => {
         </TestWrapper>
       )
 
-      await expect.element(page.getByText('読み込み中...')).toBeInTheDocument()
+      // スケルトンが表示されることを確認
+      await expect
+        .element(page.getByTestId('cast-card-skeleton-list'))
+        .toBeInTheDocument()
     })
   })
 

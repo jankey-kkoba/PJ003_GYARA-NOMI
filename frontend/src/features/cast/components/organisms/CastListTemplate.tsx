@@ -9,6 +9,7 @@ import {
   type CastFilterValues,
 } from '@/features/cast/components/molecules/CastFilterDialog'
 import { CASTS_PER_PAGE } from '@/features/cast/constants'
+import { CastCardSkeletonList } from '@/features/cast/components/molecules/CastCardSkeleton'
 
 /**
  * キャスト一覧テンプレートコンポーネント
@@ -32,8 +33,16 @@ export function CastListTemplate() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <p className="text-muted-foreground">読み込み中...</p>
+      <div className="space-y-6">
+        {/* フィルターボタン */}
+        <div className="flex justify-end">
+          <CastFilterDialog values={filter} onApply={handleFilterApply} />
+        </div>
+
+        {/* キャスト一覧スケルトン */}
+        <div className="grid grid-cols-3 md:grid-cols-3 lg:grid-cols-4 gap-2 md:gap-4">
+          <CastCardSkeletonList count={CASTS_PER_PAGE} />
+        </div>
       </div>
     )
   }

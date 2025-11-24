@@ -114,8 +114,9 @@ describe('CastDetailTemplate', () => {
         </TestWrapper>
       )
 
+      // スケルトンが表示されることを確認
       await expect
-        .element(page.getByText('読み込み中...'))
+        .element(page.getByTestId('cast-detail-skeleton'))
         .toBeInTheDocument()
     })
   })

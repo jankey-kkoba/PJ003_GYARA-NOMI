@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/card'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { CastProfilePhotoManager } from '@/features/cast-profile-photo/components/organisms/CastProfilePhotoManager'
+import { PageLoading } from '@/components/molecules/PageLoading'
 
 /**
  * キャストプロフィール編集画面テンプレート
@@ -21,11 +22,7 @@ export function CastProfileEditTemplate() {
 
   // ローディング中
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p className="text-muted-foreground">読み込み中...</p>
-      </div>
-    )
+    return <PageLoading />
   }
 
   // 未認証の場合
