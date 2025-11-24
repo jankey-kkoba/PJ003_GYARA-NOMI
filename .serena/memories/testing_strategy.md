@@ -113,11 +113,8 @@ frontend/__tests__/
 # ブラウザ環境テスト（Unit + Integration）
 npm run test
 
-# Node.js環境テスト（DB操作テスト）
+# Node.js環境テスト（DB操作とAPIのテスト）
 npm run test:node
-
-# すべてのテスト
-npm run test:all
 
 # E2E テスト
 npm run test:e2e

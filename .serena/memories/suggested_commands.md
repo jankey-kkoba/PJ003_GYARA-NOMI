@@ -12,8 +12,7 @@ npm run start        # プロダクションサーバー起動
 ```bash
 cd frontend
 npm run test         # Vitest (ブラウザ環境)
-npm run test:node    # Vitest (Node.js環境、DB操作テスト)
-npm run test:all     # 全テスト実行
+npm run test:node    # Vitest (Node.js環境、DB操作、APIテスト)
 npm run test:e2e     # Playwright E2Eテスト
 ```
 

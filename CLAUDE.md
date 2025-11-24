@@ -316,9 +316,6 @@ npm run test
 # Node.js環境テスト（DB操作テスト）
 npm run test:node
 
-# すべてのテスト
-npm run test:all
-
 # E2E テスト
 npm run test:e2e
 
