@@ -32,6 +32,12 @@ export function HomeTemplate() {
               </Button>
             )}
 
+            {userRole === 'cast' && (
+              <Button asChild className="w-full">
+                <Link href="/cast/profile/edit">プロフィールを編集</Link>
+              </Button>
+            )}
+
             <LogoutButton variant="outline" className="w-full" />
           </div>
         </div>

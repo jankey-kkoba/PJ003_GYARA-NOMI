@@ -2,16 +2,14 @@
 
 import { useState, useRef } from 'react'
 import Image from 'next/image'
+import { Camera } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { useUploadPhoto } from '@/features/cast-profile-photo/hooks/useUploadPhoto'
 import {
   ALLOWED_IMAGE_TYPES,
   ALLOWED_IMAGE_TYPES_ACCEPT,
   MAX_FILE_SIZE,
-  MAX_FILE_SIZE_MB,
   ERROR_MESSAGES,
 } from '@/features/cast-profile-photo/constants'
 
@@ -24,7 +22,7 @@ type PhotoUploaderProps = {
 
 /**
  * プロフィール写真アップロードコンポーネント
- * ファイル選択、プレビュー、アップロード機能を提供
+ * マッチングアプリ風のカメラアイコンをクリックしてアップロードするUI
  */
 export function PhotoUploader({
   onUploadSuccess,
@@ -35,6 +33,13 @@ export function PhotoUploader({
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const uploadMutation = useUploadPhoto()
+
+  /**
+   * カメラアイコンクリックハンドラー
+   */
+  const handleCameraClick = () => {
+    fileInputRef.current?.click()
+  }
 
   /**
    * ファイル選択ハンドラー
@@ -97,69 +102,80 @@ export function PhotoUploader({
   }
 
   return (
-    <Card>
-      <CardContent className="pt-6">
-        <div className="space-y-4">
-          {/* ファイル選択 */}
-          <div className="space-y-2">
-            <Label htmlFor="photo-upload">写真を選択</Label>
-            <Input
-              id="photo-upload"
-              type="file"
-              accept={ALLOWED_IMAGE_TYPES_ACCEPT}
-              onChange={handleFileSelect}
-              ref={fileInputRef}
-              disabled={uploadMutation.isPending}
-            />
-            <p className="text-sm text-muted-foreground">
-              PNG、JPEG、WEBP形式、{MAX_FILE_SIZE_MB}MB以下
-            </p>
-          </div>
+    <div className="space-y-4">
+      {/* 隠しファイル入力 */}
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept={ALLOWED_IMAGE_TYPES_ACCEPT}
+        onChange={handleFileSelect}
+        className="hidden"
+        disabled={uploadMutation.isPending}
+      />
 
-          {/* プレビュー */}
-          {previewUrl && (
-            <div className="space-y-2">
-              <Label>プレビュー</Label>
-              <div className="relative aspect-video w-full overflow-hidden rounded-lg border">
-                <Image
-                  src={previewUrl}
-                  alt="プレビュー"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
+      {/* カメラアイコン付き写真スロット（マッチングアプリ風UI） */}
+      {!previewUrl && (
+        <Card
+          className="cursor-pointer transition-all hover:border-primary hover:shadow-md"
+          onClick={handleCameraClick}
+        >
+          <CardContent className="p-0">
+            <div className="relative aspect-square flex flex-col items-center justify-center bg-muted">
+              <Camera className="h-12 w-12 text-muted-foreground mb-2" />
+              <p className="text-sm font-medium text-muted-foreground">
+                タップして写真を追加
+              </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                PNG, JPEG, WEBP
+              </p>
             </div>
-          )}
+          </CardContent>
+        </Card>
+      )}
 
-          {/* エラーメッセージ */}
-          {uploadMutation.isError && (
-            <p className="text-sm text-destructive">
-              {uploadMutation.error?.message || 'アップロードに失敗しました'}
-            </p>
-          )}
+      {/* プレビュー表示 */}
+      {previewUrl && (
+        <Card>
+          <CardContent className="p-0">
+            <div className="relative aspect-square w-full overflow-hidden rounded-lg">
+              <Image
+                src={previewUrl}
+                alt="プレビュー"
+                fill
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
-          {/* アクションボタン */}
-          <div className="flex gap-2">
-            <Button
-              onClick={handleUpload}
-              disabled={!selectedFile || uploadMutation.isPending}
-              className="flex-1"
-            >
-              {uploadMutation.isPending ? 'アップロード中...' : 'アップロード'}
-            </Button>
-            {selectedFile && (
-              <Button
-                variant="outline"
-                onClick={handleCancel}
-                disabled={uploadMutation.isPending}
-              >
-                キャンセル
-              </Button>
-            )}
-          </div>
+      {/* エラーメッセージ */}
+      {uploadMutation.isError && (
+        <p className="text-sm text-destructive">
+          {uploadMutation.error?.message || 'アップロードに失敗しました'}
+        </p>
+      )}
+
+      {/* アクションボタン（プレビュー時のみ表示） */}
+      {selectedFile && (
+        <div className="flex gap-2">
+          <Button
+            onClick={handleUpload}
+            disabled={uploadMutation.isPending}
+            className="flex-1"
+          >
+            {uploadMutation.isPending ? 'アップロード中...' : 'この写真を追加'}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={handleCancel}
+            disabled={uploadMutation.isPending}
+          >
+            キャンセル
+          </Button>
         </div>
-      </CardContent>
-    </Card>
+      )}
+    </div>
   )
 }
