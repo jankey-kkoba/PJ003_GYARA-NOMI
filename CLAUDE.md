@@ -169,6 +169,38 @@ export function useCreateUser() {
   - 新規UIコンポーネント: shadcn/uiを優先
   - 既存のカスタム実装: 必要に応じてshadcn/uiに移行
 
+### UIスタイリング
+#### 色の指定
+- **`globals.css`のセマンティックカラートークンを使用する**
+  - 正しい例: `text-muted-foreground`, `text-destructive`, `bg-card`, `border-border`
+  - 誤った例: `text-gray-500`, `bg-gray-50`, `text-red-500`, `bg-red-50`
+- ハードコードされた色クラス（`gray-500`, `red-50`等）は使用しない
+- セマンティックトークン一覧:
+  - テキスト: `text-foreground`, `text-muted-foreground`, `text-destructive`
+  - 背景: `bg-background`, `bg-card`, `bg-muted`, `bg-destructive`
+  - ボーダー: `border-border`, `border-input`
+  - その他: `ring-ring`, `text-primary`, `bg-primary`
+
+#### デザインパターンの統一
+- **既存コンポーネントのパターンを参考にする**
+  - 新規コンポーネント作成前に類似コンポーネントを確認
+  - 例: ローディング表示 → `SectionLoading`コンポーネント（`components/molecules/SectionLoading.tsx`）を使用
+  - 例: エラー表示 → `text-destructive`でメッセージ表示
+  - 例: 空状態（データなし） → `text-muted-foreground`でメッセージ表示
+- カスタムコンポーネントを安易に作成せず、既存の共通コンポーネントを活用する
+- 同じ機能のコンポーネントを重複して実装しない
+
+#### スタイリングの優先順位
+1. **shadcn/uiコンポーネント**（Card, Button, Badge等）
+2. **既存の共通コンポーネント**（SectionLoading, CastCard等）
+3. **globals.cssのセマンティックトークン**（text-muted-foreground等）
+4. **Tailwind標準クラス**（margin, padding, flex等のレイアウト用）
+
+#### 参考にすべき既存コンポーネント
+- ローディング: `components/molecules/SectionLoading.tsx`
+- カード表示: `features/cast/components/molecules/CastCard.tsx`
+- テンプレート: `features/cast/components/templates/CastListTemplate.tsx`
+
 ### 認証関連
 - 認証ロジックは`useAuth`カスタムフックで定義する
   - 場所: `features/auth/hooks/useAuth.ts`
