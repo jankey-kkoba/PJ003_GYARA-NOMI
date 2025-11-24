@@ -1,8 +1,9 @@
-import { CastProfileEditTemplate } from '@/features/cast-profile/components/organisms/CastProfileEditTemplate'
+import { redirect } from 'next/navigation'
 
 /**
- * キャストプロフィール編集ページ
+ * キャストプロフィール編集ページ（旧）
+ * 共通のプロフィール編集ページへリダイレクト
  */
 export default function CastProfileEditPage() {
-  return <CastProfileEditTemplate />
+  redirect('/profile/edit')
 }

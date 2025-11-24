@@ -127,4 +127,42 @@ export const userService = {
 
     return result
   },
+
+  /**
+   * ユーザープロフィールを取得
+   * @param userId - ユーザーID
+   * @returns プロフィール情報、存在しない場合はnull
+   */
+  async getUserProfile(userId: string) {
+    const result = await db
+      .select()
+      .from(userProfiles)
+      .where(eq(userProfiles.id, userId))
+      .limit(1)
+
+    return result[0] || null
+  },
+
+  /**
+   * ユーザープロフィールを更新
+   * @param userId - ユーザーID
+   * @param input - 更新するプロフィールデータ
+   * @returns 更新されたプロフィール情報
+   */
+  async updateUserProfile(
+    userId: string,
+    input: { name: string; birthDate: string }
+  ) {
+    const [updated] = await db
+      .update(userProfiles)
+      .set({
+        name: input.name,
+        birthDate: input.birthDate,
+        updatedAt: new Date(),
+      })
+      .where(eq(userProfiles.id, userId))
+      .returning()
+
+    return updated
+  },
 }

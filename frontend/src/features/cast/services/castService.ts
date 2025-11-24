@@ -151,4 +151,42 @@ export const castService = {
       areaName: cast.areaName,
     }
   },
+
+  /**
+   * 自分のキャストプロフィールを取得
+   * @param castId - キャストID
+   * @returns キャストプロフィール情報（存在しない場合はnull）
+   */
+  async getOwnCastProfile(castId: string) {
+    const result = await db
+      .select()
+      .from(castProfiles)
+      .where(eq(castProfiles.id, castId))
+      .limit(1)
+
+    return result[0] || null
+  },
+
+  /**
+   * キャストプロフィールを更新
+   * @param castId - キャストID
+   * @param input - 更新するプロフィールデータ
+   * @returns 更新されたプロフィール情報
+   */
+  async updateCastProfile(
+    castId: string,
+    input: { bio?: string | null; areaId?: string | null }
+  ) {
+    const [updated] = await db
+      .update(castProfiles)
+      .set({
+        ...(input.bio !== undefined && { bio: input.bio }),
+        ...(input.areaId !== undefined && { areaId: input.areaId }),
+        updatedAt: new Date(),
+      })
+      .where(eq(castProfiles.id, castId))
+      .returning()
+
+    return updated
+  },
 }

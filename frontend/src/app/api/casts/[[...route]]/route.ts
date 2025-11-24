@@ -6,6 +6,7 @@ import { zValidator } from '@hono/zod-validator'
 import { castService } from '@/features/cast/services/castService'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 import { castListQuerySchema } from '@/features/cast/schemas/castListQuery'
+import { updateCastProfileSchema } from '@/features/cast/schemas/updateCastProfile'
 
 type CreateCastsAppOptions = {
   /** Auth.js設定の初期化ミドルウェア */
@@ -109,6 +110,61 @@ export function createCastsApp(options: CreateCastsAppOptions = {}) {
         data: { cast },
       })
     })
+    // 自分のキャストプロフィール取得エンドポイント
+    .get('/profile', verifyAuthMiddleware, async (c) => {
+      const authUser = c.get('authUser')
+      const token = authUser.token
+
+      if (!token?.id) {
+        throw new HTTPException(401, { message: '認証が必要です' })
+      }
+
+      // キャストユーザーのみアクセス可能
+      if (token.role !== 'cast') {
+        throw new HTTPException(403, {
+          message: 'この機能はキャストユーザーのみ利用できます',
+        })
+      }
+
+      const profile = await castService.getOwnCastProfile(token.id)
+
+      if (!profile) {
+        throw new HTTPException(404, { message: 'プロフィールが見つかりません' })
+      }
+
+      return c.json({ success: true, profile })
+    })
+    // キャストプロフィール更新エンドポイント
+    .put(
+      '/profile',
+      verifyAuthMiddleware,
+      zValidator('json', updateCastProfileSchema),
+      async (c) => {
+        const authUser = c.get('authUser')
+        const token = authUser.token
+
+        if (!token?.id) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
+
+        // キャストユーザーのみアクセス可能
+        if (token.role !== 'cast') {
+          throw new HTTPException(403, {
+            message: 'この機能はキャストユーザーのみ利用できます',
+          })
+        }
+
+        const data = c.req.valid('json')
+
+        // プロフィールを更新
+        const profile = await castService.updateCastProfile(token.id, {
+          bio: data.bio,
+          areaId: data.areaId,
+        })
+
+        return c.json({ success: true, profile })
+      }
+    )
 
   return { app, route }
 }
@@ -121,3 +177,4 @@ const _route = route
 export type CastsAppType = typeof route
 
 export const GET = handle(app)
+export const PUT = handle(app)

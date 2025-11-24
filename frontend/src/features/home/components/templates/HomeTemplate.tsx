@@ -34,7 +34,7 @@ export function HomeTemplate() {
 
             {userRole === 'cast' && (
               <Button asChild className="w-full">
-                <Link href="/cast/profile/edit">プロフィールを編集</Link>
+                <Link href="/profile/edit">プロフィールを編集</Link>
               </Button>
             )}
 

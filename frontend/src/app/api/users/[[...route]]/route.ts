@@ -5,6 +5,7 @@ import { verifyAuth } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
 import { userService } from '@/features/user/services/userService'
 import { registerProfileSchema } from '@/features/user/schemas/registerProfile'
+import { updateUserProfileSchema } from '@/features/user/schemas/updateUserProfile'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 
 type CreateUsersAppOptions = {
@@ -35,39 +36,87 @@ export function createUsersApp(options: CreateUsersAppOptions = {}) {
     return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
   })
 
-  // プロフィール登録エンドポイント
-  const route = app.post(
-    '/register',
-    verifyAuthMiddleware,
-    zValidator('json', registerProfileSchema),
-    async (c) => {
-      // 認証済みユーザー情報を取得
+  const route = app
+    // プロフィール登録エンドポイント
+    .post(
+      '/register',
+      verifyAuthMiddleware,
+      zValidator('json', registerProfileSchema),
+      async (c) => {
+        // 認証済みユーザー情報を取得
+        const authUser = c.get('authUser')
+        // ユーザーIDを取得
+        const userId = authUser.token?.id as string | undefined
+
+        if (!userId) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
+
+        const data = c.req.valid('json')
+
+        // プロフィールが既に存在するか確認
+        const hasProfile = await userService.hasProfile(userId)
+        if (hasProfile) {
+          throw new HTTPException(400, { message: 'プロフィールは既に登録されています' })
+        }
+
+        // プロフィール作成とロール更新をトランザクションで実行
+        const profile = await userService.registerProfile(userId, {
+          name: data.name,
+          birthDate: data.birthDate,
+          userType: data.userType,
+        })
+
+        return c.json({ success: true, profile }, 201)
+      }
+    )
+    // プロフィール取得エンドポイント
+    .get('/profile', verifyAuthMiddleware, async (c) => {
       const authUser = c.get('authUser')
-      // ユーザーIDを取得
       const userId = authUser.token?.id as string | undefined
 
       if (!userId) {
         throw new HTTPException(401, { message: '認証が必要です' })
       }
 
-      const data = c.req.valid('json')
+      const profile = await userService.getUserProfile(userId)
 
-      // プロフィールが既に存在するか確認
-      const hasProfile = await userService.hasProfile(userId)
-      if (hasProfile) {
-        throw new HTTPException(400, { message: 'プロフィールは既に登録されています' })
+      if (!profile) {
+        throw new HTTPException(404, { message: 'プロフィールが見つかりません' })
       }
 
-      // プロフィール作成とロール更新をトランザクションで実行
-      const profile = await userService.registerProfile(userId, {
-        name: data.name,
-        birthDate: data.birthDate,
-        userType: data.userType,
-      })
+      return c.json({ success: true, profile })
+    })
+    // プロフィール更新エンドポイント
+    .put(
+      '/profile',
+      verifyAuthMiddleware,
+      zValidator('json', updateUserProfileSchema),
+      async (c) => {
+        const authUser = c.get('authUser')
+        const userId = authUser.token?.id as string | undefined
 
-      return c.json({ success: true, profile }, 201)
-    }
-  )
+        if (!userId) {
+          throw new HTTPException(401, { message: '認証が必要です' })
+        }
+
+        const data = c.req.valid('json')
+
+        // プロフィールが存在するか確認
+        const hasProfile = await userService.hasProfile(userId)
+        if (!hasProfile) {
+          throw new HTTPException(404, { message: 'プロフィールが見つかりません' })
+        }
+
+        // プロフィールを更新
+        const profile = await userService.updateUserProfile(userId, {
+          name: data.name,
+          birthDate: data.birthDate,
+        })
+
+        return c.json({ success: true, profile })
+      }
+    )
 
   return { app, route }
 }
@@ -81,3 +130,4 @@ export type UsersAppType = typeof route
 
 export const GET = handle(app)
 export const POST = handle(app)
+export const PUT = handle(app)

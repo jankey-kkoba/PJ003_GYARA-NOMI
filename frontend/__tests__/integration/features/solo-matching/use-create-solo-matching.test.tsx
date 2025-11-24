@@ -119,7 +119,7 @@ describe('useCreateSoloMatching', () => {
         await expect.element(page.getByTestId('isSuccess')).toHaveTextContent('true')
       })
 
-      expect(mockFetch).toHaveBeenCalledWith('/api/solo-matchings', {
+      expect(mockFetch).toHaveBeenCalledWith('/api/solo-matchings/guest', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

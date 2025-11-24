@@ -193,7 +193,7 @@ describe('MatchingOfferDialog', () => {
       await vi.waitFor(
         () => {
           expect(mockFetch).toHaveBeenCalledWith(
-            '/api/solo-matchings',
+            '/api/solo-matchings/guest',
             expect.objectContaining({
               method: 'POST',
             })
