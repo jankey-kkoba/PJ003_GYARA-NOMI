@@ -225,3 +225,18 @@ INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, 
 -- - エリア: 4件
 -- - ページネーション用キャスト: 20件
 -- - キャストプロフィール写真: 4件
+
+-- ================================================================================
+-- ソロマッチング (solo_matchings)
+-- ================================================================================
+-- ゲスト seed-user-guest-001 のマッチング
+INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
+  ('seed-solo-matching-pending-001', 'seed-user-guest-001', 'seed-user-cast-001', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 5000, 10000, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'),
+  ('seed-solo-matching-accepted-001', 'seed-user-guest-001', 'seed-user-cast-002', NULL, 'accepted', NOW() + INTERVAL '2 days', 90, '新宿駅周辺', 6000, 9000, NOW() - INTERVAL '2 hours', NOW() - INTERVAL '1 hour 30 minutes'),
+  ('seed-solo-matching-rejected-001', 'seed-user-guest-001', 'seed-user-cast-003', NULL, 'rejected', NOW() + INTERVAL '3 days', 60, '六本木駅周辺', 7000, 7000, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours 30 minutes'),
+  ('seed-solo-matching-cancelled-001', 'seed-user-guest-001', 'seed-user-cast-004', NULL, 'cancelled', NOW() + INTERVAL '4 days', 180, '銀座駅周辺', 4000, 12000, NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours 30 minutes');
+
+-- ゲスト seed-user-guest-002 のマッチング
+INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
+  ('seed-solo-matching-pending-002', 'seed-user-guest-002', 'seed-user-cast-001', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 5000, 10000, NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes');
+

@@ -4,6 +4,7 @@ import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
 import { LogoutButton } from '@/features/auth/components/atoms/LogoutButton'
+import { MatchingStatusList } from '@/features/solo-matching/components/organisms/MatchingStatusList'
 
 /**
  * ホームページのテンプレート
@@ -26,6 +27,14 @@ export function HomeTemplate() {
 
             <LogoutButton variant="outline" className="w-full" />
           </div>
+        </div>
+
+        {/* マッチング状況 */}
+        <div className="rounded-lg bg-white p-6 shadow">
+          <h2 className="mb-4 text-lg font-semibold text-gray-900">
+            マッチング状況
+          </h2>
+          <MatchingStatusList />
         </div>
       </div>
     </div>

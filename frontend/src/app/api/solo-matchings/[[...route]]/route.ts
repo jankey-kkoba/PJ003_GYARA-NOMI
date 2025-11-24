@@ -36,6 +36,33 @@ export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = 
     return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
   })
 
+  // ゲストのソロマッチング一覧取得エンドポイント
+  app.get('/', verifyAuthMiddleware, async (c) => {
+    // 認証済みユーザー情報を取得
+    const authUser = c.get('authUser')
+    const userId = authUser.token?.id as string | undefined
+
+    if (!userId) {
+      throw new HTTPException(401, { message: '認証が必要です' })
+    }
+
+    // ユーザー情報を取得してロールを確認
+    const user = await userService.findUserById(userId)
+    if (!user) {
+      throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+    }
+
+    // ゲストのみマッチング一覧を取得可能
+    if (user.role !== 'guest') {
+      throw new HTTPException(403, { message: 'ゲストのみマッチング一覧を取得できます' })
+    }
+
+    // ソロマッチング一覧を取得
+    const soloMatchings = await soloMatchingService.getGuestSoloMatchings(userId)
+
+    return c.json({ success: true, soloMatchings })
+  })
+
   // ソロマッチングオファー作成エンドポイント
   const route = app.post('/', verifyAuthMiddleware, zValidator('json', createSoloMatchingSchema), async (c) => {
     // 認証済みユーザー情報を取得

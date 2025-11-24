@@ -132,4 +132,69 @@ describe('soloMatchingService Integration', () => {
         .where(eq(soloMatchings.id, result.id))
     })
   })
+
+  describe('getGuestSoloMatchings', () => {
+    it('ゲストのマッチング一覧を取得できる', async () => {
+      // seed.sqlで用意されたテストデータを使用
+      const results = await soloMatchingService.getGuestSoloMatchings('seed-user-guest-001')
+
+      // seed.sqlで定義した4件のマッチングが取得されることを確認
+      expect(results.length).toBeGreaterThanOrEqual(4)
+
+      // 全てのマッチングがゲストIDと一致することを確認
+      results.forEach((result) => {
+        expect(result.guestId).toBe('seed-user-guest-001')
+      })
+
+      // ステータスが pending, accepted, rejected, cancelled のみであることを確認
+      results.forEach((result) => {
+        expect(['pending', 'accepted', 'rejected', 'cancelled']).toContain(result.status)
+      })
+
+      // seed.sqlで定義した各ステータスのマッチングが含まれていることを確認
+      const statuses = results.map((r) => r.status)
+      expect(statuses).toContain('pending')
+      expect(statuses).toContain('accepted')
+      expect(statuses).toContain('rejected')
+      expect(statuses).toContain('cancelled')
+    })
+
+    it('マッチングが0件の場合は空配列を返す', async () => {
+      // 存在しないゲストIDで検索
+      const results = await soloMatchingService.getGuestSoloMatchings('non-existent-guest-id')
+
+      expect(results).toEqual([])
+    })
+
+    it('作成日時の降順でソートされる', async () => {
+      // seed.sqlのデータで確認（seed-solo-matching-pending-001が最古、seed-solo-matching-cancelled-001が最新）
+      const results = await soloMatchingService.getGuestSoloMatchings('seed-user-guest-001')
+
+      // 作成日時の降順でソートされていることを確認
+      for (let i = 0; i < results.length - 1; i++) {
+        expect(results[i].createdAt.getTime()).toBeGreaterThanOrEqual(
+          results[i + 1].createdAt.getTime()
+        )
+      }
+    })
+
+    it('特定のゲストのマッチングのみを取得する', async () => {
+      // seed-user-guest-001のマッチング一覧
+      const results1 = await soloMatchingService.getGuestSoloMatchings('seed-user-guest-001')
+      // seed-user-guest-002のマッチング一覧
+      const results2 = await soloMatchingService.getGuestSoloMatchings('seed-user-guest-002')
+
+      // それぞれのゲストIDと一致することを確認
+      results1.forEach((result) => {
+        expect(result.guestId).toBe('seed-user-guest-001')
+      })
+      results2.forEach((result) => {
+        expect(result.guestId).toBe('seed-user-guest-002')
+      })
+
+      // seed-user-guest-001には4件、seed-user-guest-002には1件のマッチングがある
+      expect(results1.length).toBe(4)
+      expect(results2.length).toBe(1)
+    })
+  })
 })
