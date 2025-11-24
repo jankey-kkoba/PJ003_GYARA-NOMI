@@ -14,19 +14,6 @@ import type { Session } from 'next-auth'
 import { HomeTemplate } from '@/features/home/components/templates/HomeTemplate'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 
-// next-auth/react のモック
-const mockSignIn = vi.fn()
-const mockSignOut = vi.fn()
-
-vi.mock('next-auth/react', async () => {
-  const actual = await vi.importActual('next-auth/react')
-  return {
-    ...actual,
-    signIn: (...args: unknown[]) => mockSignIn(...args),
-    signOut: (...args: unknown[]) => mockSignOut(...args),
-  }
-})
-
 // グローバルfetchのモック
 const mockFetch = vi.fn()
 globalThis.fetch = mockFetch as unknown as typeof fetch

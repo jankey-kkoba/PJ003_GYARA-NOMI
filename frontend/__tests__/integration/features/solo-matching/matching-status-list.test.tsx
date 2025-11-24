@@ -86,23 +86,24 @@ describe('MatchingStatusList', () => {
 
   describe('ローディング状態', () => {
     it('データ取得中から完了までの遷移を確認する', async () => {
+      let resolveFetch: (value: unknown) => void
+      const fetchPromise = new Promise((resolve) => {
+        resolveFetch = resolve
+      })
+
       // fetchを遅延させる
-      mockFetch.mockImplementation(
-        () =>
-          new Promise((resolve) =>
-            setTimeout(() => {
-              resolve({
-                ok: true,
-                json: async () => ({ success: true, soloMatchings: [] }),
-              })
-            }, 1000)
-          )
-      )
+      mockFetch.mockReturnValue(fetchPromise)
 
       render(<MatchingStatusList />, { wrapper: TestWrapper })
 
       // ローディングメッセージが表示されることを確認
       await expect.element(page.getByText('マッチング状況を読み込み中...')).toBeInTheDocument()
+
+      // fetchを解決
+      resolveFetch!({
+        ok: true,
+        json: async () => ({ success: true, soloMatchings: [] }),
+      })
 
       // データ取得完了後、「マッチングはありません」が表示されることを確認
       await expect.element(page.getByText('マッチングはありません')).toBeInTheDocument()
