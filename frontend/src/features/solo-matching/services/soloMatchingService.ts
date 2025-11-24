@@ -124,4 +124,48 @@ export const soloMatchingService = {
       updatedAt: result.updatedAt,
     }))
   },
+
+  /**
+   * キャストのソロマッチング一覧を取得
+   * @param castId - キャストID
+   * @returns キャストのソロマッチング一覧（pending, acceptedのみ）
+   */
+  async getCastSoloMatchings(castId: string): Promise<SoloMatching[]> {
+    const results = await db
+      .select()
+      .from(soloMatchings)
+      .where(
+        eq(soloMatchings.castId, castId)
+      )
+      .orderBy(desc(soloMatchings.createdAt))
+
+    // フィルタリング: pending, accepted のみ（回答待ちまたは成立のマッチング）
+    const filteredResults = results.filter(
+      (result) =>
+        result.status === 'pending' ||
+        result.status === 'accepted'
+    )
+
+    // DB型からアプリケーション型に変換
+    return filteredResults.map((result) => ({
+      id: result.id,
+      guestId: result.guestId,
+      castId: result.castId,
+      chatRoomId: result.chatRoomId,
+      status: result.status,
+      proposedDate: result.proposedDate,
+      proposedDuration: result.proposedDuration,
+      proposedLocation: result.proposedLocation,
+      hourlyRate: result.hourlyRate,
+      totalPoints: result.totalPoints,
+      startedAt: result.startedAt,
+      scheduledEndAt: result.scheduledEndAt,
+      actualEndAt: result.actualEndAt,
+      extensionMinutes: result.extensionMinutes ?? 0,
+      extensionPoints: result.extensionPoints ?? 0,
+      castRespondedAt: result.castRespondedAt,
+      createdAt: result.createdAt,
+      updatedAt: result.updatedAt,
+    }))
+  },
 }

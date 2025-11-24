@@ -8,7 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { createSoloMatchingsApp } from '@/app/api/solo-matchings/[[...route]]/route'
+import { createGuestSoloMatchingsApp } from '@/app/api/solo-matchings/guest/[[...route]]/route'
 import { createMockAuthMiddleware, type MockAuthToken } from '@tests/utils/mock-auth'
 import { userService } from '@/features/user/services/userService'
 import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
@@ -55,7 +55,7 @@ const noopVerifyAuth = async (_c: unknown, next: () => Promise<void>) => {
  * 実際の API コードを使用し、認証ミドルウェアのみをモック
  */
 function createTestApp(token?: MockAuthToken) {
-  const { app } = createSoloMatchingsApp({
+  const { app } = createGuestSoloMatchingsApp({
     authMiddleware: createMockAuthMiddleware(token),
     verifyAuthMiddleware: noopVerifyAuth,
   })
@@ -71,7 +71,7 @@ describe('POST /api/solo-matchings', () => {
     it('認証されていない場合は 401 エラーを返す', async () => {
       const app = createTestApp() // token なし
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -92,7 +92,7 @@ describe('POST /api/solo-matchings', () => {
     it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
       const app = createTestApp({ role: 'guest' }) // id なし
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -126,7 +126,7 @@ describe('POST /api/solo-matchings', () => {
         updatedAt: new Date(),
       })
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -159,7 +159,7 @@ describe('POST /api/solo-matchings', () => {
         updatedAt: new Date(),
       })
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -191,7 +191,7 @@ describe('POST /api/solo-matchings', () => {
         updatedAt: new Date(),
       })
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -244,7 +244,7 @@ describe('POST /api/solo-matchings', () => {
 
       mockSoloMatchingService.createSoloMatching.mockResolvedValue(mockSoloMatching)
 
-      const res = await app.request('/api/solo-matchings', {
+      const res = await app.request('/api/solo-matchings/guest', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -300,7 +300,7 @@ describe('GET /api/solo-matchings', () => {
     it('未認証の場合は401エラーを返す', async () => {
       const app = createTestApp() // token なし
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -315,7 +315,7 @@ describe('GET /api/solo-matchings', () => {
     it('ユーザーIDが無効な場合は401エラーを返す', async () => {
       const app = createTestApp({ id: undefined })
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -334,7 +334,7 @@ describe('GET /api/solo-matchings', () => {
         async (): Promise<User | null> => null
       )
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -359,7 +359,7 @@ describe('GET /api/solo-matchings', () => {
         updatedAt: new Date(),
       })
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -382,7 +382,7 @@ describe('GET /api/solo-matchings', () => {
         updatedAt: new Date(),
       })
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -407,7 +407,7 @@ describe('GET /api/solo-matchings', () => {
       })
       mockSoloMatchingService.getGuestSoloMatchings.mockResolvedValue([mockMatching])
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -439,7 +439,7 @@ describe('GET /api/solo-matchings', () => {
       })
       mockSoloMatchingService.getGuestSoloMatchings.mockResolvedValue([])
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 
@@ -466,7 +466,7 @@ describe('GET /api/solo-matchings', () => {
         new Error('Database error')
       )
 
-      const response = await app.request('/api/solo-matchings', {
+      const response = await app.request('/api/solo-matchings/guest', {
         method: 'GET',
       })
 

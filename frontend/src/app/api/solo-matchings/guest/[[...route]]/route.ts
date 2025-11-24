@@ -16,13 +16,13 @@ type CreateSoloMatchingsAppOptions = {
 }
 
 /**
- * ソロマッチングAPI用Honoアプリを作成
+ * ゲストのソロマッチングAPI用Honoアプリを作成
  * @param options 認証ミドルウェアのオプション（テスト時に差し替え可能）
  */
-export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = {}) {
+export function createGuestSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = {}) {
   const { authMiddleware = honoAuthMiddleware, verifyAuthMiddleware = verifyAuth() } = options
 
-  const app = new Hono().basePath('/api/solo-matchings')
+  const app = new Hono().basePath('/api/solo-matchings/guest')
 
   // Auth.js設定の初期化
   app.use('*', authMiddleware)
@@ -115,12 +115,12 @@ export function createSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = 
   return { app, route }
 }
 
-const { app, route } = createSoloMatchingsApp()
+const { app, route } = createGuestSoloMatchingsApp()
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _route = route
 
-export type SoloMatchingsAppType = typeof route
+export type GuestSoloMatchingsAppType = typeof route
 
 export const GET = handle(app)
 export const POST = handle(app)

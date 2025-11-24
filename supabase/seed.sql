@@ -240,3 +240,13 @@ INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, propose
 INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
   ('seed-solo-matching-pending-002', 'seed-user-guest-002', 'seed-user-cast-001', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 5000, 10000, NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes');
 
+-- ゲスト seed-user-guest-003 のマッチング（キャスト向けテストデータ）
+-- seed-user-cast-001 が受信したマッチング
+INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
+  ('seed-solo-matching-pending-003', 'seed-user-guest-003', 'seed-user-cast-001', NULL, 'pending', NOW() + INTERVAL '5 days', 150, '表参道駅周辺', 5500, 13750, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '10 minutes'),
+  ('seed-solo-matching-accepted-002', 'seed-user-guest-003', 'seed-user-cast-001', NULL, 'accepted', NOW() + INTERVAL '6 days', 180, '恵比寿駅周辺', 6000, 18000, NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
+
+-- seed-user-cast-002 が受信したマッチング
+INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
+  ('seed-solo-matching-pending-004', 'seed-user-guest-003', 'seed-user-cast-002', NULL, 'pending', NOW() + INTERVAL '7 days', 90, '池袋駅周辺', 5000, 7500, NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes');
+

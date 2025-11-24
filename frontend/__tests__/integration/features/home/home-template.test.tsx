@@ -57,11 +57,12 @@ const mockMatchings: SoloMatching[] = [
   },
 ]
 
-// 認証済みセッション
+// 認証済みセッション（ゲストユーザー）
 const authenticatedSession: Session = {
   user: {
     id: 'user-123',
     email: 'test@example.com',
+    role: 'guest',
   },
   expires: new Date(Date.now() + 86400000).toISOString(),
 }
