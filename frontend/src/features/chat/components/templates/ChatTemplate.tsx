@@ -1,7 +1,16 @@
 'use client'
 
+import dynamic from 'next/dynamic'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { MatchingOfferDialog } from '@/features/solo-matching/components/organisms/MatchingOfferDialog'
+
+// hydrationエラーを防ぐため、MatchingOfferDialogはクライアント側でのみレンダリング
+const MatchingOfferDialog = dynamic(
+  () =>
+    import('@/features/solo-matching/components/organisms/MatchingOfferDialog').then(
+      (mod) => mod.MatchingOfferDialog
+    ),
+  { ssr: false }
+)
 
 type ChatTemplateProps = {
   castId: string
