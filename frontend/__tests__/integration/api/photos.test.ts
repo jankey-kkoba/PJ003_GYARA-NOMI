@@ -25,6 +25,19 @@ vi.mock('@/features/cast-profile-photo/services/storageService', () => ({
   },
 }))
 
+// photoService のモック（エラーハンドリングテスト用）
+vi.mock('@/features/cast-profile-photo/services/photoService', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@/features/cast-profile-photo/services/photoService')>()
+  return {
+    photoService: {
+      ...actual.photoService,
+      getNextDisplayOrder: vi.fn(actual.photoService.getNextDisplayOrder),
+      createPhoto: vi.fn(actual.photoService.createPhoto),
+      deletePhoto: vi.fn(actual.photoService.deletePhoto),
+    },
+  }
+})
+
 // 環境変数のモック（DATABASE_URLは実際の値を使用）
 vi.mock('@/libs/constants/env', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@/libs/constants/env')>()
@@ -41,6 +54,10 @@ vi.mock('@/libs/constants/env', async (importOriginal) => {
 // モック化された storageService を取得
 const { storageService } = await import('@/features/cast-profile-photo/services/storageService')
 const mockStorageService = vi.mocked(storageService)
+
+// モック化された photoService を取得
+const { photoService } = await import('@/features/cast-profile-photo/services/photoService')
+const mockPhotoService = vi.mocked(photoService)
 
 /**
  * テスト用の認証検証ミドルウェア（何もしない）
@@ -224,6 +241,40 @@ describe('/api/casts/photos', () => {
         expect(body.data.photo.publicUrl).toBeDefined()
       })
     })
+
+    describe('エラーハンドリング', () => {
+      it('DB操作失敗時、Storageからロールバックされる（Compensation Transaction）', async () => {
+        const testCastId = 'seed-user-cast-003' // 写真なしのキャスト
+        const app = createTestApp({ id: testCastId, role: 'cast' })
+
+        const testPhotoUrl = `${testCastId}/rollback-test.jpg`
+
+        // uploadPhotoは成功
+        mockStorageService.uploadPhoto.mockResolvedValue({
+          photoUrl: testPhotoUrl,
+          publicUrl: `https://example.com/storage/${testPhotoUrl}`,
+        })
+
+        // getNextDisplayOrderでエラーを発生させる
+        mockPhotoService.getNextDisplayOrder.mockRejectedValue(
+          new Error('DB接続エラー')
+        )
+
+        const formData = new FormData()
+        formData.append('file', new File(['test'], 'test.jpg', { type: 'image/jpeg' }))
+
+        const res = await app.request('/api/casts/photos', {
+          method: 'POST',
+          body: formData,
+        })
+
+        // エラーが発生することを確認
+        expect(res.status).toBe(500)
+
+        // deletePhotoが呼ばれることを確認（ロールバック処理）
+        expect(mockStorageService.deletePhoto).toHaveBeenCalledWith(testPhotoUrl)
+      })
+    })
   })
 
   describe('GET /api/casts/photos/:castId', () => {
@@ -318,6 +369,47 @@ describe('/api/casts/photos', () => {
       expect(res.status).toBe(404)
       const body = await res.json()
       expect(body.error).toBe('写真が見つかりません')
+    })
+
+    describe('エラーハンドリング', () => {
+      it('DB削除失敗時、Storage削除は実行されない（処理順序の最適化）', async () => {
+        const testCastId = 'seed-user-cast-003'
+        const app = createTestApp({ id: testCastId, role: 'cast' })
+
+        // テスト用の写真を作成
+        const photoId = `${TEST_PREFIX}${crypto.randomUUID()}`
+        const photoUrl = `${testCastId}/photo-delete-fail.jpg`
+        await db.insert(castProfilePhotos).values({
+          id: photoId,
+          castProfileId: testCastId,
+          photoUrl,
+          displayOrder: 0,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        })
+
+        // DB削除でエラーを発生させる
+        mockPhotoService.deletePhoto.mockRejectedValue(
+          new Error('DB削除エラー')
+        )
+
+        const res = await app.request(`/api/casts/photos/${photoId}`, {
+          method: 'DELETE',
+        })
+
+        // エラーが発生することを確認
+        expect(res.status).toBe(500)
+
+        // Storage削除が呼ばれていないことを確認（DB削除が先に失敗したため）
+        expect(mockStorageService.deletePhoto).not.toHaveBeenCalled()
+
+        // DBにレコードが残っていることを確認
+        const photos = await db
+          .select()
+          .from(castProfilePhotos)
+          .where(eq(castProfilePhotos.id, photoId))
+        expect(photos).toHaveLength(1)
+      })
     })
   })
 

@@ -62,31 +62,45 @@ export function createPhotosApp(options: CreatePhotosAppOptions = {}) {
         const { file } = c.req.valid('form')
         const castProfileId = token.id
 
-        // Storageにアップロード
-        const { photoUrl, publicUrl } = await storageService.uploadPhoto(
-          castProfileId,
-          file
-        )
+        let photoUrl: string | null = null
 
-        // 次の表示順序を取得
-        const displayOrder = await photoService.getNextDisplayOrder(castProfileId)
+        try {
+          // Storageにアップロード
+          const uploadResult = await storageService.uploadPhoto(castProfileId, file)
+          photoUrl = uploadResult.photoUrl
+          const publicUrl = uploadResult.publicUrl
 
-        // DBに保存
-        const photo = await photoService.createPhoto({
-          castProfileId,
-          photoUrl,
-          displayOrder,
-        })
+          // 次の表示順序を取得
+          const displayOrder = await photoService.getNextDisplayOrder(castProfileId)
 
-        return c.json({
-          success: true,
-          data: {
-            photo: {
-              ...photo,
-              publicUrl,
+          // DBに保存
+          const photo = await photoService.createPhoto({
+            castProfileId,
+            photoUrl,
+            displayOrder,
+          })
+
+          return c.json({
+            success: true,
+            data: {
+              photo: {
+                ...photo,
+                publicUrl,
+              },
             },
-          },
-        })
+          })
+        } catch (error) {
+          // DB操作失敗時、Storageからロールバック（補償トランザクション）
+          if (photoUrl) {
+            try {
+              await storageService.deletePhoto(photoUrl)
+            } catch (rollbackError) {
+              console.error('ロールバック処理に失敗しました:', rollbackError)
+              // ロールバック失敗はログのみ。元のエラーを優先して再スロー
+            }
+          }
+          throw error
+        }
       }
     )
     // 特定のキャストの写真一覧を取得
@@ -148,11 +162,11 @@ export function createPhotosApp(options: CreatePhotosAppOptions = {}) {
         throw new HTTPException(403, { message: '他のユーザーの写真は削除できません' })
       }
 
+      // DBから削除（先にDB削除を行う）
+      await photoService.deletePhoto(photoId)
+
       // Storageから削除
       await storageService.deletePhoto(photo.photoUrl)
-
-      // DBから削除
-      await photoService.deletePhoto(photoId)
 
       return c.json({
         success: true,
