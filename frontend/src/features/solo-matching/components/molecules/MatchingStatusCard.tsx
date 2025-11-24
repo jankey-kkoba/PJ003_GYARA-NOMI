@@ -1,8 +1,13 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+'use client'
+
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { SoloMatching, MatchingStatus } from '@/features/solo-matching/types/soloMatching'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { useRespondToSoloMatching } from '@/features/solo-matching/hooks/useRespondToSoloMatching'
+import { useState } from 'react'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -24,14 +29,30 @@ function getStatusInfo(status: MatchingStatus): { label: string; variant: 'defau
 
 type MatchingStatusCardProps = {
   matching: SoloMatching
+  /** 回答ボタンを表示するか（キャストが回答待ちのマッチングの場合のみtrue） */
+  showActions?: boolean
 }
 
 /**
  * マッチング状況カード
  * 個々のマッチング情報を表示
  */
-export function MatchingStatusCard({ matching }: MatchingStatusCardProps) {
+export function MatchingStatusCard({ matching, showActions = false }: MatchingStatusCardProps) {
   const statusInfo = getStatusInfo(matching.status)
+  const { mutate: respondToMatching, isPending } = useRespondToSoloMatching()
+  const [error, setError] = useState<string | null>(null)
+
+  const handleRespond = (response: 'accepted' | 'rejected') => {
+    setError(null)
+    respondToMatching(
+      { matchingId: matching.id, response },
+      {
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : '回答に失敗しました')
+        },
+      }
+    )
+  }
 
   return (
     <Card>
@@ -71,7 +92,32 @@ export function MatchingStatusCard({ matching }: MatchingStatusCardProps) {
             {matching.totalPoints.toLocaleString()}ポイント
           </div>
         </div>
+        {error && (
+          <div className="mt-2 text-sm text-destructive">
+            {error}
+          </div>
+        )}
       </CardContent>
+      {showActions && matching.status === 'pending' && (
+        <CardFooter className="flex gap-2">
+          <Button
+            variant="default"
+            className="flex-1"
+            onClick={() => handleRespond('accepted')}
+            disabled={isPending}
+          >
+            承認
+          </Button>
+          <Button
+            variant="outline"
+            className="flex-1"
+            onClick={() => handleRespond('rejected')}
+            disabled={isPending}
+          >
+            拒否
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   )
 }

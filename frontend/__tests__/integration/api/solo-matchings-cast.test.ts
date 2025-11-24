@@ -28,6 +28,7 @@ vi.mock('@/features/user/services/userService', () => ({
 vi.mock('@/features/solo-matching/services/soloMatchingService', () => ({
   soloMatchingService: {
     getCastSoloMatchings: vi.fn(),
+    respondToSoloMatching: vi.fn(),
   },
 }))
 
@@ -260,6 +261,326 @@ describe('GET /api/solo-matchings/cast', () => {
 
       const response = await app.request('/api/solo-matchings/cast', {
         method: 'GET',
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+  })
+})
+
+describe('PATCH /api/solo-matchings/cast/:id', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  describe('認証チェック', () => {
+    it('未認証の場合は401エラーを返す', async () => {
+      const app = createTestApp() // token なし
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(401)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('認証が必要です')
+      expect(mockUserService.findUserById).not.toHaveBeenCalled()
+      expect(mockSoloMatchingService.respondToSoloMatching).not.toHaveBeenCalled()
+    })
+
+    it('ユーザーIDが無効な場合は401エラーを返す', async () => {
+      const app = createTestApp({ id: undefined })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(401)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('認証が必要です')
+      expect(mockUserService.findUserById).not.toHaveBeenCalled()
+    })
+
+    it('ユーザーが存在しない場合は404エラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      // @ts-expect-error - mockの型定義がnullを許容していない
+      mockUserService.findUserById.mockImplementation(async (): Promise<User | null> => null)
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(404)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('ユーザーが見つかりません')
+      expect(mockUserService.findUserById).toHaveBeenCalledWith('cast-1')
+    })
+  })
+
+  describe('ロールチェック', () => {
+    it('ゲストの場合は403エラーを返す', async () => {
+      const app = createTestApp({ id: 'guest-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'guest-1',
+        email: 'guest@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'guest',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(403)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('キャストのみマッチングに回答できます')
+      expect(mockSoloMatchingService.respondToSoloMatching).not.toHaveBeenCalled()
+    })
+
+    it('管理者の場合は403エラーを返す', async () => {
+      const app = createTestApp({ id: 'admin-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'admin-1',
+        email: 'admin@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(403)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('キャストのみマッチングに回答できます')
+    })
+  })
+
+  describe('バリデーション', () => {
+    it('responseが無効な値の場合は400エラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'invalid' }),
+      })
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toContain('accepted')
+      expect(body.error).toContain('rejected')
+    })
+
+    it('responseが存在しない場合は400エラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      })
+
+      expect(response.status).toBe(400)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toContain('accepted')
+      expect(body.error).toContain('rejected')
+    })
+  })
+
+  describe('正常系', () => {
+    it('キャストがマッチングを承認できる', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const acceptedMatching = { ...mockMatching, status: 'accepted' as const, castRespondedAt: new Date() }
+      mockSoloMatchingService.respondToSoloMatching.mockResolvedValue(acceptedMatching)
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.success).toBe(true)
+      expect(body.matching).toMatchObject({
+        id: 'matching-1',
+        castId: 'cast-1',
+        status: 'accepted',
+      })
+      expect(body.matching.castRespondedAt).toBeDefined()
+      expect(mockSoloMatchingService.respondToSoloMatching).toHaveBeenCalledWith(
+        'matching-1',
+        'cast-1',
+        'accepted'
+      )
+    })
+
+    it('キャストがマッチングを拒否できる', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const rejectedMatching = { ...mockMatching, status: 'rejected' as const, castRespondedAt: new Date() }
+      mockSoloMatchingService.respondToSoloMatching.mockResolvedValue(rejectedMatching)
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'rejected' }),
+      })
+
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.success).toBe(true)
+      expect(body.matching).toMatchObject({
+        id: 'matching-1',
+        castId: 'cast-1',
+        status: 'rejected',
+      })
+      expect(mockSoloMatchingService.respondToSoloMatching).toHaveBeenCalledWith(
+        'matching-1',
+        'cast-1',
+        'rejected'
+      )
+    })
+  })
+
+  describe('エラーハンドリング', () => {
+    it('マッチングが見つからない場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
+        new Error('マッチングが見つかりません')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-999', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+
+    it('権限がない場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-2' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-2',
+        email: 'cast2@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
+        new Error('このマッチングに回答する権限がありません')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+
+    it('既に回答済みの場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
+        new Error('このマッチングは既に回答済みです')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ response: 'accepted' }),
       })
 
       expect(response.status).toBe(500)

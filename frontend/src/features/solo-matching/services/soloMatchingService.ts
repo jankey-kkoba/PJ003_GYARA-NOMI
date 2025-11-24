@@ -168,4 +168,70 @@ export const soloMatchingService = {
       updatedAt: result.updatedAt,
     }))
   },
+
+  /**
+   * キャストがソロマッチングに回答する
+   * @param matchingId - マッチングID
+   * @param castId - キャストID
+   * @param response - 回答 ('accepted' or 'rejected')
+   * @returns 更新されたソロマッチング
+   */
+  async respondToSoloMatching(
+    matchingId: string,
+    castId: string,
+    response: 'accepted' | 'rejected'
+  ): Promise<SoloMatching> {
+    // マッチングを取得
+    const [matching] = await db
+      .select()
+      .from(soloMatchings)
+      .where(eq(soloMatchings.id, matchingId))
+
+    if (!matching) {
+      throw new Error('マッチングが見つかりません')
+    }
+
+    // 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
+    if (matching.castId !== castId) {
+      throw new Error('このマッチングに回答する権限がありません')
+    }
+
+    // ステータスチェック: pending のみ回答可能
+    if (matching.status !== 'pending') {
+      throw new Error('このマッチングは既に回答済みです')
+    }
+
+    // ステータスを更新
+    const [updated] = await db
+      .update(soloMatchings)
+      .set({
+        status: response,
+        castRespondedAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .where(eq(soloMatchings.id, matchingId))
+      .returning()
+
+    // DB型からアプリケーション型に変換
+    return {
+      id: updated.id,
+      guestId: updated.guestId,
+      castId: updated.castId,
+      chatRoomId: updated.chatRoomId,
+      status: updated.status,
+      proposedDate: updated.proposedDate,
+      proposedDuration: updated.proposedDuration,
+      proposedLocation: updated.proposedLocation,
+      hourlyRate: updated.hourlyRate,
+      totalPoints: updated.totalPoints,
+      startedAt: updated.startedAt,
+      scheduledEndAt: updated.scheduledEndAt,
+      actualEndAt: updated.actualEndAt,
+      extensionMinutes: updated.extensionMinutes ?? 0,
+      extensionPoints: updated.extensionPoints ?? 0,
+      castRespondedAt: updated.castRespondedAt,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    }
+  },
 }

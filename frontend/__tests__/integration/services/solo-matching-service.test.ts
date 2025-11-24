@@ -197,4 +197,144 @@ describe('soloMatchingService Integration', () => {
       expect(results2.length).toBe(1)
     })
   })
+
+  describe('respondToSoloMatching', () => {
+    it('キャストがマッチングを承認できる', async () => {
+      // テスト用のマッチングを作成
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // マッチングに承認で回答
+      const result = await soloMatchingService.respondToSoloMatching(
+        matching.id,
+        'seed-user-cast-001',
+        'accepted'
+      )
+
+      // ステータスが承認に更新されていることを確認
+      expect(result.status).toBe('accepted')
+      expect(result.castRespondedAt).toBeDefined()
+      expect(result.castRespondedAt).toBeInstanceOf(Date)
+
+      // DBに実際に更新されているか検証
+      const dbRecord = await db
+        .select()
+        .from(soloMatchings)
+        .where(eq(soloMatchings.id, matching.id))
+        .limit(1)
+
+      expect(dbRecord).toHaveLength(1)
+      expect(dbRecord[0].status).toBe('accepted')
+      expect(dbRecord[0].castRespondedAt).toBeDefined()
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+
+    it('キャストがマッチングを拒否できる', async () => {
+      // テスト用のマッチングを作成
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // マッチングに拒否で回答
+      const result = await soloMatchingService.respondToSoloMatching(
+        matching.id,
+        'seed-user-cast-001',
+        'rejected'
+      )
+
+      // ステータスが拒否に更新されていることを確認
+      expect(result.status).toBe('rejected')
+      expect(result.castRespondedAt).toBeDefined()
+
+      // DBに実際に更新されているか検証
+      const dbRecord = await db
+        .select()
+        .from(soloMatchings)
+        .where(eq(soloMatchings.id, matching.id))
+        .limit(1)
+
+      expect(dbRecord[0].status).toBe('rejected')
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+
+    it('マッチングが見つからない場合はエラーを投げる', async () => {
+      await expect(
+        soloMatchingService.respondToSoloMatching(
+          'non-existent-matching-id',
+          'seed-user-cast-001',
+          'accepted'
+        )
+      ).rejects.toThrow('マッチングが見つかりません')
+    })
+
+    it('キャストIDが一致しない場合はエラーを投げる', async () => {
+      // テスト用のマッチングを作成
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // 異なるキャストIDで回答しようとする
+      await expect(
+        soloMatchingService.respondToSoloMatching(matching.id, 'seed-user-cast-002', 'accepted')
+      ).rejects.toThrow('このマッチングに回答する権限がありません')
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+
+    it('既に回答済みのマッチングにはエラーを投げる', async () => {
+      // テスト用のマッチングを作成
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // 最初の回答
+      await soloMatchingService.respondToSoloMatching(matching.id, 'seed-user-cast-001', 'accepted')
+
+      // 2回目の回答はエラー
+      await expect(
+        soloMatchingService.respondToSoloMatching(matching.id, 'seed-user-cast-001', 'rejected')
+      ).rejects.toThrow('このマッチングは既に回答済みです')
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+  })
 })
