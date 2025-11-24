@@ -15,7 +15,7 @@ type CreateSoloMatchingResponse = {
  * ソロマッチングオファーを作成
  */
 async function createSoloMatching(input: CreateSoloMatchingInput): Promise<SoloMatching> {
-  const response = await fetch('/api/solo-matchings', {
+  const response = await fetch('/api/solo-matchings/guest', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
