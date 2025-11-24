@@ -29,6 +29,7 @@ vi.mock('@/features/solo-matching/services/soloMatchingService', () => ({
   soloMatchingService: {
     getCastSoloMatchings: vi.fn(),
     respondToSoloMatching: vi.fn(),
+    startSoloMatching: vi.fn(),
   },
 }))
 
@@ -581,6 +582,207 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ response: 'accepted' }),
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+  })
+
+  describe('PATCH /api/solo-matchings/cast/:id/start', () => {
+    it('未認証の場合は401を返す', async () => {
+      const app = createTestApp() // undefinedを渡す
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(401)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('認証が必要です')
+    })
+
+    it('ユーザーが存在しない場合は404を返す', async () => {
+      const app = createTestApp({ id: 'unknown-user' })
+      mockUserService.findUserById.mockResolvedValue(null as unknown as User)
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(404)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('ユーザーが見つかりません')
+    })
+
+    it('ゲストの場合は403を返す', async () => {
+      const app = createTestApp({ id: 'guest-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'guest-1',
+        email: 'guest@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'guest',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(403)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('キャストのみマッチングを開始できます')
+    })
+
+    it('管理者の場合は403を返す', async () => {
+      const app = createTestApp({ id: 'admin-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'admin-1',
+        email: 'admin@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(403)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('キャストのみマッチングを開始できます')
+    })
+
+    it('マッチングを正常に開始できる', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const startedAt = new Date()
+      const scheduledEndAt = new Date(startedAt.getTime() + 120 * 60 * 1000) // 2時間後
+
+      mockSoloMatchingService.startSoloMatching.mockResolvedValue({
+        id: 'matching-1',
+        guestId: 'guest-1',
+        castId: 'cast-1',
+        chatRoomId: null,
+        status: 'in_progress',
+        proposedDate: new Date(),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+        totalPoints: 6000,
+        startedAt,
+        scheduledEndAt,
+        actualEndAt: null,
+        extensionMinutes: 0,
+        extensionPoints: 0,
+        castRespondedAt: new Date(),
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(200)
+      const body = await response.json()
+      expect(body.success).toBe(true)
+      expect(body.matching).toBeDefined()
+      expect(body.matching.status).toBe('in_progress')
+      expect(body.matching.startedAt).toBeDefined()
+      expect(body.matching.scheduledEndAt).toBeDefined()
+
+      expect(mockSoloMatchingService.startSoloMatching).toHaveBeenCalledWith(
+        'matching-1',
+        'cast-1'
+      )
+    })
+
+    it('マッチングが見つからない場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.startSoloMatching.mockRejectedValue(
+        new Error('マッチングが見つかりません')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+
+    it('権限がない場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.startSoloMatching.mockRejectedValue(
+        new Error('このマッチングを開始する権限がありません')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
+      })
+
+      expect(response.status).toBe(500)
+      const body = await response.json()
+      expect(body.success).toBe(false)
+      expect(body.error).toBe('予期しないエラーが発生しました')
+    })
+
+    it('accepted状態でない場合はエラーを返す', async () => {
+      const app = createTestApp({ id: 'cast-1' })
+      mockUserService.findUserById.mockResolvedValue({
+        id: 'cast-1',
+        email: 'cast@example.com',
+        emailVerified: null,
+        password: null,
+        role: 'cast',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      mockSoloMatchingService.startSoloMatching.mockRejectedValue(
+        new Error('このマッチングは開始できません（成立済みマッチングのみ開始可能です）')
+      )
+
+      const response = await app.request('/api/solo-matchings/cast/matching-1/start', {
+        method: 'PATCH',
       })
 
       expect(response.status).toBe(500)

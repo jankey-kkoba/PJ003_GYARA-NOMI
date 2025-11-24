@@ -144,6 +144,97 @@ describe('CastMatchingStatusList', () => {
     })
   })
 
+  describe('ボタン操作', () => {
+    it('accepted状態のマッチングに「合流」ボタンが表示される', async () => {
+      const acceptedMatching: SoloMatching = {
+        ...mockMatchings[1],
+        status: 'accepted',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, soloMatchings: [acceptedMatching] }),
+      })
+
+      render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+      // 「合流」ボタンが表示されることを確認
+      await expect.element(page.getByRole('button', { name: '合流' })).toBeInTheDocument()
+    })
+
+    it('「合流」ボタンをクリックするとAPI呼び出しが実行される', async () => {
+      const acceptedMatching: SoloMatching = {
+        ...mockMatchings[1],
+        status: 'accepted',
+      }
+
+      // 初回: 一覧取得
+      // 2回目: 合流API
+      // 3回目: 一覧再取得
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true, soloMatchings: [acceptedMatching] }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            matching: { ...acceptedMatching, status: 'in_progress' },
+          }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            soloMatchings: [{ ...acceptedMatching, status: 'in_progress' }],
+          }),
+        })
+
+      render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+      // 「合流」ボタンをクリック
+      const startButton = page.getByRole('button', { name: '合流' })
+      await startButton.click()
+
+      // API呼び出しが実行されたことを確認
+      // 1回目: 一覧取得、2回目: 合流API、3回目: 一覧再取得
+      await vi.waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledTimes(3)
+      })
+
+      // 合流APIのURLが正しいことを確認
+      expect(mockFetch).toHaveBeenNthCalledWith(
+        2,
+        '/api/solo-matchings/cast/matching-2/start',
+        expect.objectContaining({
+          method: 'PATCH',
+        })
+      )
+
+      // ステータスが更新されたことを確認
+      await expect.element(page.getByText('ギャラ飲み中')).toBeInTheDocument()
+    })
+
+    it('pending状態のマッチングに「承認」「拒否」ボタンが表示される', async () => {
+      const pendingMatching: SoloMatching = {
+        ...mockMatchings[0],
+        status: 'pending',
+      }
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: async () => ({ success: true, soloMatchings: [pendingMatching] }),
+      })
+
+      render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+      // 「承認」「拒否」ボタンが表示されることを確認
+      await expect.element(page.getByRole('button', { name: '承認' })).toBeInTheDocument()
+      await expect.element(page.getByRole('button', { name: '拒否' })).toBeInTheDocument()
+    })
+  })
+
   describe('エラーハンドリング', () => {
     it('APIエラーの場合はエラーメッセージを表示する', async () => {
       mockFetch.mockResolvedValue({
@@ -164,6 +255,36 @@ describe('CastMatchingStatusList', () => {
 
       // エラーメッセージが表示されることを確認
       await expect.element(page.getByText('Network error')).toBeInTheDocument()
+    })
+
+    it('「合流」ボタンクリック時のエラーハンドリング', async () => {
+      const acceptedMatching: SoloMatching = {
+        ...mockMatchings[1],
+        status: 'accepted',
+      }
+
+      // 初回: 一覧取得成功
+      // 2回目: 合流API失敗
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({ success: true, soloMatchings: [acceptedMatching] }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          json: async () => ({ success: false, error: 'マッチングの開始に失敗しました' }),
+        })
+
+      render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+      // 「合流」ボタンをクリック
+      const startButton = page.getByRole('button', { name: '合流' })
+      await startButton.click()
+
+      // エラーメッセージが表示されることを確認
+      await expect
+        .element(page.getByText('マッチングの開始に失敗しました'))
+        .toBeInTheDocument()
     })
   })
 })

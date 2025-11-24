@@ -71,6 +71,39 @@ export function createCastSoloMatchingsApp(options: CreateCastSoloMatchingsAppOp
     return c.json({ success: true, soloMatchings })
   })
 
+  // キャストのマッチング開始エンドポイント (/:id/start は /:id より前に定義)
+  app.patch('/:id/start', verifyAuthMiddleware, async (c) => {
+    // 認証済みユーザー情報を取得
+    const authUser = c.get('authUser')
+    const userId = authUser.token?.id as string | undefined
+
+    if (!userId) {
+      throw new HTTPException(401, { message: '認証が必要です' })
+    }
+
+    // ユーザー情報を取得してロールを確認
+    const user = await userService.findUserById(userId)
+    if (!user) {
+      throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+    }
+
+    // キャストのみ開始可能
+    if (user.role !== 'cast') {
+      throw new HTTPException(403, { message: 'キャストのみマッチングを開始できます' })
+    }
+
+    // マッチングIDを取得
+    const matchingId = c.req.param('id')
+
+    // マッチングを開始
+    const updatedMatching = await soloMatchingService.startSoloMatching(
+      matchingId,
+      userId
+    )
+
+    return c.json({ success: true, matching: updatedMatching })
+  })
+
   // キャストのマッチング回答エンドポイント
   const route = app.patch('/:id', verifyAuthMiddleware, async (c) => {
     // 認証済みユーザー情報を取得

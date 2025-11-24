@@ -7,6 +7,7 @@ import type { SoloMatching, MatchingStatus } from '@/features/solo-matching/type
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useRespondToSoloMatching } from '@/features/solo-matching/hooks/useRespondToSoloMatching'
+import { useStartSoloMatching } from '@/features/solo-matching/hooks/useStartSoloMatching'
 import { useState } from 'react'
 
 /**
@@ -22,6 +23,12 @@ function getStatusInfo(status: MatchingStatus): { label: string; variant: 'defau
       return { label: '不成立', variant: 'destructive' }
     case 'cancelled':
       return { label: 'キャンセル', variant: 'destructive' }
+    case 'meeting':
+      return { label: '合流待ち', variant: 'default' }
+    case 'in_progress':
+      return { label: 'ギャラ飲み中', variant: 'default' }
+    case 'completed':
+      return { label: '完了', variant: 'secondary' }
     default:
       return { label: status, variant: 'outline' }
   }
@@ -39,7 +46,8 @@ type MatchingStatusCardProps = {
  */
 export function MatchingStatusCard({ matching, showActions = false }: MatchingStatusCardProps) {
   const statusInfo = getStatusInfo(matching.status)
-  const { mutate: respondToMatching, isPending } = useRespondToSoloMatching()
+  const { mutate: respondToMatching, isPending: isRespondPending } = useRespondToSoloMatching()
+  const { mutate: startMatching, isPending: isStartPending } = useStartSoloMatching()
   const [error, setError] = useState<string | null>(null)
 
   const handleRespond = (response: 'accepted' | 'rejected') => {
@@ -49,6 +57,18 @@ export function MatchingStatusCard({ matching, showActions = false }: MatchingSt
       {
         onError: (err) => {
           setError(err instanceof Error ? err.message : '回答に失敗しました')
+        },
+      }
+    )
+  }
+
+  const handleStart = () => {
+    setError(null)
+    startMatching(
+      { matchingId: matching.id },
+      {
+        onError: (err) => {
+          setError(err instanceof Error ? err.message : 'マッチングの開始に失敗しました')
         },
       }
     )
@@ -104,7 +124,7 @@ export function MatchingStatusCard({ matching, showActions = false }: MatchingSt
             variant="default"
             className="flex-1"
             onClick={() => handleRespond('accepted')}
-            disabled={isPending}
+            disabled={isRespondPending}
           >
             承認
           </Button>
@@ -112,9 +132,21 @@ export function MatchingStatusCard({ matching, showActions = false }: MatchingSt
             variant="outline"
             className="flex-1"
             onClick={() => handleRespond('rejected')}
-            disabled={isPending}
+            disabled={isRespondPending}
           >
             拒否
+          </Button>
+        </CardFooter>
+      )}
+      {showActions && matching.status === 'accepted' && (
+        <CardFooter>
+          <Button
+            variant="default"
+            className="w-full"
+            onClick={handleStart}
+            disabled={isStartPending}
+          >
+            合流
           </Button>
         </CardFooter>
       )}

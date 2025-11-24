@@ -128,7 +128,7 @@ export const soloMatchingService = {
   /**
    * キャストのソロマッチング一覧を取得
    * @param castId - キャストID
-   * @returns キャストのソロマッチング一覧（pending, acceptedのみ）
+   * @returns キャストのソロマッチング一覧（pending, accepted, in_progressのみ）
    */
   async getCastSoloMatchings(castId: string): Promise<SoloMatching[]> {
     const results = await db
@@ -139,11 +139,12 @@ export const soloMatchingService = {
       )
       .orderBy(desc(soloMatchings.createdAt))
 
-    // フィルタリング: pending, accepted のみ（回答待ちまたは成立のマッチング）
+    // フィルタリング: pending, accepted, in_progress のみ（回答待ち、成立、進行中のマッチング）
     const filteredResults = results.filter(
       (result) =>
         result.status === 'pending' ||
-        result.status === 'accepted'
+        result.status === 'accepted' ||
+        result.status === 'in_progress'
     )
 
     // DB型からアプリケーション型に変換
@@ -208,6 +209,72 @@ export const soloMatchingService = {
         status: response,
         castRespondedAt: new Date(),
         updatedAt: new Date(),
+      })
+      .where(eq(soloMatchings.id, matchingId))
+      .returning()
+
+    // DB型からアプリケーション型に変換
+    return {
+      id: updated.id,
+      guestId: updated.guestId,
+      castId: updated.castId,
+      chatRoomId: updated.chatRoomId,
+      status: updated.status,
+      proposedDate: updated.proposedDate,
+      proposedDuration: updated.proposedDuration,
+      proposedLocation: updated.proposedLocation,
+      hourlyRate: updated.hourlyRate,
+      totalPoints: updated.totalPoints,
+      startedAt: updated.startedAt,
+      scheduledEndAt: updated.scheduledEndAt,
+      actualEndAt: updated.actualEndAt,
+      extensionMinutes: updated.extensionMinutes ?? 0,
+      extensionPoints: updated.extensionPoints ?? 0,
+      castRespondedAt: updated.castRespondedAt,
+      createdAt: updated.createdAt,
+      updatedAt: updated.updatedAt,
+    }
+  },
+
+  /**
+   * キャストがソロマッチングを開始する（合流ボタン押下時）
+   * @param matchingId - マッチングID
+   * @param castId - キャストID
+   * @returns 更新されたソロマッチング
+   */
+  async startSoloMatching(matchingId: string, castId: string): Promise<SoloMatching> {
+    // マッチングを取得
+    const [matching] = await db
+      .select()
+      .from(soloMatchings)
+      .where(eq(soloMatchings.id, matchingId))
+
+    if (!matching) {
+      throw new Error('マッチングが見つかりません')
+    }
+
+    // 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
+    if (matching.castId !== castId) {
+      throw new Error('このマッチングを開始する権限がありません')
+    }
+
+    // ステータスチェック: accepted のみ開始可能
+    if (matching.status !== 'accepted') {
+      throw new Error('このマッチングは開始できません（成立済みマッチングのみ開始可能です）')
+    }
+
+    // 開始時刻と予定終了時刻を計算
+    const now = new Date()
+    const scheduledEnd = addMinutesToDate(now, matching.proposedDuration)
+
+    // ステータスを更新
+    const [updated] = await db
+      .update(soloMatchings)
+      .set({
+        status: 'in_progress',
+        startedAt: now,
+        scheduledEndAt: scheduledEnd,
+        updatedAt: now,
       })
       .where(eq(soloMatchings.id, matchingId))
       .returning()

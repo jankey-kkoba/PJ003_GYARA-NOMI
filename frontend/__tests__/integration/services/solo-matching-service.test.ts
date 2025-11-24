@@ -337,4 +337,122 @@ describe('soloMatchingService Integration', () => {
         .where(eq(soloMatchings.id, matching.id))
     })
   })
+
+  describe('startSoloMatching', () => {
+    it('accepted状態のマッチングを開始できる', async () => {
+      // テスト用のマッチングを作成して承認済みにする
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120, // 2時間
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // マッチングを承認済みにする
+      await soloMatchingService.respondToSoloMatching(
+        matching.id,
+        'seed-user-cast-001',
+        'accepted'
+      )
+
+      // マッチングを開始
+      const result = await soloMatchingService.startSoloMatching(
+        matching.id,
+        'seed-user-cast-001'
+      )
+
+      // ステータスがin_progressに更新されていることを確認
+      expect(result.status).toBe('in_progress')
+      expect(result.startedAt).toBeDefined()
+      expect(result.scheduledEndAt).toBeDefined()
+
+      // startedAtとscheduledEndAtの差が120分（proposedDuration）であることを確認
+      if (result.startedAt && result.scheduledEndAt) {
+        const diffMinutes = Math.round(
+          (result.scheduledEndAt.getTime() - result.startedAt.getTime()) / (1000 * 60)
+        )
+        expect(diffMinutes).toBe(120)
+      }
+
+      // DBに実際に更新されているか検証
+      const dbRecord = await db
+        .select()
+        .from(soloMatchings)
+        .where(eq(soloMatchings.id, matching.id))
+        .limit(1)
+
+      expect(dbRecord[0].status).toBe('in_progress')
+      expect(dbRecord[0].startedAt).toBeDefined()
+      expect(dbRecord[0].scheduledEndAt).toBeDefined()
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+
+    it('マッチングが見つからない場合はエラーを投げる', async () => {
+      await expect(
+        soloMatchingService.startSoloMatching(
+          'non-existent-matching-id',
+          'seed-user-cast-001'
+        )
+      ).rejects.toThrow('マッチングが見つかりません')
+    })
+
+    it('キャストIDが一致しない場合はエラーを投げる', async () => {
+      // テスト用のマッチングを作成して承認済みにする
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      await soloMatchingService.respondToSoloMatching(
+        matching.id,
+        'seed-user-cast-001',
+        'accepted'
+      )
+
+      // 異なるキャストIDで開始しようとする
+      await expect(
+        soloMatchingService.startSoloMatching(matching.id, 'seed-user-cast-002')
+      ).rejects.toThrow('このマッチングを開始する権限がありません')
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+
+    it('accepted状態でない場合はエラーを投げる（pending）', async () => {
+      // テスト用のマッチングを作成（pending状態のまま）
+      const matching = await soloMatchingService.createSoloMatching({
+        guestId: 'seed-user-guest-001',
+        castId: 'seed-user-cast-001',
+        proposedDate: new Date(Date.now() + 86400000),
+        proposedDuration: 120,
+        proposedLocation: '渋谷',
+        hourlyRate: 3000,
+      })
+
+      // pending状態で開始しようとする
+      await expect(
+        soloMatchingService.startSoloMatching(matching.id, 'seed-user-cast-001')
+      ).rejects.toThrow('このマッチングは開始できません（成立済みマッチングのみ開始可能です）')
+
+      // クリーンアップのためIDにプレフィックスを追加
+      await db
+        .update(soloMatchings)
+        .set({ id: `${TEST_PREFIX}${matching.id}` })
+        .where(eq(soloMatchings.id, matching.id))
+    })
+  })
 })
