@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+cd frontend
+
+echo "🧪 ブラウザ環境テスト実行中..."
+npm run test -- --run || exit 1
+
+echo "🧪 Node.js環境テスト実行中..."
+npm run test:node -- --run || exit 1
+
+echo "✅ すべてのテストが完了しました"
