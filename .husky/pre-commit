@@ -4,7 +4,7 @@
 cd frontend
 
 echo "📝 Prettierでフォーマット中..."
-npm run format || exit 1
+npm run format:check || exit 1
 
 echo "🔍 TypeScriptの型チェック中..."
 npm run typecheck || exit 1
