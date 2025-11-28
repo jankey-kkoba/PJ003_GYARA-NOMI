@@ -5,25 +5,25 @@ import { ReactQueryProvider } from '@/libs/react-query/provider'
 import { Toaster } from '@/components/ui/sonner'
 
 export const metadata: Metadata = {
-  title: 'ギャラ飲みプラットフォーム',
-  description: 'キャストとゲストをつなぐギャラ飲みプラットフォーム',
+	title: 'ギャラ飲みプラットフォーム',
+	description: 'キャストとゲストをつなぐギャラ飲みプラットフォーム',
 }
 
 export default function RootLayout({
-  children,
+	children,
 }: Readonly<{
-  children: React.ReactNode
+	children: React.ReactNode
 }>) {
-  return (
-    <html lang="ja">
-      <body>
-        <AuthProvider>
-          <ReactQueryProvider>
-            {children}
-            <Toaster position="top-right" richColors />
-          </ReactQueryProvider>
-        </AuthProvider>
-      </body>
-    </html>
-  )
+	return (
+		<html lang="ja">
+			<body>
+				<AuthProvider>
+					<ReactQueryProvider>
+						{children}
+						<Toaster position="top-right" richColors />
+					</ReactQueryProvider>
+				</AuthProvider>
+			</body>
+		</html>
+	)
 }

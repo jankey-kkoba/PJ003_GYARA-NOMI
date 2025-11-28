@@ -7,7 +7,8 @@
  * Supabase 関連の環境変数
  */
 export const NEXT_PUBLIC_SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL!
-export const NEXT_PUBLIC_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+export const NEXT_PUBLIC_SUPABASE_ANON_KEY =
+	process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 export const SUPABASE_JWT_SECRET = process.env.SUPABASE_JWT_SECRET!
 
 /**

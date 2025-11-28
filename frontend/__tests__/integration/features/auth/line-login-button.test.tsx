@@ -14,59 +14,59 @@ import { TestProviders } from '@tests/utils'
 const mockLineLogin = vi.fn()
 
 vi.mock('@/features/auth/hooks/useAuth', () => ({
-  useAuth: () => ({
-    lineLogin: mockLineLogin,
-  }),
+	useAuth: () => ({
+		lineLogin: mockLineLogin,
+	}),
 }))
 
 describe('LineLoginButton', () => {
-  it('ボタンが表示される', async () => {
-    render(
-      <TestProviders>
-        <LineLoginButton />
-      </TestProviders>
-    )
+	it('ボタンが表示される', async () => {
+		render(
+			<TestProviders>
+				<LineLoginButton />
+			</TestProviders>,
+		)
 
-    await expect
-      .element(page.getByRole('button', { name: /LINEでログイン/i }))
-      .toBeVisible()
-  })
+		await expect
+			.element(page.getByRole('button', { name: /LINEでログイン/i }))
+			.toBeVisible()
+	})
 
-  it('ボタンテキストが正しく表示される', async () => {
-    render(
-      <TestProviders>
-        <LineLoginButton />
-      </TestProviders>
-    )
+	it('ボタンテキストが正しく表示される', async () => {
+		render(
+			<TestProviders>
+				<LineLoginButton />
+			</TestProviders>,
+		)
 
-    // ボタンが表示されていることを確認
-    const button = page.getByRole('button', { name: /LINEでログイン/i })
-    await expect.element(button).toBeVisible()
-  })
+		// ボタンが表示されていることを確認
+		const button = page.getByRole('button', { name: /LINEでログイン/i })
+		await expect.element(button).toBeVisible()
+	})
 
-  it('クリックでlineLoginが呼び出される', async () => {
-    render(
-      <TestProviders>
-        <LineLoginButton />
-      </TestProviders>
-    )
+	it('クリックでlineLoginが呼び出される', async () => {
+		render(
+			<TestProviders>
+				<LineLoginButton />
+			</TestProviders>,
+		)
 
-    await page.getByRole('button', { name: /LINEでログイン/i }).click()
+		await page.getByRole('button', { name: /LINEでログイン/i }).click()
 
-    expect(mockLineLogin).toHaveBeenCalled()
-  })
+		expect(mockLineLogin).toHaveBeenCalled()
+	})
 
-  it('クリックでlineLoginが引数なしで呼び出される', async () => {
-    mockLineLogin.mockClear()
+	it('クリックでlineLoginが引数なしで呼び出される', async () => {
+		mockLineLogin.mockClear()
 
-    render(
-      <TestProviders>
-        <LineLoginButton />
-      </TestProviders>
-    )
+		render(
+			<TestProviders>
+				<LineLoginButton />
+			</TestProviders>,
+		)
 
-    await page.getByRole('button', { name: /LINEでログイン/i }).click()
+		await page.getByRole('button', { name: /LINEでログイン/i }).click()
 
-    expect(mockLineLogin).toHaveBeenCalledWith()
-  })
+		expect(mockLineLogin).toHaveBeenCalledWith()
+	})
 })

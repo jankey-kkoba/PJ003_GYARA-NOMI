@@ -4,8 +4,8 @@ import { ApiError } from './errors'
  * APIレスポンスのエラーデータの型
  */
 type ApiErrorResponse = {
-  error?: string
-  message?: string
+	error?: string
+	message?: string
 }
 
 /**
@@ -15,30 +15,29 @@ type ApiErrorResponse = {
  * @throws {ApiError} レスポンスがokでない場合
  */
 export async function handleApiError(
-  response: Response,
-  defaultMessage: string = '通信エラーが発生しました'
+	response: Response,
+	defaultMessage: string = '通信エラーが発生しました',
 ): Promise<void> {
-  if (response.ok) {
-    return
-  }
+	if (response.ok) {
+		return
+	}
 
-  const statusCode = response.status
-  const errorType = ApiError.inferTypeFromStatus(statusCode)
+	const statusCode = response.status
+	const errorType = ApiError.inferTypeFromStatus(statusCode)
 
-  try {
-    const errorData = (await response.json()) as ApiErrorResponse
-    const errorMessage =
-      errorData.error || errorData.message || defaultMessage
+	try {
+		const errorData = (await response.json()) as ApiErrorResponse
+		const errorMessage = errorData.error || errorData.message || defaultMessage
 
-    throw new ApiError(errorMessage, statusCode, errorType, errorData)
-  } catch (error) {
-    // JSONのパースに失敗した場合
-    if (error instanceof ApiError) {
-      throw error
-    }
+		throw new ApiError(errorMessage, statusCode, errorType, errorData)
+	} catch (error) {
+		// JSONのパースに失敗した場合
+		if (error instanceof ApiError) {
+			throw error
+		}
 
-    throw new ApiError(defaultMessage, statusCode, errorType, error)
-  }
+		throw new ApiError(defaultMessage, statusCode, errorType, error)
+	}
 }
 
 /**
@@ -50,11 +49,11 @@ export async function handleApiError(
  * @throws {ApiError} レスポンスがokでない場合
  */
 export async function handleApiResponse<T>(
-  response: Response,
-  defaultErrorMessage: string = '通信エラーが発生しました'
+	response: Response,
+	defaultErrorMessage: string = '通信エラーが発生しました',
 ): Promise<T> {
-  await handleApiError(response, defaultErrorMessage)
-  return response.json()
+	await handleApiError(response, defaultErrorMessage)
+	return response.json()
 }
 
 /**
@@ -64,14 +63,14 @@ export async function handleApiResponse<T>(
  * @throws {ApiError} 常にApiErrorをthrow
  */
 export function handleNetworkError(
-  error: unknown,
-  defaultMessage: string = 'ネットワークエラーが発生しました'
+	error: unknown,
+	defaultMessage: string = 'ネットワークエラーが発生しました',
 ): never {
-  if (error instanceof ApiError) {
-    throw error
-  }
+	if (error instanceof ApiError) {
+		throw error
+	}
 
-  const message = error instanceof Error ? error.message : defaultMessage
+	const message = error instanceof Error ? error.message : defaultMessage
 
-  throw new ApiError(message, undefined, 'network', error)
+	throw new ApiError(message, undefined, 'network', error)
 }

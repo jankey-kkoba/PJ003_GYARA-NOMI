@@ -5,5 +5,5 @@ import { ProfileEditTemplate } from '@/features/user-profile/components/template
  * キャストとゲスト両方で使用される
  */
 export default function ProfileEditPage() {
-  return <ProfileEditTemplate />
+	return <ProfileEditTemplate />
 }

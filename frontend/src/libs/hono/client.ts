@@ -8,9 +8,9 @@ import type { PhotosAppType } from '@/app/api/casts/photos/[[...route]]/route'
  * Honoクライアントのベースオプション
  */
 const clientOptions = {
-  init: {
-    credentials: 'include' as const,
-  },
+	init: {
+		credentials: 'include' as const,
+	},
 }
 
 /**

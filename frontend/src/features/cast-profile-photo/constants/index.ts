@@ -11,10 +11,10 @@ export const STORAGE_BUCKET_NAME = 'cast-profile-photos'
  * 許可される画像ファイル形式
  */
 export const ALLOWED_IMAGE_TYPES = [
-  'image/png',
-  'image/jpeg',
-  'image/jpg',
-  'image/webp',
+	'image/png',
+	'image/jpeg',
+	'image/jpg',
+	'image/webp',
 ] as const
 
 /**
@@ -37,8 +37,8 @@ export const MAX_FILE_SIZE_MB = 5
  * エラーメッセージ
  */
 export const ERROR_MESSAGES = {
-  FILE_REQUIRED: '画像ファイルが必要です',
-  INVALID_FILE_TYPE:
-    '許可されていないファイル形式です。PNG、JPEG、WEBPのいずれかを使用してください',
-  FILE_TOO_LARGE: `ファイルサイズは${MAX_FILE_SIZE_MB}MB以下にしてください`,
+	FILE_REQUIRED: '画像ファイルが必要です',
+	INVALID_FILE_TYPE:
+		'許可されていないファイル形式です。PNG、JPEG、WEBPのいずれかを使用してください',
+	FILE_TOO_LARGE: `ファイルサイズは${MAX_FILE_SIZE_MB}MB以下にしてください`,
 } as const

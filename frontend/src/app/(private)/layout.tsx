@@ -7,25 +7,25 @@ import { userService } from '@/features/user/services/userService'
  * ログイン済みかつプロフィール登録済みのユーザーのみアクセス可能
  */
 export default async function PrivateLayout({
-  children,
+	children,
 }: {
-  children: React.ReactNode
+	children: React.ReactNode
 }) {
-  const session = await auth()
+	const session = await auth()
 
-  // 未ログインの場合はログインページへ
-  if (!session?.user?.id) {
-    redirect('/login')
-  }
+	// 未ログインの場合はログインページへ
+	if (!session?.user?.id) {
+		redirect('/login')
+	}
 
-  // プロフィール未登録の場合は登録ページへ
-  const hasProfile = await userService.hasProfile(session.user.id)
-  if (!hasProfile) {
-    // ユーザーのroleに基づいてtypeを決定
-    const user = await userService.findUserById(session.user.id)
-    const userType = user?.role || 'guest'
-    redirect(`/register?type=${userType}`)
-  }
+	// プロフィール未登録の場合は登録ページへ
+	const hasProfile = await userService.hasProfile(session.user.id)
+	if (!hasProfile) {
+		// ユーザーのroleに基づいてtypeを決定
+		const user = await userService.findUserById(session.user.id)
+		const userType = user?.role || 'guest'
+		redirect(`/register?type=${userType}`)
+	}
 
-  return <>{children}</>
+	return <>{children}</>
 }

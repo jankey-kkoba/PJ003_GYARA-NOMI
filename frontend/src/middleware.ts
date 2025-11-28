@@ -6,27 +6,27 @@ import { NextResponse } from 'next/server'
  * 保護されたルートへのアクセスを制御する
  */
 export default auth((req) => {
-  const isAuthenticated = !!req.auth
-  const { pathname } = req.nextUrl
+	const isAuthenticated = !!req.auth
+	const { pathname } = req.nextUrl
 
-  // 公開ルート（認証不要）
-  const publicRoutes = [
-    '/login',
-    '/sign-up',
-    '/guide',
-    '/terms',
-    '/privacy',
-    '/faq',
-  ]
-  const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
+	// 公開ルート（認証不要）
+	const publicRoutes = [
+		'/login',
+		'/sign-up',
+		'/guide',
+		'/terms',
+		'/privacy',
+		'/faq',
+	]
+	const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
 
-  // 未認証で保護されたルートにアクセスした場合
-  if (!isAuthenticated && !isPublicRoute) {
-    const loginUrl = new URL('/login', req.url)
-    return NextResponse.redirect(loginUrl)
-  }
+	// 未認証で保護されたルートにアクセスした場合
+	if (!isAuthenticated && !isPublicRoute) {
+		const loginUrl = new URL('/login', req.url)
+		return NextResponse.redirect(loginUrl)
+	}
 
-  return NextResponse.next()
+	return NextResponse.next()
 })
 
 /**
@@ -34,7 +34,7 @@ export default auth((req) => {
  * API routes、静的ファイル、画像は除外
  */
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+	matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
 }
 
 // Node.jsランタイムを使用（postgres.jsがEdgeランタイムで動作しないため）

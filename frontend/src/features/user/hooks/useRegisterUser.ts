@@ -6,9 +6,9 @@ import { handleApiResponse } from '@/libs/react-query'
  * プロフィール登録リクエストの入力データ
  */
 type RegisterProfileInput = {
-  name: string
-  birthDate: string
-  userType: 'guest' | 'cast'
+	name: string
+	birthDate: string
+	userType: 'guest' | 'cast'
 }
 
 /**
@@ -16,13 +16,13 @@ type RegisterProfileInput = {
  * @returns mutation オブジェクト
  */
 export function useRegisterUser() {
-  return useMutation({
-    mutationFn: async (input: RegisterProfileInput) => {
-      const res = await usersClient.api.users.register.$post({
-        json: input,
-      })
+	return useMutation({
+		mutationFn: async (input: RegisterProfileInput) => {
+			const res = await usersClient.api.users.register.$post({
+				json: input,
+			})
 
-      return handleApiResponse(res, '登録に失敗しました')
-    },
-  })
+			return handleApiResponse(res, '登録に失敗しました')
+		},
+	})
 }

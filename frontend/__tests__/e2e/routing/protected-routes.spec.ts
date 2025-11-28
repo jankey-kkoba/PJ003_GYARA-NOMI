@@ -10,66 +10,72 @@
 import { test, expect } from '@playwright/test'
 
 test.describe('Protected Routes', () => {
-  test.describe('未認証ユーザーのリダイレクト', () => {
-    test('保護されたルート（ホーム）にアクセスするとログインページにリダイレクトされる', async ({
-      page,
-    }) => {
-      await page.goto('/')
+	test.describe('未認証ユーザーのリダイレクト', () => {
+		test('保護されたルート（ホーム）にアクセスするとログインページにリダイレクトされる', async ({
+			page,
+		}) => {
+			await page.goto('/')
 
-      // ログインページにリダイレクトされることを確認
-      await expect(page).toHaveURL('/login')
-      await expect(
-        page.getByRole('heading', { name: 'ギャラ飲みプラットフォーム' })
-      ).toBeVisible()
-    })
-  })
+			// ログインページにリダイレクトされることを確認
+			await expect(page).toHaveURL('/login')
+			await expect(
+				page.getByRole('heading', { name: 'ギャラ飲みプラットフォーム' }),
+			).toBeVisible()
+		})
+	})
 
-  test.describe('公開ルートへのアクセス', () => {
-    test('ログインページは認証なしでアクセス可能', async ({ page }) => {
-      await page.goto('/login')
+	test.describe('公開ルートへのアクセス', () => {
+		test('ログインページは認証なしでアクセス可能', async ({ page }) => {
+			await page.goto('/login')
 
-      await expect(page).toHaveURL('/login')
-      await expect(
-        page.getByRole('heading', { name: 'ギャラ飲みプラットフォーム' })
-      ).toBeVisible()
-      await expect(page.getByText('LINEでログイン')).toBeVisible()
-    })
+			await expect(page).toHaveURL('/login')
+			await expect(
+				page.getByRole('heading', { name: 'ギャラ飲みプラットフォーム' }),
+			).toBeVisible()
+			await expect(page.getByText('LINEでログイン')).toBeVisible()
+		})
 
-    test('typeパラメータなしの /sign-up はログインページにリダイレクトされる', async ({
-      page,
-    }) => {
-      await page.goto('/sign-up')
+		test('typeパラメータなしの /sign-up はログインページにリダイレクトされる', async ({
+			page,
+		}) => {
+			await page.goto('/sign-up')
 
-      // ログインページにリダイレクトされる
-      await expect(page).toHaveURL('/login')
-    })
-  })
+			// ログインページにリダイレクトされる
+			await expect(page).toHaveURL('/login')
+		})
+	})
 
-  test.describe('ナビゲーション', () => {
-    test('ログインページにゲスト登録リンクが表示される', async ({ page }) => {
-      await page.goto('/login')
+	test.describe('ナビゲーション', () => {
+		test('ログインページにゲスト登録リンクが表示される', async ({ page }) => {
+			await page.goto('/login')
 
-      // ゲスト登録リンクが表示される
-      await expect(page.getByRole('link', { name: /ゲストとして登録/ })).toBeVisible()
-    })
+			// ゲスト登録リンクが表示される
+			await expect(
+				page.getByRole('link', { name: /ゲストとして登録/ }),
+			).toBeVisible()
+		})
 
-    test('ログインページにキャスト登録リンクが表示される', async ({ page }) => {
-      await page.goto('/login')
+		test('ログインページにキャスト登録リンクが表示される', async ({ page }) => {
+			await page.goto('/login')
 
-      // キャスト登録リンクが表示される
-      await expect(page.getByRole('link', { name: /キャストとして登録/ })).toBeVisible()
-    })
+			// キャスト登録リンクが表示される
+			await expect(
+				page.getByRole('link', { name: /キャストとして登録/ }),
+			).toBeVisible()
+		})
 
-    test('利用規約リンクが表示される', async ({ page }) => {
-      await page.goto('/login')
+		test('利用規約リンクが表示される', async ({ page }) => {
+			await page.goto('/login')
 
-      await expect(page.getByRole('link', { name: '利用規約' })).toBeVisible()
-    })
+			await expect(page.getByRole('link', { name: '利用規約' })).toBeVisible()
+		})
 
-    test('プライバシーポリシーリンクが表示される', async ({ page }) => {
-      await page.goto('/login')
+		test('プライバシーポリシーリンクが表示される', async ({ page }) => {
+			await page.goto('/login')
 
-      await expect(page.getByRole('link', { name: 'プライバシーポリシー' })).toBeVisible()
-    })
-  })
+			await expect(
+				page.getByRole('link', { name: 'プライバシーポリシー' }),
+			).toBeVisible()
+		})
+	})
 })

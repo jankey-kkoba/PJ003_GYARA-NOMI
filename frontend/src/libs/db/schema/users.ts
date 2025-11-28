@@ -14,15 +14,19 @@ export const userRoleEnum = pgEnum('user_role', ['guest', 'cast', 'admin'])
  * Auth.jsの認証情報も含む
  */
 export const users = pgTable('users', {
-  id: text('id')
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  email: text('email').unique(),
-  emailVerified: timestamp('email_verified', { mode: 'date' }),
-  password: text('password'), // Credentialsログイン用のハッシュ化されたパスワード（管理者・テストユーザー用）
-  role: userRoleEnum('role'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	id: text('id')
+		.primaryKey()
+		.$defaultFn(() => crypto.randomUUID()),
+	email: text('email').unique(),
+	emailVerified: timestamp('email_verified', { mode: 'date' }),
+	password: text('password'), // Credentialsログイン用のハッシュ化されたパスワード（管理者・テストユーザー用）
+	role: userRoleEnum('role'),
+	createdAt: timestamp('created_at', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
 })
 
 /**
@@ -30,11 +34,15 @@ export const users = pgTable('users', {
  * キャスト、ゲスト共通のプロフィール情報を管理
  */
 export const userProfiles = pgTable('user_profiles', {
-  id: text('id')
-    .primaryKey()
-    .references(() => users.id),
-  name: text('name').notNull(),
-  birthDate: date('birth_date', { mode: 'string' }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
+	id: text('id')
+		.primaryKey()
+		.references(() => users.id),
+	name: text('name').notNull(),
+	birthDate: date('birth_date', { mode: 'string' }).notNull(),
+	createdAt: timestamp('created_at', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
+	updatedAt: timestamp('updated_at', { withTimezone: true })
+		.notNull()
+		.defaultNow(),
 })

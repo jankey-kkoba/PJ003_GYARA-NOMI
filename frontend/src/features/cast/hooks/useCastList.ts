@@ -8,10 +8,10 @@ import { CASTS_PER_PAGE } from '@/features/cast/constants'
  * キャスト一覧取得のクエリパラメータ
  */
 type UseCastListParams = {
-  page?: number
-  limit?: number
-  minAge?: number
-  maxAge?: number
+	page?: number
+	limit?: number
+	minAge?: number
+	maxAge?: number
 }
 
 /**
@@ -20,29 +20,29 @@ type UseCastListParams = {
  * @returns query オブジェクト
  */
 export function useCastList(params: UseCastListParams = {}) {
-  const { page = 1, limit = CASTS_PER_PAGE, minAge, maxAge } = params
+	const { page = 1, limit = CASTS_PER_PAGE, minAge, maxAge } = params
 
-  return useQuery({
-    queryKey: ['casts', 'list', page, limit, minAge, maxAge],
-    queryFn: async (): Promise<CastListResponse> => {
-      const query: Record<string, string> = {
-        page: String(page),
-        limit: String(limit),
-      }
-      if (minAge !== undefined) query.minAge = String(minAge)
-      if (maxAge !== undefined) query.maxAge = String(maxAge)
+	return useQuery({
+		queryKey: ['casts', 'list', page, limit, minAge, maxAge],
+		queryFn: async (): Promise<CastListResponse> => {
+			const query: Record<string, string> = {
+				page: String(page),
+				limit: String(limit),
+			}
+			if (minAge !== undefined) query.minAge = String(minAge)
+			if (maxAge !== undefined) query.maxAge = String(maxAge)
 
-      const res = await castsClient.api.casts.$get({ query })
+			const res = await castsClient.api.casts.$get({ query })
 
-      await handleApiError(res, 'キャスト一覧の取得に失敗しました')
+			await handleApiError(res, 'キャスト一覧の取得に失敗しました')
 
-      const result = await res.json()
+			const result = await res.json()
 
-      if (!result.success || !result.data) {
-        throw new Error('キャスト一覧の取得に失敗しました')
-      }
+			if (!result.success || !result.data) {
+				throw new Error('キャスト一覧の取得に失敗しました')
+			}
 
-      return result.data
-    },
-  })
+			return result.data
+		},
+	})
 }

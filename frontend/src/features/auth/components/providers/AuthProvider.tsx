@@ -4,7 +4,7 @@ import { SessionProvider } from 'next-auth/react'
 import { ReactNode } from 'react'
 
 interface AuthProviderProps {
-  children: ReactNode
+	children: ReactNode
 }
 
 /**
@@ -12,5 +12,5 @@ interface AuthProviderProps {
  * next-authのSessionProviderをラップ
  */
 export function AuthProvider({ children }: AuthProviderProps) {
-  return <SessionProvider>{children}</SessionProvider>
+	return <SessionProvider>{children}</SessionProvider>
 }

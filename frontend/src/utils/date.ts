@@ -1,4 +1,10 @@
-import { differenceInYears, subYears, addDays, addMinutes, formatISO } from 'date-fns'
+import {
+	differenceInYears,
+	subYears,
+	addDays,
+	addMinutes,
+	formatISO,
+} from 'date-fns'
 
 /**
  * 誕生日から年齢を計算する
@@ -6,8 +12,11 @@ import { differenceInYears, subYears, addDays, addMinutes, formatISO } from 'dat
  * @param baseDate - 基準日（デフォルトは現在日時）
  * @returns 年齢
  */
-export function calculateAge(birthDate: Date, baseDate: Date = new Date()): number {
-  return differenceInYears(baseDate, birthDate)
+export function calculateAge(
+	birthDate: Date,
+	baseDate: Date = new Date(),
+): number {
+	return differenceInYears(baseDate, birthDate)
 }
 
 /**
@@ -17,7 +26,7 @@ export function calculateAge(birthDate: Date, baseDate: Date = new Date()): numb
  * @returns 減算後の日付
  */
 export function subtractYears(date: Date, years: number): Date {
-  return subYears(date, years)
+	return subYears(date, years)
 }
 
 /**
@@ -27,7 +36,7 @@ export function subtractYears(date: Date, years: number): Date {
  * @returns 加算後の日付
  */
 export function addDaysToDate(date: Date, days: number): Date {
-  return addDays(date, days)
+	return addDays(date, days)
 }
 
 /**
@@ -37,7 +46,7 @@ export function addDaysToDate(date: Date, days: number): Date {
  * @returns 加算後の日付
  */
 export function addMinutesToDate(date: Date, minutes: number): Date {
-  return addMinutes(date, minutes)
+	return addMinutes(date, minutes)
 }
 
 /**
@@ -46,7 +55,7 @@ export function addMinutesToDate(date: Date, minutes: number): Date {
  * @returns YYYY-MM-DD形式の文字列
  */
 export function formatDateOnly(date: Date): string {
-  return formatISO(date, { representation: 'date' })
+	return formatISO(date, { representation: 'date' })
 }
 
 /**
@@ -55,5 +64,5 @@ export function formatDateOnly(date: Date): string {
  * @returns ISO 8601形式の文字列
  */
 export function formatDateTime(date: Date): string {
-  return formatISO(date)
+	return formatISO(date)
 }

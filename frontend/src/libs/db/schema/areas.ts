@@ -5,6 +5,6 @@ import { pgTable, text } from 'drizzle-orm/pg-core'
  * キャストやゲストの活動エリアを管理
  */
 export const areas = pgTable('areas', {
-  id: text('id').primaryKey(),
-  name: text('name').notNull(),
+	id: text('id').primaryKey(),
+	name: text('name').notNull(),
 })

@@ -5,5 +5,5 @@ import { redirect } from 'next/navigation'
  * 共通のプロフィール編集ページへリダイレクト
  */
 export default function CastProfileEditPage() {
-  redirect('/profile/edit')
+	redirect('/profile/edit')
 }

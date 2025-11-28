@@ -9,110 +9,128 @@ import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 import { userService } from '@/features/user/services/userService'
 
 type CreateSoloMatchingsAppOptions = {
-  /** Auth.js設定の初期化ミドルウェア */
-  authMiddleware?: MiddlewareHandler
-  /** 認証検証ミドルウェア */
-  verifyAuthMiddleware?: MiddlewareHandler
+	/** Auth.js設定の初期化ミドルウェア */
+	authMiddleware?: MiddlewareHandler
+	/** 認証検証ミドルウェア */
+	verifyAuthMiddleware?: MiddlewareHandler
 }
 
 /**
  * ゲストのソロマッチングAPI用Honoアプリを作成
  * @param options 認証ミドルウェアのオプション（テスト時に差し替え可能）
  */
-export function createGuestSoloMatchingsApp(options: CreateSoloMatchingsAppOptions = {}) {
-  const { authMiddleware = honoAuthMiddleware, verifyAuthMiddleware = verifyAuth() } = options
+export function createGuestSoloMatchingsApp(
+	options: CreateSoloMatchingsAppOptions = {},
+) {
+	const {
+		authMiddleware = honoAuthMiddleware,
+		verifyAuthMiddleware = verifyAuth(),
+	} = options
 
-  const app = new Hono().basePath('/api/solo-matchings/guest')
+	const app = new Hono().basePath('/api/solo-matchings/guest')
 
-  // Auth.js設定の初期化
-  app.use('*', authMiddleware)
+	// Auth.js設定の初期化
+	app.use('*', authMiddleware)
 
-  // エラーハンドラー
-  app.onError((err, c) => {
-    if (err instanceof HTTPException) {
-      return c.json({ success: false, error: err.message }, err.status)
-    }
-    console.error('Unexpected error:', err)
-    return c.json({ success: false, error: '予期しないエラーが発生しました' }, 500)
-  })
+	// エラーハンドラー
+	app.onError((err, c) => {
+		if (err instanceof HTTPException) {
+			return c.json({ success: false, error: err.message }, err.status)
+		}
+		console.error('Unexpected error:', err)
+		return c.json(
+			{ success: false, error: '予期しないエラーが発生しました' },
+			500,
+		)
+	})
 
-  // ゲストのソロマッチング一覧取得エンドポイント
-  app.get('/', verifyAuthMiddleware, async (c) => {
-    // 認証済みユーザー情報を取得
-    const authUser = c.get('authUser')
-    const userId = authUser.token?.id as string | undefined
+	// ゲストのソロマッチング一覧取得エンドポイント
+	app.get('/', verifyAuthMiddleware, async (c) => {
+		// 認証済みユーザー情報を取得
+		const authUser = c.get('authUser')
+		const userId = authUser.token?.id as string | undefined
 
-    if (!userId) {
-      throw new HTTPException(401, { message: '認証が必要です' })
-    }
+		if (!userId) {
+			throw new HTTPException(401, { message: '認証が必要です' })
+		}
 
-    // ユーザー情報を取得してロールを確認
-    const user = await userService.findUserById(userId)
-    if (!user) {
-      throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-    }
+		// ユーザー情報を取得してロールを確認
+		const user = await userService.findUserById(userId)
+		if (!user) {
+			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+		}
 
-    // ゲストのみマッチング一覧を取得可能
-    if (user.role !== 'guest') {
-      throw new HTTPException(403, { message: 'ゲストのみマッチング一覧を取得できます' })
-    }
+		// ゲストのみマッチング一覧を取得可能
+		if (user.role !== 'guest') {
+			throw new HTTPException(403, {
+				message: 'ゲストのみマッチング一覧を取得できます',
+			})
+		}
 
-    // ソロマッチング一覧を取得
-    const soloMatchings = await soloMatchingService.getGuestSoloMatchings(userId)
+		// ソロマッチング一覧を取得
+		const soloMatchings =
+			await soloMatchingService.getGuestSoloMatchings(userId)
 
-    return c.json({ success: true, soloMatchings })
-  })
+		return c.json({ success: true, soloMatchings })
+	})
 
-  // ソロマッチングオファー作成エンドポイント
-  const route = app.post('/', verifyAuthMiddleware, zValidator('json', createSoloMatchingSchema), async (c) => {
-    // 認証済みユーザー情報を取得
-    const authUser = c.get('authUser')
-    const userId = authUser.token?.id as string | undefined
+	// ソロマッチングオファー作成エンドポイント
+	const route = app.post(
+		'/',
+		verifyAuthMiddleware,
+		zValidator('json', createSoloMatchingSchema),
+		async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
 
-    if (!userId) {
-      throw new HTTPException(401, { message: '認証が必要です' })
-    }
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
 
-    // ユーザー情報を取得してロールを確認
-    const user = await userService.findUserById(userId)
-    if (!user) {
-      throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-    }
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
 
-    // ゲストのみマッチングオファーを送信可能
-    if (user.role !== 'guest') {
-      throw new HTTPException(403, { message: 'ゲストのみマッチングオファーを送信できます' })
-    }
+			// ゲストのみマッチングオファーを送信可能
+			if (user.role !== 'guest') {
+				throw new HTTPException(403, {
+					message: 'ゲストのみマッチングオファーを送信できます',
+				})
+			}
 
-    const data = c.req.valid('json')
+			const data = c.req.valid('json')
 
-    // proposedDateとproposedTimeOffsetMinutesの処理
-    let proposedDate: Date | undefined
-    let proposedTimeOffsetMinutes: number | undefined
+			// proposedDateとproposedTimeOffsetMinutesの処理
+			let proposedDate: Date | undefined
+			let proposedTimeOffsetMinutes: number | undefined
 
-    if (data.proposedTimeOffsetMinutes) {
-      // 相対時間指定の場合
-      proposedTimeOffsetMinutes = data.proposedTimeOffsetMinutes
-    } else if (data.proposedDate) {
-      // カスタム日時指定の場合（過去の日時チェックはスキーマで実施済み）
-      proposedDate = new Date(data.proposedDate)
-    }
+			if (data.proposedTimeOffsetMinutes) {
+				// 相対時間指定の場合
+				proposedTimeOffsetMinutes = data.proposedTimeOffsetMinutes
+			} else if (data.proposedDate) {
+				// カスタム日時指定の場合（過去の日時チェックはスキーマで実施済み）
+				proposedDate = new Date(data.proposedDate)
+			}
 
-    // ソロマッチングを作成
-    const soloMatching = await soloMatchingService.createSoloMatching({
-      guestId: userId,
-      castId: data.castId,
-      proposedDate,
-      proposedTimeOffsetMinutes,
-      proposedDuration: data.proposedDuration,
-      proposedLocation: data.proposedLocation,
-      hourlyRate: data.hourlyRate,
-    })
+			// ソロマッチングを作成
+			const soloMatching = await soloMatchingService.createSoloMatching({
+				guestId: userId,
+				castId: data.castId,
+				proposedDate,
+				proposedTimeOffsetMinutes,
+				proposedDuration: data.proposedDuration,
+				proposedLocation: data.proposedLocation,
+				hourlyRate: data.hourlyRate,
+			})
 
-    return c.json({ success: true, soloMatching }, 201)
-  })
+			return c.json({ success: true, soloMatching }, 201)
+		},
+	)
 
-  return { app, route }
+	return { app, route }
 }
 
 const { app, route } = createGuestSoloMatchingsApp()

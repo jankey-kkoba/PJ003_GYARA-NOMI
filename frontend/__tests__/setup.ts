@@ -15,5 +15,5 @@ vi.stubEnv('LINE_CLIENT_SECRET', 'test-line-client-secret')
 
 // グローバルのクリーンアップ
 afterEach(() => {
-  vi.clearAllMocks()
+	vi.clearAllMocks()
 })
