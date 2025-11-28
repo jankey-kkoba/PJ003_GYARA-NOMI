@@ -1012,9 +1012,10 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 			expect(body.matching.status).toBe('completed')
 			expect(body.matching.actualEndAt).toBeDefined()
 
-			expect(
-				mockSoloMatchingService.completeSoloMatching,
-			).toHaveBeenCalledWith('matching-1', 'cast-1')
+			expect(mockSoloMatchingService.completeSoloMatching).toHaveBeenCalledWith(
+				'matching-1',
+				'cast-1',
+			)
 		})
 
 		it('サービス層でエラーが発生した場合は500エラーを返す', async () => {

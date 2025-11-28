@@ -360,7 +360,11 @@ describe('CastMatchingStatusList', () => {
 					ok: true,
 					json: async () => ({
 						success: true,
-						matching: { ...inProgressMatching, status: 'completed', actualEndAt: new Date() },
+						matching: {
+							...inProgressMatching,
+							status: 'completed',
+							actualEndAt: new Date(),
+						},
 					}),
 				})
 				.mockResolvedValueOnce({
