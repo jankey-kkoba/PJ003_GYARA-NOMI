@@ -9,10 +9,13 @@ cd frontend && npm run lint
 
 ### 2. テスト実行
 ```bash
-cd frontend && npm run test:all
+# ブラウザ環境テスト
+cd frontend && npm run npm run test
 ```
-- ブラウザ環境テスト (`npm run test`)
-- Node.js環境テスト (`npm run test:node`)
+```bash
+# Node.js環境テスト
+cd frontend && npm run npm run test:node
+```
 
 ### 3. ビルド確認
 ```bash
