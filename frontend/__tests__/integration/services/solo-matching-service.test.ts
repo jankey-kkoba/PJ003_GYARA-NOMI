@@ -854,6 +854,5 @@ describe('soloMatchingService Integration', () => {
 				.set({ id: `${TEST_PREFIX}${matching.id}` })
 				.where(eq(soloMatchings.id, matching.id))
 		})
-
 	})
 })

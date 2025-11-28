@@ -172,7 +172,9 @@ export function createGuestSoloMatchingsApp(
 				// サービス層のエラーは全て500として返す
 				console.error('Service error:', error)
 				const message =
-					error instanceof Error ? error.message : '予期しないエラーが発生しました'
+					error instanceof Error
+						? error.message
+						: '予期しないエラーが発生しました'
 				throw new HTTPException(500, { message })
 			}
 		},

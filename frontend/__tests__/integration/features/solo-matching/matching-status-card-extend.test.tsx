@@ -85,9 +85,7 @@ describe('MatchingStatusCard 延長機能', () => {
 			})
 
 			// 延長ボタンが表示されないことを確認
-			await expect
-				.element(page.getByText('延長する'))
-				.not.toBeInTheDocument()
+			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
 		})
 
 		it('in_progress状態でない場合は延長ボタンを表示しない', async () => {
@@ -98,9 +96,7 @@ describe('MatchingStatusCard 延長機能', () => {
 			})
 
 			// 延長ボタンが表示されないことを確認
-			await expect
-				.element(page.getByText('延長する'))
-				.not.toBeInTheDocument()
+			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
 		})
 
 		it('終了予定時刻が未来の場合は延長ボタンを表示しない', async () => {
@@ -114,9 +110,7 @@ describe('MatchingStatusCard 延長機能', () => {
 			})
 
 			// 延長ボタンが表示されないことを確認
-			await expect
-				.element(page.getByText('延長する'))
-				.not.toBeInTheDocument()
+			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
 		})
 	})
 
@@ -216,9 +210,7 @@ describe('MatchingStatusCard 延長機能', () => {
 			})
 
 			// ステータスバッジが表示されることを確認
-			await expect
-				.element(page.getByText('ギャラ飲み中'))
-				.toBeInTheDocument()
+			await expect.element(page.getByText('ギャラ飲み中')).toBeInTheDocument()
 		})
 	})
 })
