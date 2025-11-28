@@ -314,4 +314,73 @@ export const soloMatchingService = {
 			updatedAt: updated.updatedAt,
 		}
 	},
+
+	/**
+	 * キャストがソロマッチングを終了する（終了ボタン押下時）
+	 * @param matchingId - マッチングID
+	 * @param castId - キャストID
+	 * @returns 更新されたソロマッチング
+	 */
+	async completeSoloMatching(
+		matchingId: string,
+		castId: string,
+	): Promise<SoloMatching> {
+		// マッチングを取得
+		const [matching] = await db
+			.select()
+			.from(soloMatchings)
+			.where(eq(soloMatchings.id, matchingId))
+
+		if (!matching) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
+		if (matching.castId !== castId) {
+			throw new Error('このマッチングを終了する権限がありません')
+		}
+
+		// ステータスチェック: in_progress のみ終了可能
+		if (matching.status !== 'in_progress') {
+			throw new Error(
+				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
+			)
+		}
+
+		// 終了時刻を記録
+		const now = new Date()
+
+		// ステータスを更新
+		const [updated] = await db
+			.update(soloMatchings)
+			.set({
+				status: 'completed',
+				actualEndAt: now,
+				updatedAt: now,
+			})
+			.where(eq(soloMatchings.id, matchingId))
+			.returning()
+
+		// DB型からアプリケーション型に変換
+		return {
+			id: updated.id,
+			guestId: updated.guestId,
+			castId: updated.castId,
+			chatRoomId: updated.chatRoomId,
+			status: updated.status,
+			proposedDate: updated.proposedDate,
+			proposedDuration: updated.proposedDuration,
+			proposedLocation: updated.proposedLocation,
+			hourlyRate: updated.hourlyRate,
+			totalPoints: updated.totalPoints,
+			startedAt: updated.startedAt,
+			scheduledEndAt: updated.scheduledEndAt,
+			actualEndAt: updated.actualEndAt,
+			extensionMinutes: updated.extensionMinutes ?? 0,
+			extensionPoints: updated.extensionPoints ?? 0,
+			castRespondedAt: updated.castRespondedAt,
+			createdAt: updated.createdAt,
+			updatedAt: updated.updatedAt,
+		}
+	},
 }

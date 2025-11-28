@@ -17,6 +17,7 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useRespondToSoloMatching } from '@/features/solo-matching/hooks/useRespondToSoloMatching'
 import { useStartSoloMatching } from '@/features/solo-matching/hooks/useStartSoloMatching'
+import { useCompleteSoloMatching } from '@/features/solo-matching/hooks/useCompleteSoloMatching'
 import { useState } from 'react'
 
 /**
@@ -65,6 +66,8 @@ export function MatchingStatusCard({
 		useRespondToSoloMatching()
 	const { mutate: startMatching, isPending: isStartPending } =
 		useStartSoloMatching()
+	const { mutate: completeMatching, isPending: isCompletePending } =
+		useCompleteSoloMatching()
 	const [error, setError] = useState<string | null>(null)
 
 	const handleRespond = (response: 'accepted' | 'rejected') => {
@@ -89,6 +92,22 @@ export function MatchingStatusCard({
 						err instanceof Error
 							? err.message
 							: 'マッチングの開始に失敗しました',
+					)
+				},
+			},
+		)
+	}
+
+	const handleComplete = () => {
+		setError(null)
+		completeMatching(
+			{ matchingId: matching.id },
+			{
+				onError: (err) => {
+					setError(
+						err instanceof Error
+							? err.message
+							: 'マッチングの終了に失敗しました',
 					)
 				},
 			},
@@ -164,6 +183,18 @@ export function MatchingStatusCard({
 						disabled={isStartPending}
 					>
 						合流
+					</Button>
+				</CardFooter>
+			)}
+			{showActions && matching.status === 'in_progress' && (
+				<CardFooter>
+					<Button
+						variant="destructive"
+						className="w-full"
+						onClick={handleComplete}
+						disabled={isCompletePending}
+					>
+						終了
 					</Button>
 				</CardFooter>
 			)}

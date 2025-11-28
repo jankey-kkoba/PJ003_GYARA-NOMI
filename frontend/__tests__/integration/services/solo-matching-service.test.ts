@@ -488,4 +488,165 @@ describe('soloMatchingService Integration', () => {
 				.where(eq(soloMatchings.id, matching.id))
 		})
 	})
+
+	describe('completeSoloMatching', () => {
+		it('in_progress状態のマッチングを終了できる', async () => {
+			// テスト用のマッチングを作成して開始済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120, // 2時間
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// マッチングを承認済みにする
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			// マッチングを開始
+			await soloMatchingService.startSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// マッチングを終了
+			const result = await soloMatchingService.completeSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// ステータスがcompletedに更新されていることを確認
+			expect(result.status).toBe('completed')
+			expect(result.actualEndAt).toBeDefined()
+
+			// DBに実際に更新されているか検証
+			const dbRecord = await db
+				.select()
+				.from(soloMatchings)
+				.where(eq(soloMatchings.id, matching.id))
+				.limit(1)
+
+			expect(dbRecord[0].status).toBe('completed')
+			expect(dbRecord[0].actualEndAt).toBeDefined()
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('マッチングが見つからない場合はエラーを投げる', async () => {
+			await expect(
+				soloMatchingService.completeSoloMatching(
+					'non-existent-matching-id',
+					'seed-user-cast-001',
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+		})
+
+		it('キャストIDが一致しない場合はエラーを投げる', async () => {
+			// テスト用のマッチングを作成して開始済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			await soloMatchingService.startSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// 異なるキャストIDで終了しようとする
+			await expect(
+				soloMatchingService.completeSoloMatching(
+					matching.id,
+					'seed-user-cast-002',
+				),
+			).rejects.toThrow('このマッチングを終了する権限がありません')
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('in_progress状態でない場合はエラーを投げる（accepted）', async () => {
+			// テスト用のマッチングを作成して承認済み（開始前）にする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			// accepted状態で終了しようとする
+			await expect(
+				soloMatchingService.completeSoloMatching(
+					matching.id,
+					'seed-user-cast-001',
+				),
+			).rejects.toThrow(
+				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
+			)
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('in_progress状態でない場合はエラーを投げる（pending）', async () => {
+			// テスト用のマッチングを作成（pending状態のまま）
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// pending状態で終了しようとする
+			await expect(
+				soloMatchingService.completeSoloMatching(
+					matching.id,
+					'seed-user-cast-001',
+				),
+			).rejects.toThrow(
+				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
+			)
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+	})
 })

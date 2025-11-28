@@ -312,5 +312,123 @@ describe('CastMatchingStatusList', () => {
 				.element(page.getByText('マッチングの開始に失敗しました'))
 				.toBeInTheDocument()
 		})
+
+		it('in_progress状態のマッチングに「終了」ボタンが表示される', async () => {
+			const inProgressMatching: SoloMatching = {
+				...mockMatchings[1],
+				status: 'in_progress',
+				startedAt: new Date(),
+				scheduledEndAt: new Date(Date.now() + 120 * 60 * 1000),
+			}
+
+			mockFetch.mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					success: true,
+					soloMatchings: [inProgressMatching],
+				}),
+			})
+
+			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+			// 「終了」ボタンが表示されることを確認
+			await expect
+				.element(page.getByRole('button', { name: '終了' }))
+				.toBeInTheDocument()
+		})
+
+		it('「終了」ボタンをクリックするとAPI呼び出しが実行される', async () => {
+			const inProgressMatching: SoloMatching = {
+				...mockMatchings[1],
+				status: 'in_progress',
+				startedAt: new Date(),
+				scheduledEndAt: new Date(Date.now() + 120 * 60 * 1000),
+			}
+
+			// 初回: 一覧取得
+			// 2回目: 終了API
+			// 3回目: 一覧再取得
+			mockFetch
+				.mockResolvedValueOnce({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatchings: [inProgressMatching],
+					}),
+				})
+				.mockResolvedValueOnce({
+					ok: true,
+					json: async () => ({
+						success: true,
+						matching: { ...inProgressMatching, status: 'completed', actualEndAt: new Date() },
+					}),
+				})
+				.mockResolvedValueOnce({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatchings: [], // 終了後は一覧から消える
+					}),
+				})
+
+			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+			// 「終了」ボタンをクリック
+			const endButton = page.getByRole('button', { name: '終了' })
+			await endButton.click()
+
+			// API呼び出しが実行されたことを確認
+			// 1回目: 一覧取得、2回目: 終了API、3回目: 一覧再取得
+			await vi.waitFor(() => {
+				expect(mockFetch).toHaveBeenCalledTimes(3)
+			})
+
+			// 終了APIのURLが正しいことを確認
+			expect(mockFetch).toHaveBeenNthCalledWith(
+				2,
+				'/api/solo-matchings/cast/matching-2/end',
+				expect.objectContaining({
+					method: 'PATCH',
+				}),
+			)
+		})
+
+		it('「終了」ボタンクリック時のエラーハンドリング', async () => {
+			const inProgressMatching: SoloMatching = {
+				...mockMatchings[1],
+				status: 'in_progress',
+				startedAt: new Date(),
+				scheduledEndAt: new Date(Date.now() + 120 * 60 * 1000),
+			}
+
+			// 初回: 一覧取得成功
+			// 2回目: 終了API失敗
+			mockFetch
+				.mockResolvedValueOnce({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatchings: [inProgressMatching],
+					}),
+				})
+				.mockResolvedValueOnce({
+					ok: false,
+					json: async () => ({
+						success: false,
+						error: 'マッチングの終了に失敗しました',
+					}),
+				})
+
+			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+			// 「終了」ボタンをクリック
+			const endButton = page.getByRole('button', { name: '終了' })
+			await endButton.click()
+
+			// エラーメッセージが表示されることを確認
+			await expect
+				.element(page.getByText('マッチングの終了に失敗しました'))
+				.toBeInTheDocument()
+		})
 	})
 })
