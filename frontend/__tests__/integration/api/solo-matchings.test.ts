@@ -32,6 +32,7 @@ vi.mock('@/features/solo-matching/services/soloMatchingService', () => ({
 	soloMatchingService: {
 		createSoloMatching: vi.fn(),
 		getGuestSoloMatchings: vi.fn(),
+		extendSoloMatching: vi.fn(),
 	},
 }))
 
@@ -487,6 +488,374 @@ describe('GET /api/solo-matchings', () => {
 			const body = await response.json()
 			expect(body.success).toBe(false)
 			expect(body.error).toBe('予期しないエラーが発生しました')
+		})
+	})
+})
+
+/**
+ * テスト用の進行中マッチングデータ
+ */
+const mockInProgressMatching: SoloMatching = {
+	id: 'matching-in-progress',
+	guestId: 'guest-1',
+	castId: 'cast-1',
+	chatRoomId: null,
+	status: 'in_progress',
+	proposedDate: new Date('2025-11-28T17:00:00Z'),
+	proposedDuration: 120,
+	proposedLocation: '渋谷駅周辺',
+	hourlyRate: 5000,
+	totalPoints: 10000,
+	startedAt: new Date('2025-11-28T17:00:00Z'),
+	scheduledEndAt: new Date('2025-11-28T19:00:00Z'),
+	actualEndAt: null,
+	extensionMinutes: 0,
+	extensionPoints: 0,
+	castRespondedAt: new Date('2025-11-28T16:30:00Z'),
+	createdAt: new Date('2025-11-28T10:00:00Z'),
+	updatedAt: new Date('2025-11-28T17:00:00Z'),
+}
+
+describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	describe('認証チェック', () => {
+		it('未認証の場合は401エラーを返す', async () => {
+			const app = createTestApp() // token なし
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(401)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+
+		it('ユーザーIDが無効な場合は401エラーを返す', async () => {
+			const app = createTestApp({ id: undefined })
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(401)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+
+		it('ユーザーが存在しない場合は404エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockImplementation(
+				// @ts-expect-error - 戻り値の型がPromise<User | null>だが、mockの型定義がnullを許容していない
+				async (): Promise<User | null> => null,
+			)
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(404)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ユーザーが見つかりません')
+		})
+	})
+
+	describe('ロールチェック', () => {
+		it('キャストの場合は403エラーを返す', async () => {
+			const app = createTestApp({ id: 'cast-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'cast-1',
+				email: 'cast@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'cast',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(403)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ゲストのみマッチングを延長できます')
+		})
+
+		it('管理者の場合は403エラーを返す', async () => {
+			const app = createTestApp({ id: 'admin-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'admin-1',
+				email: 'admin@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'admin',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(403)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ゲストのみマッチングを延長できます')
+		})
+	})
+
+	describe('バリデーション', () => {
+		it('延長時間が30分単位でない場合は400エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 25 }),
+				},
+			)
+
+			expect(response.status).toBe(400)
+		})
+
+		it('延長時間が0の場合は400エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 0 }),
+				},
+			)
+
+			expect(response.status).toBe(400)
+		})
+
+		it('延長時間が負の値の場合は400エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: -30 }),
+				},
+			)
+
+			expect(response.status).toBe(400)
+		})
+
+		it('延長時間が指定されていない場合は400エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({}),
+				},
+			)
+
+			expect(response.status).toBe(400)
+		})
+	})
+
+	describe('サービス層エラーハンドリング', () => {
+		it('サービス層でエラーが発生した場合は500エラーとエラーメッセージを返す', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+			mockSoloMatchingService.extendSoloMatching.mockRejectedValue(
+				new Error('マッチングが見つかりません'),
+			)
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-123/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(500)
+			const body = await response.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('マッチングが見つかりません')
+		})
+	})
+
+	describe('正常系', () => {
+		it('ゲストがマッチングを延長できる', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const extendedMatching: SoloMatching = {
+				...mockInProgressMatching,
+				extensionMinutes: 30,
+				extensionPoints: 2500,
+				totalPoints: 12500,
+				scheduledEndAt: new Date('2025-11-28T19:30:00Z'),
+			}
+			mockSoloMatchingService.extendSoloMatching.mockResolvedValue(
+				extendedMatching,
+			)
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-in-progress/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 30 }),
+				},
+			)
+
+			expect(response.status).toBe(200)
+			const body = await response.json()
+			expect(body.success).toBe(true)
+			expect(body.soloMatching).toBeDefined()
+			expect(body.soloMatching.extensionMinutes).toBe(30)
+			expect(body.soloMatching.extensionPoints).toBe(2500)
+			expect(body.soloMatching.totalPoints).toBe(12500)
+			expect(mockSoloMatchingService.extendSoloMatching).toHaveBeenCalledWith(
+				'matching-in-progress',
+				'guest-1',
+				30,
+			)
+		})
+
+		it('60分延長できる', async () => {
+			const app = createTestApp({ id: 'guest-1' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const extendedMatching: SoloMatching = {
+				...mockInProgressMatching,
+				extensionMinutes: 60,
+				extensionPoints: 5000,
+				totalPoints: 15000,
+				scheduledEndAt: new Date('2025-11-28T20:00:00Z'),
+			}
+			mockSoloMatchingService.extendSoloMatching.mockResolvedValue(
+				extendedMatching,
+			)
+
+			const response = await app.request(
+				'/api/solo-matchings/guest/matching-in-progress/extend',
+				{
+					method: 'PATCH',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ extensionMinutes: 60 }),
+				},
+			)
+
+			expect(response.status).toBe(200)
+			const body = await response.json()
+			expect(body.success).toBe(true)
+			expect(body.soloMatching.extensionMinutes).toBe(60)
+			expect(body.soloMatching.extensionPoints).toBe(5000)
+			expect(mockSoloMatchingService.extendSoloMatching).toHaveBeenCalledWith(
+				'matching-in-progress',
+				'guest-1',
+				60,
+			)
 		})
 	})
 })

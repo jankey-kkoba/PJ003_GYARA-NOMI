@@ -2,6 +2,7 @@ import { db } from '@/libs/db'
 import { soloMatchings } from '@/libs/db/schema/solo-matchings'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 import { addMinutesToDate } from '@/utils/date'
+import { calculatePoints } from '@/utils/points'
 import { eq, desc } from 'drizzle-orm'
 
 /**
@@ -52,7 +53,7 @@ export const soloMatchingService = {
 		}
 
 		// 合計ポイントを計算（時給 × 時間）
-		const totalPoints = Math.round((proposedDuration / 60) * hourlyRate)
+		const totalPoints = calculatePoints(proposedDuration, hourlyRate)
 
 		const [result] = await db
 			.insert(soloMatchings)
@@ -94,7 +95,7 @@ export const soloMatchingService = {
 	/**
 	 * ゲストのソロマッチング一覧を取得
 	 * @param guestId - ゲストID
-	 * @returns ゲストのソロマッチング一覧（pending, accepted, rejected, cancelledのみ）
+	 * @returns ゲストのソロマッチング一覧（pending, accepted, rejected, cancelled, in_progress）
 	 */
 	async getGuestSoloMatchings(guestId: string): Promise<SoloMatching[]> {
 		const results = await db
@@ -103,13 +104,14 @@ export const soloMatchingService = {
 			.where(eq(soloMatchings.guestId, guestId))
 			.orderBy(desc(soloMatchings.createdAt))
 
-		// フィルタリング: pending, accepted, rejected, cancelled のみ
+		// フィルタリング: pending, accepted, rejected, cancelled, in_progress
 		const filteredResults = results.filter(
 			(result) =>
 				result.status === 'pending' ||
 				result.status === 'accepted' ||
 				result.status === 'rejected' ||
-				result.status === 'cancelled',
+				result.status === 'cancelled' ||
+				result.status === 'in_progress',
 		)
 
 		// DB型からアプリケーション型に変換
@@ -357,6 +359,100 @@ export const soloMatchingService = {
 				status: 'completed',
 				actualEndAt: now,
 				updatedAt: now,
+			})
+			.where(eq(soloMatchings.id, matchingId))
+			.returning()
+
+		// DB型からアプリケーション型に変換
+		return {
+			id: updated.id,
+			guestId: updated.guestId,
+			castId: updated.castId,
+			chatRoomId: updated.chatRoomId,
+			status: updated.status,
+			proposedDate: updated.proposedDate,
+			proposedDuration: updated.proposedDuration,
+			proposedLocation: updated.proposedLocation,
+			hourlyRate: updated.hourlyRate,
+			totalPoints: updated.totalPoints,
+			startedAt: updated.startedAt,
+			scheduledEndAt: updated.scheduledEndAt,
+			actualEndAt: updated.actualEndAt,
+			extensionMinutes: updated.extensionMinutes ?? 0,
+			extensionPoints: updated.extensionPoints ?? 0,
+			castRespondedAt: updated.castRespondedAt,
+			createdAt: updated.createdAt,
+			updatedAt: updated.updatedAt,
+		}
+	},
+
+	/**
+	 * ゲストがソロマッチングを延長する
+	 * @param matchingId - マッチングID
+	 * @param guestId - ゲストID
+	 * @param extensionMinutes - 延長時間（分）30分単位
+	 * @returns 更新されたソロマッチング
+	 */
+	async extendSoloMatching(
+		matchingId: string,
+		guestId: string,
+		extensionMinutes: number,
+	): Promise<SoloMatching> {
+		// マッチングを取得
+		const [matching] = await db
+			.select()
+			.from(soloMatchings)
+			.where(eq(soloMatchings.id, matchingId))
+
+		if (!matching) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// 権限チェック: 指定されたゲストIDがマッチングのguest_idと一致するか
+		if (matching.guestId !== guestId) {
+			throw new Error('このマッチングを延長する権限がありません')
+		}
+
+		// ステータスチェック: in_progress のみ延長可能
+		if (matching.status !== 'in_progress') {
+			throw new Error(
+				'このマッチングは延長できません（進行中のマッチングのみ延長可能です）',
+			)
+		}
+
+		// 終了予定時刻が存在することを確認
+		if (!matching.scheduledEndAt) {
+			throw new Error('予定終了時刻が設定されていません')
+		}
+
+		// 新しい予定終了時刻を計算
+		const newScheduledEndAt = addMinutesToDate(
+			matching.scheduledEndAt,
+			extensionMinutes,
+		)
+
+		// 延長ポイントを計算（時給 × 時間）
+		const additionalPoints = calculatePoints(
+			extensionMinutes,
+			matching.hourlyRate,
+		)
+
+		// 累積値を計算
+		const newExtensionMinutes =
+			(matching.extensionMinutes ?? 0) + extensionMinutes
+		const newExtensionPoints =
+			(matching.extensionPoints ?? 0) + additionalPoints
+		const newTotalPoints = matching.totalPoints + additionalPoints
+
+		// 更新
+		const [updated] = await db
+			.update(soloMatchings)
+			.set({
+				scheduledEndAt: newScheduledEndAt,
+				extensionMinutes: newExtensionMinutes,
+				extensionPoints: newExtensionPoints,
+				totalPoints: newTotalPoints,
+				updatedAt: new Date(),
 			})
 			.where(eq(soloMatchings.id, matchingId))
 			.returning()

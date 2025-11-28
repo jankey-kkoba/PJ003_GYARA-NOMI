@@ -148,11 +148,15 @@ describe('soloMatchingService Integration', () => {
 				expect(result.guestId).toBe('seed-user-guest-001')
 			})
 
-			// ステータスが pending, accepted, rejected, cancelled のみであることを確認
+			// ステータスが pending, accepted, rejected, cancelled, in_progress のみであることを確認
 			results.forEach((result) => {
-				expect(['pending', 'accepted', 'rejected', 'cancelled']).toContain(
-					result.status,
-				)
+				expect([
+					'pending',
+					'accepted',
+					'rejected',
+					'cancelled',
+					'in_progress',
+				]).toContain(result.status)
 			})
 
 			// seed.sqlで定義した各ステータスのマッチングが含まれていることを確認
@@ -648,5 +652,208 @@ describe('soloMatchingService Integration', () => {
 				.set({ id: `${TEST_PREFIX}${matching.id}` })
 				.where(eq(soloMatchings.id, matching.id))
 		})
+	})
+
+	describe('extendSoloMatching', () => {
+		it('in_progress状態のマッチングを延長できる', async () => {
+			// テスト用のマッチングを作成して開始済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120, // 2時間
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// マッチングを承認済みにする
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			// マッチングを開始
+			const startedMatching = await soloMatchingService.startSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// マッチングを延長（30分）
+			const result = await soloMatchingService.extendSoloMatching(
+				matching.id,
+				'seed-user-guest-001',
+				30,
+			)
+
+			// ステータスがin_progressのままであることを確認
+			expect(result.status).toBe('in_progress')
+			// 延長時間が記録されていることを確認
+			expect(result.extensionMinutes).toBe(30)
+			// 延長ポイントが計算されていることを確認（30分 × 3000円/時 = 1500ポイント）
+			expect(result.extensionPoints).toBe(1500)
+			// 合計ポイントが更新されていることを確認（6000 + 1500 = 7500ポイント）
+			expect(result.totalPoints).toBe(7500)
+			// 予定終了時刻が30分延長されていることを確認
+			if (startedMatching.scheduledEndAt && result.scheduledEndAt) {
+				const diffMinutes = Math.round(
+					(result.scheduledEndAt.getTime() -
+						startedMatching.scheduledEndAt.getTime()) /
+						(1000 * 60),
+				)
+				expect(diffMinutes).toBe(30)
+			}
+
+			// DBに実際に更新されているか検証
+			const dbRecord = await db
+				.select()
+				.from(soloMatchings)
+				.where(eq(soloMatchings.id, matching.id))
+				.limit(1)
+
+			expect(dbRecord[0].extensionMinutes).toBe(30)
+			expect(dbRecord[0].extensionPoints).toBe(1500)
+			expect(dbRecord[0].totalPoints).toBe(7500)
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('延長を複数回実行すると累積される', async () => {
+			// テスト用のマッチングを作成して開始済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120, // 2時間
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			await soloMatchingService.startSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// 1回目の延長（30分）
+			await soloMatchingService.extendSoloMatching(
+				matching.id,
+				'seed-user-guest-001',
+				30,
+			)
+
+			// 2回目の延長（60分）
+			const result = await soloMatchingService.extendSoloMatching(
+				matching.id,
+				'seed-user-guest-001',
+				60,
+			)
+
+			// 延長時間が累積されていることを確認（30 + 60 = 90分）
+			expect(result.extensionMinutes).toBe(90)
+			// 延長ポイントが累積されていることを確認（1500 + 3000 = 4500ポイント）
+			expect(result.extensionPoints).toBe(4500)
+			// 合計ポイントが更新されていることを確認（6000 + 4500 = 10500ポイント）
+			expect(result.totalPoints).toBe(10500)
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('マッチングが見つからない場合はエラーを投げる', async () => {
+			await expect(
+				soloMatchingService.extendSoloMatching(
+					'non-existent-matching-id',
+					'seed-user-guest-001',
+					30,
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+		})
+
+		it('ゲストIDが一致しない場合はエラーを投げる', async () => {
+			// テスト用のマッチングを作成して開始済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			await soloMatchingService.startSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+			)
+
+			// 異なるゲストIDで延長しようとする
+			await expect(
+				soloMatchingService.extendSoloMatching(
+					matching.id,
+					'seed-user-guest-002',
+					30,
+				),
+			).rejects.toThrow('このマッチングを延長する権限がありません')
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('in_progress状態でない場合はエラーを投げる（accepted）', async () => {
+			// テスト用のマッチングを作成して承認済み（開始前）にする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			// accepted状態で延長しようとする
+			await expect(
+				soloMatchingService.extendSoloMatching(
+					matching.id,
+					'seed-user-guest-001',
+					30,
+				),
+			).rejects.toThrow(
+				'このマッチングは延長できません（進行中のマッチングのみ延長可能です）',
+			)
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
 	})
 })

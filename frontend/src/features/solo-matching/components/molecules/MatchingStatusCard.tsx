@@ -18,7 +18,15 @@ import { ja } from 'date-fns/locale'
 import { useRespondToSoloMatching } from '@/features/solo-matching/hooks/useRespondToSoloMatching'
 import { useStartSoloMatching } from '@/features/solo-matching/hooks/useStartSoloMatching'
 import { useCompleteSoloMatching } from '@/features/solo-matching/hooks/useCompleteSoloMatching'
+import { useExtendSoloMatching } from '@/features/solo-matching/hooks/useExtendSoloMatching'
 import { useState } from 'react'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -51,15 +59,28 @@ type MatchingStatusCardProps = {
 	matching: SoloMatching
 	/** 回答ボタンを表示するか（キャストが回答待ちのマッチングの場合のみtrue） */
 	showActions?: boolean
+	/** ゲストビューかどうか（延長ボタン表示用） */
+	isGuestView?: boolean
 }
 
 /**
  * マッチング状況カード
  * 個々のマッチング情報を表示
  */
+/**
+ * 延長時間の選択肢（30分単位）
+ */
+const EXTENSION_OPTIONS = [
+	{ value: '30', label: '30分' },
+	{ value: '60', label: '1時間' },
+	{ value: '90', label: '1時間30分' },
+	{ value: '120', label: '2時間' },
+]
+
 export function MatchingStatusCard({
 	matching,
 	showActions = false,
+	isGuestView = false,
 }: MatchingStatusCardProps) {
 	const statusInfo = getStatusInfo(matching.status)
 	const { mutate: respondToMatching, isPending: isRespondPending } =
@@ -68,7 +89,10 @@ export function MatchingStatusCard({
 		useStartSoloMatching()
 	const { mutate: completeMatching, isPending: isCompletePending } =
 		useCompleteSoloMatching()
+	const { mutate: extendMatching, isPending: isExtendPending } =
+		useExtendSoloMatching()
 	const [error, setError] = useState<string | null>(null)
+	const [selectedExtension, setSelectedExtension] = useState<string>('30')
 
 	const handleRespond = (response: 'accepted' | 'rejected') => {
 		setError(null)
@@ -113,6 +137,31 @@ export function MatchingStatusCard({
 			},
 		)
 	}
+
+	const handleExtend = () => {
+		setError(null)
+		extendMatching(
+			{
+				matchingId: matching.id,
+				extensionMinutes: parseInt(selectedExtension, 10),
+			},
+			{
+				onError: (err) => {
+					setError(
+						err instanceof Error
+							? err.message
+							: 'マッチングの延長に失敗しました',
+					)
+				},
+			},
+		)
+	}
+
+	// 延長ボタンを表示するかどうかを判定
+	// ゲストビューかつin_progress状態かつ終了予定時刻を過ぎている場合に表示
+	const showExtendButton = isGuestView && matching.status === 'in_progress'
+	const isScheduledEndPassed =
+		matching.scheduledEndAt && new Date() >= new Date(matching.scheduledEndAt)
 
 	return (
 		<Card>
@@ -196,6 +245,42 @@ export function MatchingStatusCard({
 					>
 						終了
 					</Button>
+				</CardFooter>
+			)}
+			{showExtendButton && isScheduledEndPassed && (
+				<CardFooter className="flex flex-col gap-2">
+					<div className="flex w-full gap-2">
+						<Select
+							value={selectedExtension}
+							onValueChange={setSelectedExtension}
+						>
+							<SelectTrigger className="w-[140px]">
+								<SelectValue placeholder="延長時間" />
+							</SelectTrigger>
+							<SelectContent>
+								{EXTENSION_OPTIONS.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<Button
+							variant="default"
+							className="flex-1"
+							onClick={handleExtend}
+							disabled={isExtendPending}
+						>
+							延長する
+						</Button>
+					</div>
+					<p className="text-xs text-muted-foreground">
+						延長ポイント:{' '}
+						{Math.round(
+							(parseInt(selectedExtension, 10) / 60) * matching.hourlyRate,
+						).toLocaleString()}
+						ポイント
+					</p>
 				</CardFooter>
 			)}
 		</Card>

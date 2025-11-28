@@ -5,6 +5,7 @@ import { verifyAuth } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
 import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
 import { createSoloMatchingSchema } from '@/features/solo-matching/schemas/createSoloMatching'
+import { extendSoloMatchingSchema } from '@/features/solo-matching/schemas/extendSoloMatching'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 import { userService } from '@/features/user/services/userService'
 
@@ -75,7 +76,7 @@ export function createGuestSoloMatchingsApp(
 	})
 
 	// ソロマッチングオファー作成エンドポイント
-	const route = app.post(
+	const postRoute = app.post(
 		'/',
 		verifyAuthMiddleware,
 		zValidator('json', createSoloMatchingSchema),
@@ -130,15 +131,71 @@ export function createGuestSoloMatchingsApp(
 		},
 	)
 
-	return { app, route }
+	// ソロマッチング延長エンドポイント
+	const extendRoute = app.patch(
+		'/:id/extend',
+		verifyAuthMiddleware,
+		zValidator('json', extendSoloMatchingSchema),
+		async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
+
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
+
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
+
+			// ゲストのみ延長可能
+			if (user.role !== 'guest') {
+				throw new HTTPException(403, {
+					message: 'ゲストのみマッチングを延長できます',
+				})
+			}
+
+			const matchingId = c.req.param('id')
+			const data = c.req.valid('json')
+
+			try {
+				const soloMatching = await soloMatchingService.extendSoloMatching(
+					matchingId,
+					userId,
+					data.extensionMinutes,
+				)
+				return c.json({ success: true, soloMatching })
+			} catch (error) {
+				// サービス層のエラーは全て500として返す
+				console.error('Service error:', error)
+				const message =
+					error instanceof Error ? error.message : '予期しないエラーが発生しました'
+				throw new HTTPException(500, { message })
+			}
+		},
+	)
+
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _postRoute = postRoute
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _extendRoute = extendRoute
+
+	return { app, postRoute, extendRoute }
 }
 
-const { app, route } = createGuestSoloMatchingsApp()
+const { app, postRoute, extendRoute } = createGuestSoloMatchingsApp()
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _route = route
+const _postRoute = postRoute
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _extendRoute = extendRoute
 
-export type GuestSoloMatchingsAppType = typeof route
+export type GuestSoloMatchingsPostRouteType = typeof postRoute
+export type GuestSoloMatchingsExtendRouteType = typeof extendRoute
 
 export const GET = handle(app)
 export const POST = handle(app)
+export const PATCH = handle(app)

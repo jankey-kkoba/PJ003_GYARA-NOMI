@@ -41,7 +41,7 @@ export function MatchingStatusList() {
 	return (
 		<div className="space-y-4">
 			{matchings.map((matching) => (
-				<MatchingStatusCard key={matching.id} matching={matching} />
+				<MatchingStatusCard key={matching.id} matching={matching} isGuestView />
 			))}
 		</div>
 	)
