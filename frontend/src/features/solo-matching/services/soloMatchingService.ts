@@ -1,5 +1,5 @@
 import { db } from '@/libs/db'
-import { soloMatchings } from '@/libs/db/schema/solo-matchings'
+import { matchings, matchingParticipants } from '@/libs/db/schema'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 import { addMinutesToDate } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
@@ -16,6 +16,35 @@ export type CreateSoloMatchingParams = {
 	proposedDuration: number
 	proposedLocation: string
 	hourlyRate: number
+}
+
+/**
+ * matchingsとmatching_participantsの結合結果からSoloMatchingへ変換するヘルパー関数
+ */
+function toSoloMatching(
+	matching: typeof matchings.$inferSelect,
+	participant: typeof matchingParticipants.$inferSelect,
+): SoloMatching {
+	return {
+		id: matching.id,
+		guestId: matching.guestId,
+		castId: participant.castId,
+		chatRoomId: matching.chatRoomId,
+		status: matching.status,
+		proposedDate: matching.proposedDate,
+		proposedDuration: matching.proposedDuration,
+		proposedLocation: matching.proposedLocation,
+		hourlyRate: matching.hourlyRate,
+		totalPoints: matching.totalPoints,
+		startedAt: matching.startedAt,
+		scheduledEndAt: matching.scheduledEndAt,
+		actualEndAt: matching.actualEndAt,
+		extensionMinutes: matching.extensionMinutes ?? 0,
+		extensionPoints: matching.extensionPoints ?? 0,
+		castRespondedAt: participant.respondedAt,
+		createdAt: matching.createdAt,
+		updatedAt: matching.updatedAt,
+	}
 }
 
 /**
@@ -55,41 +84,33 @@ export const soloMatchingService = {
 		// 合計ポイントを計算（時給 × 時間）
 		const totalPoints = calculatePoints(proposedDuration, hourlyRate)
 
-		const [result] = await db
-			.insert(soloMatchings)
+		// matchingsにinsert（IDはスキーマの$defaultFnで自動生成される）
+		const [matchingResult] = await db
+			.insert(matchings)
 			.values({
+				type: 'solo',
 				guestId,
-				castId,
 				proposedDate: finalProposedDate,
 				proposedDuration,
 				proposedLocation,
 				hourlyRate,
+				requestedCastCount: 1,
 				totalPoints,
-				chatRoomId: null, // チャット機能実装時に対応
+				chatRoomId: null,
 			})
 			.returning()
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: result.id,
-			guestId: result.guestId,
-			castId: result.castId,
-			chatRoomId: result.chatRoomId,
-			status: result.status,
-			proposedDate: result.proposedDate,
-			proposedDuration: result.proposedDuration,
-			proposedLocation: result.proposedLocation,
-			hourlyRate: result.hourlyRate,
-			totalPoints: result.totalPoints,
-			startedAt: result.startedAt,
-			scheduledEndAt: result.scheduledEndAt,
-			actualEndAt: result.actualEndAt,
-			extensionMinutes: result.extensionMinutes ?? 0,
-			extensionPoints: result.extensionPoints ?? 0,
-			castRespondedAt: result.castRespondedAt,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
-		}
+		// matching_participantsにinsert（IDはスキーマの$defaultFnで自動生成される）
+		const [participantResult] = await db
+			.insert(matchingParticipants)
+			.values({
+				matchingId: matchingResult.id,
+				castId,
+				status: 'pending',
+			})
+			.returning()
+
+		return toSoloMatching(matchingResult, participantResult)
 	},
 
 	/**
@@ -99,42 +120,31 @@ export const soloMatchingService = {
 	 */
 	async getGuestSoloMatchings(guestId: string): Promise<SoloMatching[]> {
 		const results = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.guestId, guestId))
-			.orderBy(desc(soloMatchings.createdAt))
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(and(eq(matchings.guestId, guestId), eq(matchings.type, 'solo')))
+			.orderBy(desc(matchings.createdAt))
 
 		// フィルタリング: pending, accepted, rejected, cancelled, in_progress
 		const filteredResults = results.filter(
 			(result) =>
-				result.status === 'pending' ||
-				result.status === 'accepted' ||
-				result.status === 'rejected' ||
-				result.status === 'cancelled' ||
-				result.status === 'in_progress',
+				result.matching.status === 'pending' ||
+				result.matching.status === 'accepted' ||
+				result.matching.status === 'rejected' ||
+				result.matching.status === 'cancelled' ||
+				result.matching.status === 'in_progress',
 		)
 
-		// DB型からアプリケーション型に変換
-		return filteredResults.map((result) => ({
-			id: result.id,
-			guestId: result.guestId,
-			castId: result.castId,
-			chatRoomId: result.chatRoomId,
-			status: result.status,
-			proposedDate: result.proposedDate,
-			proposedDuration: result.proposedDuration,
-			proposedLocation: result.proposedLocation,
-			hourlyRate: result.hourlyRate,
-			totalPoints: result.totalPoints,
-			startedAt: result.startedAt,
-			scheduledEndAt: result.scheduledEndAt,
-			actualEndAt: result.actualEndAt,
-			extensionMinutes: result.extensionMinutes ?? 0,
-			extensionPoints: result.extensionPoints ?? 0,
-			castRespondedAt: result.castRespondedAt,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
-		}))
+		return filteredResults.map((result) =>
+			toSoloMatching(result.matching, result.participant),
+		)
 	},
 
 	/**
@@ -144,40 +154,34 @@ export const soloMatchingService = {
 	 */
 	async getCastSoloMatchings(castId: string): Promise<SoloMatching[]> {
 		const results = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.castId, castId))
-			.orderBy(desc(soloMatchings.createdAt))
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(
+				and(
+					eq(matchingParticipants.castId, castId),
+					eq(matchings.type, 'solo'),
+				),
+			)
+			.orderBy(desc(matchings.createdAt))
 
 		// フィルタリング: pending, accepted, in_progress のみ（回答待ち、成立、進行中のマッチング）
 		const filteredResults = results.filter(
 			(result) =>
-				result.status === 'pending' ||
-				result.status === 'accepted' ||
-				result.status === 'in_progress',
+				result.matching.status === 'pending' ||
+				result.matching.status === 'accepted' ||
+				result.matching.status === 'in_progress',
 		)
 
-		// DB型からアプリケーション型に変換
-		return filteredResults.map((result) => ({
-			id: result.id,
-			guestId: result.guestId,
-			castId: result.castId,
-			chatRoomId: result.chatRoomId,
-			status: result.status,
-			proposedDate: result.proposedDate,
-			proposedDuration: result.proposedDuration,
-			proposedLocation: result.proposedLocation,
-			hourlyRate: result.hourlyRate,
-			totalPoints: result.totalPoints,
-			startedAt: result.startedAt,
-			scheduledEndAt: result.scheduledEndAt,
-			actualEndAt: result.actualEndAt,
-			extensionMinutes: result.extensionMinutes ?? 0,
-			extensionPoints: result.extensionPoints ?? 0,
-			castRespondedAt: result.castRespondedAt,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
-		}))
+		return filteredResults.map((result) =>
+			toSoloMatching(result.matching, result.participant),
+		)
 	},
 
 	/**
@@ -192,58 +196,58 @@ export const soloMatchingService = {
 		castId: string,
 		response: 'accepted' | 'rejected',
 	): Promise<SoloMatching> {
-		// マッチングを取得
-		const [matching] = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.id, matchingId))
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(eq(matchings.id, matchingId))
 
-		if (!matching) {
+		if (!result) {
 			throw new Error('マッチングが見つかりません')
 		}
 
 		// 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
-		if (matching.castId !== castId) {
+		if (result.participant.castId !== castId) {
 			throw new Error('このマッチングに回答する権限がありません')
 		}
 
 		// ステータスチェック: pending のみ回答可能
-		if (matching.status !== 'pending') {
+		if (result.matching.status !== 'pending') {
 			throw new Error('このマッチングは既に回答済みです')
 		}
 
-		// ステータスを更新
-		const [updated] = await db
-			.update(soloMatchings)
+		const now = new Date()
+
+		// マッチングのステータスを更新
+		const [updatedMatching] = await db
+			.update(matchings)
 			.set({
 				status: response,
-				castRespondedAt: new Date(),
-				updatedAt: new Date(),
+				recruitingEndedAt: now,
+				updatedAt: now,
 			})
-			.where(eq(soloMatchings.id, matchingId))
+			.where(eq(matchings.id, matchingId))
 			.returning()
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: updated.id,
-			guestId: updated.guestId,
-			castId: updated.castId,
-			chatRoomId: updated.chatRoomId,
-			status: updated.status,
-			proposedDate: updated.proposedDate,
-			proposedDuration: updated.proposedDuration,
-			proposedLocation: updated.proposedLocation,
-			hourlyRate: updated.hourlyRate,
-			totalPoints: updated.totalPoints,
-			startedAt: updated.startedAt,
-			scheduledEndAt: updated.scheduledEndAt,
-			actualEndAt: updated.actualEndAt,
-			extensionMinutes: updated.extensionMinutes ?? 0,
-			extensionPoints: updated.extensionPoints ?? 0,
-			castRespondedAt: updated.castRespondedAt,
-			createdAt: updated.createdAt,
-			updatedAt: updated.updatedAt,
-		}
+		// 参加者のステータスを更新
+		const [updatedParticipant] = await db
+			.update(matchingParticipants)
+			.set({
+				status: response,
+				respondedAt: now,
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+			.returning()
+
+		return toSoloMatching(updatedMatching, updatedParticipant)
 	},
 
 	/**
@@ -256,23 +260,30 @@ export const soloMatchingService = {
 		matchingId: string,
 		castId: string,
 	): Promise<SoloMatching> {
-		// マッチングを取得
-		const [matching] = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.id, matchingId))
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(eq(matchings.id, matchingId))
 
-		if (!matching) {
+		if (!result) {
 			throw new Error('マッチングが見つかりません')
 		}
 
 		// 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
-		if (matching.castId !== castId) {
+		if (result.participant.castId !== castId) {
 			throw new Error('このマッチングを開始する権限がありません')
 		}
 
 		// ステータスチェック: accepted のみ開始可能
-		if (matching.status !== 'accepted') {
+		if (result.matching.status !== 'accepted') {
 			throw new Error(
 				'このマッチングは開始できません（成立済みマッチングのみ開始可能です）',
 			)
@@ -280,41 +291,32 @@ export const soloMatchingService = {
 
 		// 開始時刻と予定終了時刻を計算
 		const now = new Date()
-		const scheduledEnd = addMinutesToDate(now, matching.proposedDuration)
+		const scheduledEnd = addMinutesToDate(now, result.matching.proposedDuration)
 
-		// ステータスを更新
-		const [updated] = await db
-			.update(soloMatchings)
+		// マッチングのステータスを更新
+		const [updatedMatching] = await db
+			.update(matchings)
 			.set({
 				status: 'in_progress',
 				startedAt: now,
 				scheduledEndAt: scheduledEnd,
 				updatedAt: now,
 			})
-			.where(eq(soloMatchings.id, matchingId))
+			.where(eq(matchings.id, matchingId))
 			.returning()
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: updated.id,
-			guestId: updated.guestId,
-			castId: updated.castId,
-			chatRoomId: updated.chatRoomId,
-			status: updated.status,
-			proposedDate: updated.proposedDate,
-			proposedDuration: updated.proposedDuration,
-			proposedLocation: updated.proposedLocation,
-			hourlyRate: updated.hourlyRate,
-			totalPoints: updated.totalPoints,
-			startedAt: updated.startedAt,
-			scheduledEndAt: updated.scheduledEndAt,
-			actualEndAt: updated.actualEndAt,
-			extensionMinutes: updated.extensionMinutes ?? 0,
-			extensionPoints: updated.extensionPoints ?? 0,
-			castRespondedAt: updated.castRespondedAt,
-			createdAt: updated.createdAt,
-			updatedAt: updated.updatedAt,
-		}
+		// 参加者のステータスを更新
+		const [updatedParticipant] = await db
+			.update(matchingParticipants)
+			.set({
+				status: 'joined',
+				joinedAt: now,
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+			.returning()
+
+		return toSoloMatching(updatedMatching, updatedParticipant)
 	},
 
 	/**
@@ -327,63 +329,59 @@ export const soloMatchingService = {
 		matchingId: string,
 		castId: string,
 	): Promise<SoloMatching> {
-		// マッチングを取得
-		const [matching] = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.id, matchingId))
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(eq(matchings.id, matchingId))
 
-		if (!matching) {
+		if (!result) {
 			throw new Error('マッチングが見つかりません')
 		}
 
 		// 権限チェック: 指定されたキャストIDがマッチングのcast_idと一致するか
-		if (matching.castId !== castId) {
+		if (result.participant.castId !== castId) {
 			throw new Error('このマッチングを終了する権限がありません')
 		}
 
 		// ステータスチェック: in_progress のみ終了可能
-		if (matching.status !== 'in_progress') {
+		if (result.matching.status !== 'in_progress') {
 			throw new Error(
 				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
 			)
 		}
 
-		// 終了時刻を記録
 		const now = new Date()
 
-		// ステータスを更新
-		const [updated] = await db
-			.update(soloMatchings)
+		// マッチングのステータスを更新
+		const [updatedMatching] = await db
+			.update(matchings)
 			.set({
 				status: 'completed',
 				actualEndAt: now,
 				updatedAt: now,
 			})
-			.where(eq(soloMatchings.id, matchingId))
+			.where(eq(matchings.id, matchingId))
 			.returning()
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: updated.id,
-			guestId: updated.guestId,
-			castId: updated.castId,
-			chatRoomId: updated.chatRoomId,
-			status: updated.status,
-			proposedDate: updated.proposedDate,
-			proposedDuration: updated.proposedDuration,
-			proposedLocation: updated.proposedLocation,
-			hourlyRate: updated.hourlyRate,
-			totalPoints: updated.totalPoints,
-			startedAt: updated.startedAt,
-			scheduledEndAt: updated.scheduledEndAt,
-			actualEndAt: updated.actualEndAt,
-			extensionMinutes: updated.extensionMinutes ?? 0,
-			extensionPoints: updated.extensionPoints ?? 0,
-			castRespondedAt: updated.castRespondedAt,
-			createdAt: updated.createdAt,
-			updatedAt: updated.updatedAt,
-		}
+		// 参加者のステータスを更新
+		const [updatedParticipant] = await db
+			.update(matchingParticipants)
+			.set({
+				status: 'completed',
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+			.returning()
+
+		return toSoloMatching(updatedMatching, updatedParticipant)
 	},
 
 	/**
@@ -398,55 +396,62 @@ export const soloMatchingService = {
 		guestId: string,
 		extensionMinutes: number,
 	): Promise<SoloMatching> {
-		// マッチングを取得
-		const [matching] = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.id, matchingId))
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(eq(matchings.id, matchingId))
 
-		if (!matching) {
+		if (!result) {
 			throw new Error('マッチングが見つかりません')
 		}
 
 		// 権限チェック: 指定されたゲストIDがマッチングのguest_idと一致するか
-		if (matching.guestId !== guestId) {
+		if (result.matching.guestId !== guestId) {
 			throw new Error('このマッチングを延長する権限がありません')
 		}
 
 		// ステータスチェック: in_progress のみ延長可能
-		if (matching.status !== 'in_progress') {
+		if (result.matching.status !== 'in_progress') {
 			throw new Error(
 				'このマッチングは延長できません（進行中のマッチングのみ延長可能です）',
 			)
 		}
 
 		// 終了予定時刻が存在することを確認
-		if (!matching.scheduledEndAt) {
+		if (!result.matching.scheduledEndAt) {
 			throw new Error('予定終了時刻が設定されていません')
 		}
 
 		// 新しい予定終了時刻を計算
 		const newScheduledEndAt = addMinutesToDate(
-			matching.scheduledEndAt,
+			result.matching.scheduledEndAt,
 			extensionMinutes,
 		)
 
 		// 延長ポイントを計算（時給 × 時間）
 		const additionalPoints = calculatePoints(
 			extensionMinutes,
-			matching.hourlyRate,
+			result.matching.hourlyRate,
 		)
 
 		// 累積値を計算
 		const newExtensionMinutes =
-			(matching.extensionMinutes ?? 0) + extensionMinutes
+			(result.matching.extensionMinutes ?? 0) + extensionMinutes
 		const newExtensionPoints =
-			(matching.extensionPoints ?? 0) + additionalPoints
-		const newTotalPoints = matching.totalPoints + additionalPoints
+			(result.matching.extensionPoints ?? 0) + additionalPoints
+		const newTotalPoints = result.matching.totalPoints + additionalPoints
 
-		// 更新
-		const [updated] = await db
-			.update(soloMatchings)
+		// マッチングを更新
+		const [updatedMatching] = await db
+			.update(matchings)
 			.set({
 				scheduledEndAt: newScheduledEndAt,
 				extensionMinutes: newExtensionMinutes,
@@ -454,30 +459,10 @@ export const soloMatchingService = {
 				totalPoints: newTotalPoints,
 				updatedAt: new Date(),
 			})
-			.where(eq(soloMatchings.id, matchingId))
+			.where(eq(matchings.id, matchingId))
 			.returning()
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: updated.id,
-			guestId: updated.guestId,
-			castId: updated.castId,
-			chatRoomId: updated.chatRoomId,
-			status: updated.status,
-			proposedDate: updated.proposedDate,
-			proposedDuration: updated.proposedDuration,
-			proposedLocation: updated.proposedLocation,
-			hourlyRate: updated.hourlyRate,
-			totalPoints: updated.totalPoints,
-			startedAt: updated.startedAt,
-			scheduledEndAt: updated.scheduledEndAt,
-			actualEndAt: updated.actualEndAt,
-			extensionMinutes: updated.extensionMinutes ?? 0,
-			extensionPoints: updated.extensionPoints ?? 0,
-			castRespondedAt: updated.castRespondedAt,
-			createdAt: updated.createdAt,
-			updatedAt: updated.updatedAt,
-		}
+		return toSoloMatching(updatedMatching, result.participant)
 	},
 
 	/**
@@ -487,37 +472,26 @@ export const soloMatchingService = {
 	 */
 	async getCompletedSoloMatchings(guestId: string): Promise<SoloMatching[]> {
 		const results = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.guestId, guestId))
-			.orderBy(desc(soloMatchings.actualEndAt))
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(and(eq(matchings.guestId, guestId), eq(matchings.type, 'solo')))
+			.orderBy(desc(matchings.actualEndAt))
 
 		// フィルタリング: completed のみ
 		const filteredResults = results.filter(
-			(result) => result.status === 'completed',
+			(result) => result.matching.status === 'completed',
 		)
 
-		// DB型からアプリケーション型に変換
-		return filteredResults.map((result) => ({
-			id: result.id,
-			guestId: result.guestId,
-			castId: result.castId,
-			chatRoomId: result.chatRoomId,
-			status: result.status,
-			proposedDate: result.proposedDate,
-			proposedDuration: result.proposedDuration,
-			proposedLocation: result.proposedLocation,
-			hourlyRate: result.hourlyRate,
-			totalPoints: result.totalPoints,
-			startedAt: result.startedAt,
-			scheduledEndAt: result.scheduledEndAt,
-			actualEndAt: result.actualEndAt,
-			extensionMinutes: result.extensionMinutes ?? 0,
-			extensionPoints: result.extensionPoints ?? 0,
-			castRespondedAt: result.castRespondedAt,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
-		}))
+		return filteredResults.map((result) =>
+			toSoloMatching(result.matching, result.participant),
+		)
 	},
 
 	/**
@@ -531,13 +505,21 @@ export const soloMatchingService = {
 		castId: string,
 	): Promise<SoloMatching | null> {
 		const [result] = await db
-			.select()
-			.from(soloMatchings)
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
 			.where(
 				and(
-					eq(soloMatchings.guestId, guestId),
-					eq(soloMatchings.castId, castId),
-					eq(soloMatchings.status, 'pending'),
+					eq(matchings.guestId, guestId),
+					eq(matchingParticipants.castId, castId),
+					eq(matchings.status, 'pending'),
+					eq(matchings.type, 'solo'),
 				),
 			)
 			.limit(1)
@@ -546,26 +528,6 @@ export const soloMatchingService = {
 			return null
 		}
 
-		// DB型からアプリケーション型に変換
-		return {
-			id: result.id,
-			guestId: result.guestId,
-			castId: result.castId,
-			chatRoomId: result.chatRoomId,
-			status: result.status,
-			proposedDate: result.proposedDate,
-			proposedDuration: result.proposedDuration,
-			proposedLocation: result.proposedLocation,
-			hourlyRate: result.hourlyRate,
-			totalPoints: result.totalPoints,
-			startedAt: result.startedAt,
-			scheduledEndAt: result.scheduledEndAt,
-			actualEndAt: result.actualEndAt,
-			extensionMinutes: result.extensionMinutes ?? 0,
-			extensionPoints: result.extensionPoints ?? 0,
-			castRespondedAt: result.castRespondedAt,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
-		}
+		return toSoloMatching(result.matching, result.participant)
 	},
 }

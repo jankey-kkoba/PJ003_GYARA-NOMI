@@ -17,8 +17,7 @@ export * from '@/libs/db/schema/areas'
 
 // マッチング関連
 export * from '@/libs/db/schema/matchings'
-export * from '@/libs/db/schema/matching-offers'
-export * from '@/libs/db/schema/solo-matchings'
+export * from '@/libs/db/schema/matching-participants'
 export * from '@/libs/db/schema/cast-reviews'
 
 // チャット関連

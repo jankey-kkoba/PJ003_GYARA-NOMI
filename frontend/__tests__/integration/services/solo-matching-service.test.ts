@@ -17,7 +17,7 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { eq, like } from 'drizzle-orm'
 import { db } from '@/libs/db'
-import { soloMatchings } from '@/libs/db/schema/solo-matchings'
+import { matchings, matchingParticipants } from '@/libs/db/schema'
 import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
 
 // 新規作成データのプレフィックス（クリーンアップ用）
@@ -25,14 +25,50 @@ const TEST_PREFIX = 'test-solo-matching-service-'
 
 // 新規作成したデータのクリーンアップ
 async function cleanupTestData() {
-	// LIKE演算子でテストプレフィックスに一致するソロマッチングを検索して削除
+	// LIKE演算子でテストプレフィックスに一致するマッチングを検索して削除
+	// 注: matching_participantsはmatchingsにcascade deleteが設定されているので自動的に削除される
 	const testMatchings = await db
-		.select({ id: soloMatchings.id })
-		.from(soloMatchings)
-		.where(like(soloMatchings.id, `${TEST_PREFIX}%`))
+		.select({ id: matchings.id })
+		.from(matchings)
+		.where(like(matchings.id, `${TEST_PREFIX}%`))
 
 	for (const { id } of testMatchings) {
-		await db.delete(soloMatchings).where(eq(soloMatchings.id, id))
+		await db.delete(matchings).where(eq(matchings.id, id))
+	}
+}
+
+// マッチングをテストプレフィックス付きIDに更新する（クリーンアップ用）
+async function markForCleanup(matchingId: string) {
+	// 参加者テーブルも更新する必要がある
+	const [participant] = await db
+		.select()
+		.from(matchingParticipants)
+		.where(eq(matchingParticipants.matchingId, matchingId))
+
+	if (participant) {
+		// まず参加者を削除
+		await db
+			.delete(matchingParticipants)
+			.where(eq(matchingParticipants.matchingId, matchingId))
+	}
+
+	// マッチングIDを更新
+	const newMatchingId = `${TEST_PREFIX}${matchingId}`
+	await db
+		.update(matchings)
+		.set({ id: newMatchingId })
+		.where(eq(matchings.id, matchingId))
+
+	// 参加者を再作成
+	if (participant) {
+		await db.insert(matchingParticipants).values({
+			id: `${TEST_PREFIX}${participant.id}`,
+			matchingId: newMatchingId,
+			castId: participant.castId,
+			status: participant.status,
+			respondedAt: participant.respondedAt,
+			joinedAt: participant.joinedAt,
+		})
 	}
 }
 
@@ -69,23 +105,31 @@ describe('soloMatchingService Integration', () => {
 			expect(result.status).toBe('pending')
 			expect(result.chatRoomId).toBeNull()
 
-			// DBに実際に作成されているか検証
-			const dbRecord = await db
+			// DBに実際に作成されているか検証（matchingsテーブル）
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, result.id))
+				.from(matchings)
+				.where(eq(matchings.id, result.id))
 				.limit(1)
 
-			expect(dbRecord).toHaveLength(1)
-			expect(dbRecord[0].guestId).toBe('seed-user-guest-001')
-			expect(dbRecord[0].castId).toBe('seed-user-cast-001')
-			expect(dbRecord[0].totalPoints).toBe(6000)
+			expect(dbMatching).toBeDefined()
+			expect(dbMatching.guestId).toBe('seed-user-guest-001')
+			expect(dbMatching.type).toBe('solo')
+			expect(dbMatching.totalPoints).toBe(6000)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${result.id}` })
-				.where(eq(soloMatchings.id, result.id))
+			// DBに実際に作成されているか検証（matching_participantsテーブル）
+			const [dbParticipant] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, result.id))
+				.limit(1)
+
+			expect(dbParticipant).toBeDefined()
+			expect(dbParticipant.castId).toBe('seed-user-cast-001')
+			expect(dbParticipant.status).toBe('pending')
+
+			// クリーンアップ
+			await markForCleanup(result.id)
 		})
 
 		it('合計ポイントが正しく計算される（30分の場合）', async () => {
@@ -103,11 +147,8 @@ describe('soloMatchingService Integration', () => {
 			// 30分 = 0.5時間 → 0.5 × 4000 = 2000ポイント
 			expect(result.totalPoints).toBe(2000)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${result.id}` })
-				.where(eq(soloMatchings.id, result.id))
+			// クリーンアップ
+			await markForCleanup(result.id)
 		})
 
 		it('合計ポイントが正しく計算される（3時間30分の場合）', async () => {
@@ -125,11 +166,8 @@ describe('soloMatchingService Integration', () => {
 			// 3.5時間 × 5000 = 17500ポイント
 			expect(result.totalPoints).toBe(17500)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${result.id}` })
-				.where(eq(soloMatchings.id, result.id))
+			// クリーンアップ
+			await markForCleanup(result.id)
 		})
 	})
 
@@ -177,7 +215,7 @@ describe('soloMatchingService Integration', () => {
 		})
 
 		it('作成日時の降順でソートされる', async () => {
-			// seed.sqlのデータで確認（seed-solo-matching-pending-001が最古、seed-solo-matching-cancelled-001が最新）
+			// seed.sqlのデータで確認
 			const results = await soloMatchingService.getGuestSoloMatchings(
 				'seed-user-guest-001',
 			)
@@ -239,21 +277,27 @@ describe('soloMatchingService Integration', () => {
 			expect(result.castRespondedAt).toBeInstanceOf(Date)
 
 			// DBに実際に更新されているか検証
-			const dbRecord = await db
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, matching.id))
+				.from(matchings)
+				.where(eq(matchings.id, matching.id))
 				.limit(1)
 
-			expect(dbRecord).toHaveLength(1)
-			expect(dbRecord[0].status).toBe('accepted')
-			expect(dbRecord[0].castRespondedAt).toBeDefined()
+			expect(dbMatching.status).toBe('accepted')
+			expect(dbMatching.recruitingEndedAt).toBeDefined()
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// 参加者テーブルも更新されているか確認
+			const [dbParticipant] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, matching.id))
+				.limit(1)
+
+			expect(dbParticipant.status).toBe('accepted')
+			expect(dbParticipant.respondedAt).toBeDefined()
+
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('キャストがマッチングを拒否できる', async () => {
@@ -279,19 +323,16 @@ describe('soloMatchingService Integration', () => {
 			expect(result.castRespondedAt).toBeDefined()
 
 			// DBに実際に更新されているか検証
-			const dbRecord = await db
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, matching.id))
+				.from(matchings)
+				.where(eq(matchings.id, matching.id))
 				.limit(1)
 
-			expect(dbRecord[0].status).toBe('rejected')
+			expect(dbMatching.status).toBe('rejected')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('マッチングが見つからない場合はエラーを投げる', async () => {
@@ -324,11 +365,8 @@ describe('soloMatchingService Integration', () => {
 				),
 			).rejects.toThrow('このマッチングに回答する権限がありません')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('既に回答済みのマッチングにはエラーを投げる', async () => {
@@ -358,11 +396,8 @@ describe('soloMatchingService Integration', () => {
 				),
 			).rejects.toThrow('このマッチングは既に回答済みです')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 	})
 
@@ -406,21 +441,18 @@ describe('soloMatchingService Integration', () => {
 			}
 
 			// DBに実際に更新されているか検証
-			const dbRecord = await db
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, matching.id))
+				.from(matchings)
+				.where(eq(matchings.id, matching.id))
 				.limit(1)
 
-			expect(dbRecord[0].status).toBe('in_progress')
-			expect(dbRecord[0].startedAt).toBeDefined()
-			expect(dbRecord[0].scheduledEndAt).toBeDefined()
+			expect(dbMatching.status).toBe('in_progress')
+			expect(dbMatching.startedAt).toBeDefined()
+			expect(dbMatching.scheduledEndAt).toBeDefined()
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('マッチングが見つからない場合はエラーを投げる', async () => {
@@ -457,11 +489,8 @@ describe('soloMatchingService Integration', () => {
 				),
 			).rejects.toThrow('このマッチングを開始する権限がありません')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('accepted状態でない場合はエラーを投げる（pending）', async () => {
@@ -485,11 +514,8 @@ describe('soloMatchingService Integration', () => {
 				'このマッチングは開始できません（成立済みマッチングのみ開始可能です）',
 			)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 	})
 
@@ -529,20 +555,17 @@ describe('soloMatchingService Integration', () => {
 			expect(result.actualEndAt).toBeDefined()
 
 			// DBに実際に更新されているか検証
-			const dbRecord = await db
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, matching.id))
+				.from(matchings)
+				.where(eq(matchings.id, matching.id))
 				.limit(1)
 
-			expect(dbRecord[0].status).toBe('completed')
-			expect(dbRecord[0].actualEndAt).toBeDefined()
+			expect(dbMatching.status).toBe('completed')
+			expect(dbMatching.actualEndAt).toBeDefined()
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('マッチングが見つからない場合はエラーを投げる', async () => {
@@ -584,11 +607,8 @@ describe('soloMatchingService Integration', () => {
 				),
 			).rejects.toThrow('このマッチングを終了する権限がありません')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('in_progress状態でない場合はエラーを投げる（accepted）', async () => {
@@ -618,11 +638,8 @@ describe('soloMatchingService Integration', () => {
 				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
 			)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('in_progress状態でない場合はエラーを投げる（pending）', async () => {
@@ -646,11 +663,8 @@ describe('soloMatchingService Integration', () => {
 				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
 			)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 	})
 
@@ -705,21 +719,18 @@ describe('soloMatchingService Integration', () => {
 			}
 
 			// DBに実際に更新されているか検証
-			const dbRecord = await db
+			const [dbMatching] = await db
 				.select()
-				.from(soloMatchings)
-				.where(eq(soloMatchings.id, matching.id))
+				.from(matchings)
+				.where(eq(matchings.id, matching.id))
 				.limit(1)
 
-			expect(dbRecord[0].extensionMinutes).toBe(30)
-			expect(dbRecord[0].extensionPoints).toBe(1500)
-			expect(dbRecord[0].totalPoints).toBe(7500)
+			expect(dbMatching.extensionMinutes).toBe(30)
+			expect(dbMatching.extensionPoints).toBe(1500)
+			expect(dbMatching.totalPoints).toBe(7500)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('延長を複数回実行すると累積される', async () => {
@@ -765,11 +776,8 @@ describe('soloMatchingService Integration', () => {
 			// 合計ポイントが更新されていることを確認（6000 + 4500 = 10500ポイント）
 			expect(result.totalPoints).toBe(10500)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('マッチングが見つからない場合はエラーを投げる', async () => {
@@ -813,11 +821,8 @@ describe('soloMatchingService Integration', () => {
 				),
 			).rejects.toThrow('このマッチングを延長する権限がありません')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('in_progress状態でない場合はエラーを投げる（accepted）', async () => {
@@ -848,11 +853,8 @@ describe('soloMatchingService Integration', () => {
 				'このマッチングは延長できません（進行中のマッチングのみ延長可能です）',
 			)
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 	})
 
@@ -880,11 +882,8 @@ describe('soloMatchingService Integration', () => {
 			expect(result?.castId).toBe('seed-user-cast-001')
 			expect(result?.status).toBe('pending')
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('pendingオファーがない場合はnullを返す', async () => {
@@ -898,10 +897,11 @@ describe('soloMatchingService Integration', () => {
 		})
 
 		it('acceptedオファーはpendingとして取得されない', async () => {
-			// テスト用のマッチングを作成して承認済みにする
+			// シードデータと競合しない組み合わせを使用
+			// seed-user-guest-001/seed-user-cast-003 はシードデータにpendingマッチングがない
 			const matching = await soloMatchingService.createSoloMatching({
 				guestId: 'seed-user-guest-001',
-				castId: 'seed-user-cast-001',
+				castId: 'seed-user-cast-003',
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
@@ -911,56 +911,53 @@ describe('soloMatchingService Integration', () => {
 			// マッチングを承認済みにする
 			await soloMatchingService.respondToSoloMatching(
 				matching.id,
-				'seed-user-cast-001',
+				'seed-user-cast-003',
 				'accepted',
 			)
 
 			// pendingオファーを取得（acceptedなので取得されないはず）
 			const result = await soloMatchingService.getPendingOfferForCast(
 				'seed-user-guest-001',
-				'seed-user-cast-001',
+				'seed-user-cast-003',
 			)
 
 			// acceptedのオファーはpendingではないのでnull
 			expect(result).toBeNull()
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 
 		it('異なるゲスト・キャストの組み合わせでは取得されない', async () => {
-			// テスト用のpendingマッチングを作成
+			// シードデータと競合しない組み合わせを使用
+			// seed-user-guest-002/seed-user-cast-004 はシードデータにpendingマッチングがない
 			const matching = await soloMatchingService.createSoloMatching({
-				guestId: 'seed-user-guest-001',
-				castId: 'seed-user-cast-001',
+				guestId: 'seed-user-guest-002',
+				castId: 'seed-user-cast-004',
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				hourlyRate: 3000,
 			})
 
-			// 異なるゲストIDで検索
+			// 異なるゲストIDで検索（シードデータにも該当なし）
+			// guest-003/cast-004 はシードデータにpendingマッチングがない
 			const result1 = await soloMatchingService.getPendingOfferForCast(
-				'seed-user-guest-002',
-				'seed-user-cast-001',
+				'seed-user-guest-003',
+				'seed-user-cast-004',
 			)
 			expect(result1).toBeNull()
 
-			// 異なるキャストIDで検索
+			// 異なるキャストIDで検索（シードデータにも該当なし）
+			// guest-002/cast-005 はシードデータにpendingマッチングがない
 			const result2 = await soloMatchingService.getPendingOfferForCast(
-				'seed-user-guest-001',
-				'seed-user-cast-002',
+				'seed-user-guest-002',
+				'seed-user-cast-005',
 			)
 			expect(result2).toBeNull()
 
-			// クリーンアップのためIDにプレフィックスを追加
-			await db
-				.update(soloMatchings)
-				.set({ id: `${TEST_PREFIX}${matching.id}` })
-				.where(eq(soloMatchings.id, matching.id))
+			// クリーンアップ
+			await markForCleanup(matching.id)
 		})
 	})
 })

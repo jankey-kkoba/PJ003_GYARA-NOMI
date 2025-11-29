@@ -8,8 +8,8 @@
  * - seed.sqlで定義されたデータが存在すること
  *   - seed-user-guest-001: ゲストユーザー
  *   - seed-user-cast-001: キャストユーザー
- *   - seed-solo-matching-completed-001: 完了済みマッチング
- *   - seed-solo-matching-completed-002: 完了済みマッチング（評価済みテスト用）
+ *   - seed-matching-completed-001: 完了済みマッチング
+ *   - seed-matching-completed-002: 完了済みマッチング（評価済みテスト用）
  */
 
 import { describe, it, expect, beforeEach, afterEach } from 'vitest'
@@ -22,9 +22,9 @@ import { castReviewService } from '@/features/cast-review/services/castReviewSer
 const GUEST_ID = 'seed-user-guest-001'
 const CAST_ID_1 = 'seed-user-cast-001'
 const CAST_ID_2 = 'seed-user-cast-002'
-const COMPLETED_MATCHING_ID_1 = 'seed-solo-matching-completed-001'
-const COMPLETED_MATCHING_ID_2 = 'seed-solo-matching-completed-002'
-const PENDING_MATCHING_ID = 'seed-solo-matching-pending-001'
+const COMPLETED_MATCHING_ID_1 = 'seed-matching-completed-001'
+const COMPLETED_MATCHING_ID_2 = 'seed-matching-completed-002'
+const PENDING_MATCHING_ID = 'seed-matching-pending-001'
 
 // テスト作成データのプレフィックス（クリーンアップ用）
 const TEST_PREFIX = 'test-cast-review-service-'

@@ -1,7 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/libs/db'
-import { castReviews } from '@/libs/db/schema/cast-reviews'
-import { soloMatchings } from '@/libs/db/schema/solo-matchings'
+import { castReviews, matchings, matchingParticipants } from '@/libs/db/schema'
 import type { CastReview } from '@/features/cast-review/types/castReview'
 
 /**
@@ -23,23 +22,30 @@ export const castReviewService = {
 		rating: number,
 		comment?: string,
 	): Promise<CastReview> {
-		// マッチング情報を取得
-		const [matching] = await db
-			.select()
-			.from(soloMatchings)
-			.where(eq(soloMatchings.id, matchingId))
+		// マッチング情報と参加者情報を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+			})
+			.from(matchings)
+			.innerJoin(
+				matchingParticipants,
+				eq(matchings.id, matchingParticipants.matchingId),
+			)
+			.where(eq(matchings.id, matchingId))
 
-		if (!matching) {
+		if (!result) {
 			throw new Error('マッチングが見つかりません')
 		}
 
 		// 権限チェック: ゲストIDが一致するか
-		if (matching.guestId !== guestId) {
+		if (result.matching.guestId !== guestId) {
 			throw new Error('このマッチングを評価する権限がありません')
 		}
 
 		// ステータスチェック: completedのみ評価可能
-		if (matching.status !== 'completed') {
+		if (result.matching.status !== 'completed') {
 			throw new Error('完了したマッチングのみ評価できます')
 		}
 
@@ -55,26 +61,26 @@ export const castReviewService = {
 		}
 
 		// 評価を作成
-		const [result] = await db
+		const [reviewResult] = await db
 			.insert(castReviews)
 			.values({
 				matchingId,
 				guestId,
-				castId: matching.castId,
+				castId: result.participant.castId,
 				rating,
 				comment: comment ?? null,
 			})
 			.returning()
 
 		return {
-			id: result.id,
-			matchingId: result.matchingId,
-			guestId: result.guestId,
-			castId: result.castId,
-			rating: result.rating,
-			comment: result.comment,
-			createdAt: result.createdAt,
-			updatedAt: result.updatedAt,
+			id: reviewResult.id,
+			matchingId: reviewResult.matchingId,
+			guestId: reviewResult.guestId,
+			castId: reviewResult.castId,
+			rating: reviewResult.rating,
+			comment: reviewResult.comment,
+			createdAt: reviewResult.createdAt,
+			updatedAt: reviewResult.updatedAt,
 		}
 	},
 

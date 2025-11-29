@@ -1,5 +1,5 @@
 import { pgTable, text, integer, timestamp } from 'drizzle-orm/pg-core'
-import { soloMatchings } from '@/libs/db/schema/solo-matchings'
+import { matchings } from '@/libs/db/schema/matchings'
 import { users } from '@/libs/db/schema/users'
 
 /**
@@ -12,7 +12,7 @@ export const castReviews = pgTable('cast_reviews', {
 		.$defaultFn(() => crypto.randomUUID()),
 	matchingId: text('matching_id')
 		.notNull()
-		.references(() => soloMatchings.id),
+		.references(() => matchings.id),
 	guestId: text('guest_id')
 		.notNull()
 		.references(() => users.id),
