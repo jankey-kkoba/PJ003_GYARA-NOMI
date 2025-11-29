@@ -133,9 +133,7 @@ async function sendOffer(
 	await page.getByRole('button', { name: 'オファーを送信' }).click()
 
 	// 成功トーストが表示されるのを待機
-	await expect(
-		page.getByText('マッチングオファーを送信しました'),
-	).toBeVisible()
+	await expect(page.getByText('マッチングオファーを送信しました')).toBeVisible()
 
 	// トーストが消えるのを待機
 	await page.waitForTimeout(2000)
@@ -185,8 +183,13 @@ test.describe('ソロマッチング シナリオテスト', () => {
 
 		// 同じカード内の「不成立」バッジを確認
 		// data-slot="card"でカードを特定し、その中で不成立バッジを探す
-		const matchingCard = page.locator('[data-slot="card"]').filter({ hasText: uniqueLocation }).first()
-		await expect(matchingCard.getByText('不成立')).toBeVisible({ timeout: 10000 })
+		const matchingCard = page
+			.locator('[data-slot="card"]')
+			.filter({ hasText: uniqueLocation })
+			.first()
+		await expect(matchingCard.getByText('不成立')).toBeVisible({
+			timeout: 10000,
+		})
 	})
 
 	// シナリオ2: マッチング終了（延長なし）
@@ -250,7 +253,10 @@ test.describe('ソロマッチング シナリオテスト', () => {
 
 		// 同じカード内の「完了」バッジを確認
 		// data-slot="card"でカードを特定
-		const matchingCard = completedSection.locator('[data-slot="card"]').filter({ hasText: uniqueLocation }).first()
+		const matchingCard = completedSection
+			.locator('[data-slot="card"]')
+			.filter({ hasText: uniqueLocation })
+			.first()
 		await expect(matchingCard.getByText('完了')).toBeVisible({
 			timeout: 10000,
 		})
@@ -355,7 +361,10 @@ test.describe('ソロマッチング シナリオテスト', () => {
 
 		// 同じカード内の「完了」バッジを確認
 		// data-slot="card"でカードを特定
-		const matchingCard = completedSection.locator('[data-slot="card"]').filter({ hasText: uniqueLocation }).first()
+		const matchingCard = completedSection
+			.locator('[data-slot="card"]')
+			.filter({ hasText: uniqueLocation })
+			.first()
 		await expect(matchingCard.getByText('完了')).toBeVisible({
 			timeout: 10000,
 		})
