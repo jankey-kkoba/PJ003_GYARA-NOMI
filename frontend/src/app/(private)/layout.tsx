@@ -24,7 +24,7 @@ export default async function PrivateLayout({
 		// ユーザーのroleに基づいてtypeを決定
 		const user = await userService.findUserById(session.user.id)
 		const userType = user?.role || 'guest'
-		redirect(`/register?type=${userType}`)
+		redirect(`/profile/create?type=${userType}`)
 	}
 
 	return <>{children}</>

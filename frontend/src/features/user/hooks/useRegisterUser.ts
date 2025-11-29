@@ -18,7 +18,7 @@ type RegisterProfileInput = {
 export function useRegisterUser() {
 	return useMutation({
 		mutationFn: async (input: RegisterProfileInput) => {
-			const res = await usersClient.api.users.register.$post({
+			const res = await usersClient.api.users.profile.create.$post({
 				json: input,
 			})
 

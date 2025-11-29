@@ -1,5 +1,5 @@
 /**
- * POST /api/users/register API 統合テスト
+ * POST /api/users/profile/create API 統合テスト
  *
  * Testing Trophy の Integration テストとして、
  * API エンドポイントのバリデーション、認証、エラーハンドリングを検証する
@@ -52,7 +52,7 @@ function createTestApp(token?: MockAuthToken) {
 	return app
 }
 
-describe('POST /api/users/register', () => {
+describe('POST /api/users/profile/create', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
 	})
@@ -61,7 +61,7 @@ describe('POST /api/users/register', () => {
 		it('認証されていない場合は 401 エラーを返す', async () => {
 			const app = createTestApp() // token なし
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -80,7 +80,7 @@ describe('POST /api/users/register', () => {
 		it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
 			const app = createTestApp({ role: 'guest' }) // id なし
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -102,7 +102,7 @@ describe('POST /api/users/register', () => {
 		it('名前が空の場合は 400 エラーを返す', async () => {
 			const app = createTestApp(validToken)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -118,7 +118,7 @@ describe('POST /api/users/register', () => {
 		it('生年月日が空の場合は 400 エラーを返す', async () => {
 			const app = createTestApp(validToken)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -134,7 +134,7 @@ describe('POST /api/users/register', () => {
 		it('userType が不正な場合は 400 エラーを返す', async () => {
 			const app = createTestApp(validToken)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -150,7 +150,7 @@ describe('POST /api/users/register', () => {
 		it('必須フィールドが欠けている場合は 400 エラーを返す', async () => {
 			const app = createTestApp(validToken)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -178,7 +178,7 @@ describe('POST /api/users/register', () => {
 				updatedAt: new Date(),
 			})
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -218,7 +218,7 @@ describe('POST /api/users/register', () => {
 				updatedAt: new Date(),
 			})
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -251,7 +251,7 @@ describe('POST /api/users/register', () => {
 
 			mockUserService.hasProfile.mockResolvedValue(true)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -278,7 +278,7 @@ describe('POST /api/users/register', () => {
 				new Error('DB connection failed'),
 			)
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -310,7 +310,7 @@ describe('POST /api/users/register', () => {
 				updatedAt: new Date(),
 			})
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
@@ -335,7 +335,7 @@ describe('POST /api/users/register', () => {
 				updatedAt: new Date(),
 			})
 
-			const res = await app.request('/api/users/register', {
+			const res = await app.request('/api/users/profile/create', {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({

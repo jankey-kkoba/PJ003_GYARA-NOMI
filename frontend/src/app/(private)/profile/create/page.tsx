@@ -2,19 +2,19 @@ import { redirect } from 'next/navigation'
 import { RegisterTemplate } from '@/features/auth/components/templates/RegisterTemplate'
 
 /**
- * プロフィール登録ページのProps
+ * プロフィール作成ページのProps
  */
-type RegisterPageProps = {
+type CreateProfilePageProps = {
 	searchParams: Promise<{ type?: string }>
 }
 
 /**
- * プロフィール登録ページ
+ * プロフィール作成ページ
  * URLパラメータ ?type=guest または ?type=cast でユーザータイプを判別
  */
-export default async function RegisterPage({
+export default async function CreateProfilePage({
 	searchParams,
-}: RegisterPageProps) {
+}: CreateProfilePageProps) {
 	const params = await searchParams
 	const { type } = params
 

@@ -43,9 +43,9 @@ export function createUsersApp(options: CreateUsersAppOptions = {}) {
 	})
 
 	const route = app
-		// プロフィール登録エンドポイント
+		// プロフィール作成エンドポイント
 		.post(
-			'/register',
+			'/profile/create',
 			verifyAuthMiddleware,
 			zValidator('json', registerProfileSchema),
 			async (c) => {

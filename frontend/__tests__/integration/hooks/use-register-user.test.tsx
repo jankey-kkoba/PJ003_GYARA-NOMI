@@ -17,8 +17,10 @@ vi.mock('hono/client', () => ({
 	hc: () => ({
 		api: {
 			users: {
-				register: {
-					$post: mockPost,
+				profile: {
+					create: {
+						$post: mockPost,
+					},
 				},
 			},
 		},
