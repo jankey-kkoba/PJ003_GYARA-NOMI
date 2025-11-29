@@ -9,6 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { ROUTES } from '@/libs/constants/routes'
 import type { CastListItem } from '@/features/cast/types'
 import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
 
@@ -26,7 +27,7 @@ type CastCardProps = {
 export function CastCard({ cast }: CastCardProps) {
 	return (
 		<Link
-			href={`/casts/${cast.id}`}
+			href={ROUTES.CASTS.DETAIL(cast.id)}
 			className="block"
 			aria-label={`${cast.name}のプロフィール`}
 		>

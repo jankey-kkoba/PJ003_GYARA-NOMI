@@ -9,6 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { ROUTES } from '@/libs/constants/routes'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { CastProfilePhotoManager } from '@/features/cast-profile-photo/components/organisms/CastProfilePhotoManager'
 import { PageLoading } from '@/components/molecules/PageLoading'
@@ -30,7 +31,9 @@ export function CastProfileEditTemplate() {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen gap-4">
 				<p className="text-destructive">ログインが必要です</p>
-				<Button onClick={() => router.push('/login')}>ログインページへ</Button>
+				<Button onClick={() => router.push(ROUTES.LOGIN)}>
+					ログインページへ
+				</Button>
 			</div>
 		)
 	}
@@ -42,7 +45,7 @@ export function CastProfileEditTemplate() {
 				<p className="text-destructive">
 					この機能はキャストユーザーのみ利用できます
 				</p>
-				<Button onClick={() => router.push('/')}>ホームに戻る</Button>
+				<Button onClick={() => router.push(ROUTES.HOME)}>ホームに戻る</Button>
 			</div>
 		)
 	}

@@ -9,6 +9,7 @@ import {
 	CardHeader,
 	CardTitle,
 } from '@/components/ui/card'
+import { ROUTES } from '@/libs/constants/routes'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 import { useUserProfile } from '@/features/user/hooks/useUserProfile'
 import { useOwnCastProfile } from '@/features/cast/hooks/useCastProfile'
@@ -41,7 +42,9 @@ export function ProfileEditTemplate() {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen gap-4">
 				<p className="text-destructive">ログインが必要です</p>
-				<Button onClick={() => router.push('/login')}>ログインページへ</Button>
+				<Button onClick={() => router.push(ROUTES.LOGIN)}>
+					ログインページへ
+				</Button>
 			</div>
 		)
 	}
@@ -51,7 +54,7 @@ export function ProfileEditTemplate() {
 		return (
 			<div className="flex flex-col items-center justify-center min-h-screen gap-4">
 				<p className="text-destructive">プロフィールが見つかりません</p>
-				<Button onClick={() => router.push('/')}>ホームに戻る</Button>
+				<Button onClick={() => router.push(ROUTES.HOME)}>ホームに戻る</Button>
 			</div>
 		)
 	}

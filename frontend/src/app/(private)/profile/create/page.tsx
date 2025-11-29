@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { ROUTES } from '@/libs/constants/routes'
 import { RegisterTemplate } from '@/features/auth/components/templates/RegisterTemplate'
 
 /**
@@ -20,7 +21,7 @@ export default async function CreateProfilePage({
 
 	// typeが不正な場合はログインページにリダイレクト
 	if (!type || (type !== 'guest' && type !== 'cast')) {
-		redirect('/login')
+		redirect(ROUTES.LOGIN)
 	}
 
 	return <RegisterTemplate userType={type} />

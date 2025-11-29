@@ -3,6 +3,7 @@
 import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
+import { ROUTES } from '@/libs/constants/routes'
 import { LogoutButton } from '@/features/auth/components/atoms/LogoutButton'
 import { MatchingStatusList } from '@/features/solo-matching/components/organisms/MatchingStatusList'
 import { CastMatchingStatusList } from '@/features/solo-matching/components/organisms/CastMatchingStatusList'
@@ -28,13 +29,13 @@ export function HomeTemplate() {
 					<div className="space-y-3">
 						{userRole === 'guest' && (
 							<Button asChild className="w-full">
-								<Link href="/casts">キャスト一覧を見る</Link>
+								<Link href={ROUTES.CASTS.LIST}>キャスト一覧を見る</Link>
 							</Button>
 						)}
 
 						{userRole === 'cast' && (
 							<Button asChild className="w-full">
-								<Link href="/profile/edit">プロフィールを編集</Link>
+								<Link href={ROUTES.PROFILE.EDIT}>プロフィールを編集</Link>
 							</Button>
 						)}
 

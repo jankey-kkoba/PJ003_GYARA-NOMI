@@ -10,6 +10,7 @@ import {
 	LINE_CLIENT_SECRET,
 	SUPABASE_JWT_SECRET,
 } from '@/libs/constants/env'
+import { ROUTES } from '@/libs/constants/routes'
 
 /**
  * Auth.jsの設定
@@ -71,7 +72,7 @@ export const authConfig: NextAuthConfig = {
 		}),
 	],
 	pages: {
-		signIn: '/login',
+		signIn: ROUTES.LOGIN,
 	},
 	callbacks: {
 		/**

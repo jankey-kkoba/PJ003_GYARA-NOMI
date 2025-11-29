@@ -1,4 +1,5 @@
 import { redirect } from 'next/navigation'
+import { ROUTES } from '@/libs/constants/routes'
 import { SignUpTemplate } from '@/features/auth/components/templates/SignUpTemplate'
 
 /**
@@ -18,7 +19,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
 
 	// typeが不正な場合はログインページにリダイレクト
 	if (!type || (type !== 'guest' && type !== 'cast')) {
-		redirect('/login')
+		redirect(ROUTES.LOGIN)
 	}
 
 	return <SignUpTemplate userType={type} />

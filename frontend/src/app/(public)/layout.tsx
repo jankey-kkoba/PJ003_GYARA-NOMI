@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ROUTES } from '@/libs/constants/routes'
 
 /**
  * 公開ページ用レイアウト
@@ -14,18 +15,21 @@ export default function PublicLayout({
 			{/* ヘッダー */}
 			<header className="border-b border-border bg-background sticky top-0 z-50">
 				<div className="container mx-auto px-4 h-14 flex items-center justify-between">
-					<Link href="/" className="text-lg font-bold text-foreground">
+					<Link
+						href={ROUTES.HOME}
+						className="text-lg font-bold text-foreground"
+					>
 						ギャラ飲み
 					</Link>
 					<nav className="flex items-center gap-4">
 						<Link
-							href="/guide"
+							href={ROUTES.GUIDE}
 							className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 						>
 							使い方
 						</Link>
 						<Link
-							href="/login"
+							href={ROUTES.LOGIN}
 							className="text-sm text-primary hover:text-primary/80 transition-colors"
 						>
 							ログイン
@@ -50,19 +54,19 @@ export default function PublicLayout({
 						</p>
 						<nav className="flex items-center gap-4">
 							<Link
-								href="/guide"
+								href={ROUTES.GUIDE}
 								className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 							>
 								使い方
 							</Link>
 							<Link
-								href="/terms"
+								href={ROUTES.TERMS}
 								className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 							>
 								利用規約
 							</Link>
 							<Link
-								href="/privacy"
+								href={ROUTES.PRIVACY}
 								className="text-sm text-muted-foreground hover:text-foreground transition-colors"
 							>
 								プライバシーポリシー

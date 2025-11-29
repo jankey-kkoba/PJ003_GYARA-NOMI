@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/libs/auth'
+import { ROUTES } from '@/libs/constants/routes'
 import { userService } from '@/features/user/services/userService'
 
 /**
@@ -15,7 +16,7 @@ export default async function PrivateLayout({
 
 	// 未ログインの場合はログインページへ
 	if (!session?.user?.id) {
-		redirect('/login')
+		redirect(ROUTES.LOGIN)
 	}
 
 	// プロフィール未登録の場合は登録ページへ
@@ -24,7 +25,7 @@ export default async function PrivateLayout({
 		// ユーザーのroleに基づいてtypeを決定
 		const user = await userService.findUserById(session.user.id)
 		const userType = user?.role || 'guest'
-		redirect(`/profile/create?type=${userType}`)
+		redirect(`${ROUTES.PROFILE.CREATE}?type=${userType}`)
 	}
 
 	return <>{children}</>

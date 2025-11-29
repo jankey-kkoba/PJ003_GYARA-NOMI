@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { auth } from '@/libs/auth'
+import { ROUTES } from '@/libs/constants/routes'
 import { userService } from '@/features/user/services/userService'
 import { CastListTemplate } from '@/features/cast/components/organisms/CastListTemplate'
 
@@ -12,7 +13,7 @@ export default async function CastsPage() {
 
 	// 認証チェック（privateレイアウトで実施済みだが念のため）
 	if (!session?.user?.id) {
-		redirect('/login')
+		redirect(ROUTES.LOGIN)
 	}
 
 	// ユーザー情報を取得
@@ -20,7 +21,7 @@ export default async function CastsPage() {
 
 	// ゲストユーザーのみアクセス可能
 	if (user?.role !== 'guest') {
-		redirect('/')
+		redirect(ROUTES.HOME)
 	}
 
 	return (

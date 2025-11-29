@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import { ROUTES } from '@/libs/constants/routes'
 
 /**
  * サインアップリンクコンポーネント
@@ -12,13 +13,13 @@ export function SignUpLinks() {
 			</p>
 			<div className="mt-2 flex justify-center gap-4">
 				<Link
-					href="/sign-up?type=guest"
+					href={`${ROUTES.SIGN_UP}?type=guest`}
 					className="text-sm font-medium text-primary hover:underline"
 				>
 					ゲストとして登録
 				</Link>
 				<Link
-					href="/sign-up?type=cast"
+					href={`${ROUTES.SIGN_UP}?type=cast`}
 					className="text-sm font-medium text-primary hover:underline"
 				>
 					キャストとして登録

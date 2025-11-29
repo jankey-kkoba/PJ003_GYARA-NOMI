@@ -1,4 +1,5 @@
 import { auth } from '@/libs/auth'
+import { PUBLIC_PATHS, ROUTES } from '@/libs/constants/routes'
 import { NextResponse } from 'next/server'
 
 /**
@@ -10,19 +11,11 @@ export default auth((req) => {
 	const { pathname } = req.nextUrl
 
 	// 公開ルート（認証不要）
-	const publicRoutes = [
-		'/login',
-		'/sign-up',
-		'/guide',
-		'/terms',
-		'/privacy',
-		'/faq',
-	]
-	const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route))
+	const isPublicRoute = PUBLIC_PATHS.some((route) => pathname.startsWith(route))
 
 	// 未認証で保護されたルートにアクセスした場合
 	if (!isAuthenticated && !isPublicRoute) {
-		const loginUrl = new URL('/login', req.url)
+		const loginUrl = new URL(ROUTES.LOGIN, req.url)
 		return NextResponse.redirect(loginUrl)
 	}
 
