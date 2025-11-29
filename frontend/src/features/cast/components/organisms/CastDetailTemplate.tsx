@@ -1,5 +1,6 @@
 'use client'
 
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,6 +14,7 @@ import { useCastDetail } from '@/features/cast/hooks/useCastDetail'
 import { FavoriteButton } from '@/features/favorite/components/atoms/FavoriteButton'
 import { PhotoGallery } from '@/features/cast-profile-photo/components/molecules/PhotoGallery'
 import { CastDetailSkeleton } from '@/features/cast/components/molecules/CastDetailSkeleton'
+import { ROUTES } from '@/libs/constants/routes'
 
 type CastDetailTemplateProps = {
 	castId: string
@@ -81,6 +83,13 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
 							<p className="whitespace-pre-wrap">{cast.bio}</p>
 						</div>
 					)}
+
+					{/* チャットボタン */}
+					<div className="pt-4">
+						<Button asChild className="w-full" size="lg">
+							<Link href={ROUTES.CASTS.CHAT(castId)}>チャットする</Link>
+						</Button>
+					</div>
 				</CardContent>
 			</Card>
 		</div>

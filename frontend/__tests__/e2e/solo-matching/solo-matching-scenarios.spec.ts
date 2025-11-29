@@ -2,6 +2,7 @@
  * ソロマッチング シナリオE2Eテスト
  *
  * 以下のシナリオを検証:
+ * 0. キャスト詳細画面からチャット画面に遷移できる
  * 1. ソロマッチングをオファーしたが却下された
  * 2. ソロマッチングが受諾され、合流後、延長もなくマッチングが終了した
  * 3. ソロマッチングが受諾され、合流後、終了前に一度延長され、マッチングが終了した
@@ -143,7 +144,45 @@ test.describe('ソロマッチング シナリオテスト', () => {
 	// シリアル実行で干渉を防ぐ
 	test.describe.configure({ mode: 'serial' })
 
-	// シナリオ1: オファー却下（最初に実行）
+	// シナリオ0: キャスト詳細→チャット遷移
+	test('シナリオ0: キャスト詳細画面から「チャットする」ボタンでチャット画面に遷移できる', async ({
+		page,
+	}) => {
+		// ゲストとしてログイン
+		await loginAsGuest(page)
+
+		// キャスト一覧ページへ移動
+		await page.goto('/casts')
+		await page.waitForLoadState('networkidle')
+
+		// 最初のキャストカードをクリックして詳細ページへ
+		const firstCard = page
+			.getByRole('link', { name: /のプロフィール$/ })
+			.first()
+		await expect(firstCard).toBeVisible({ timeout: 10000 })
+		await firstCard.click()
+
+		// キャスト詳細ページに遷移したことを確認
+		await expect(page).toHaveURL(/\/casts\/seed-user-cast-/)
+
+		// 「チャットする」ボタンが表示されることを確認
+		const chatButton = page.getByRole('link', { name: 'チャットする' })
+		await expect(chatButton).toBeVisible({ timeout: 10000 })
+
+		// 「チャットする」ボタンをクリック
+		await chatButton.click()
+
+		// チャット画面に遷移したことを確認
+		await expect(page).toHaveURL(/\/casts\/seed-user-cast-.*\/chat$/)
+
+		// チャット画面の要素が表示されることを確認（オファーボタン）
+		const offerButton = page.getByRole('button', {
+			name: 'マッチングオファーを送る',
+		})
+		await expect(offerButton).toBeVisible({ timeout: 10000 })
+	})
+
+	// シナリオ1: オファー却下
 	test('シナリオ1: ゲストがオファー → キャストが拒否 → ステータスがrejectedになる', async ({
 		page,
 	}) => {
