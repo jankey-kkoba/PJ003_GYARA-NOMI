@@ -481,6 +481,46 @@ export const soloMatchingService = {
 	},
 
 	/**
+	 * ゲストの完了済みソロマッチング一覧を取得
+	 * @param guestId - ゲストID
+	 * @returns 完了済みのソロマッチング一覧
+	 */
+	async getCompletedSoloMatchings(guestId: string): Promise<SoloMatching[]> {
+		const results = await db
+			.select()
+			.from(soloMatchings)
+			.where(eq(soloMatchings.guestId, guestId))
+			.orderBy(desc(soloMatchings.actualEndAt))
+
+		// フィルタリング: completed のみ
+		const filteredResults = results.filter(
+			(result) => result.status === 'completed',
+		)
+
+		// DB型からアプリケーション型に変換
+		return filteredResults.map((result) => ({
+			id: result.id,
+			guestId: result.guestId,
+			castId: result.castId,
+			chatRoomId: result.chatRoomId,
+			status: result.status,
+			proposedDate: result.proposedDate,
+			proposedDuration: result.proposedDuration,
+			proposedLocation: result.proposedLocation,
+			hourlyRate: result.hourlyRate,
+			totalPoints: result.totalPoints,
+			startedAt: result.startedAt,
+			scheduledEndAt: result.scheduledEndAt,
+			actualEndAt: result.actualEndAt,
+			extensionMinutes: result.extensionMinutes ?? 0,
+			extensionPoints: result.extensionPoints ?? 0,
+			castRespondedAt: result.castRespondedAt,
+			createdAt: result.createdAt,
+			updatedAt: result.updatedAt,
+		}))
+	},
+
+	/**
 	 * ゲストが指定キャストに対して送信中（回答待ち）のオファーを取得
 	 * @param guestId - ゲストID
 	 * @param castId - キャストID

@@ -180,6 +180,48 @@ export function createGuestSoloMatchingsApp(
 		},
 	)
 
+	// 完了済みソロマッチング一覧取得エンドポイント
+	const completedRoute = app.get(
+		'/completed',
+		verifyAuthMiddleware,
+		async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
+
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
+
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
+
+			// ゲストのみ完了済みマッチング一覧を取得可能
+			if (user.role !== 'guest') {
+				throw new HTTPException(403, {
+					message: 'ゲストのみ完了済みマッチング一覧を取得できます',
+				})
+			}
+
+			try {
+				// 完了済みソロマッチング一覧を取得
+				const soloMatchings =
+					await soloMatchingService.getCompletedSoloMatchings(userId)
+				return c.json({ success: true, soloMatchings })
+			} catch (error) {
+				console.error('Service error:', error)
+				const message =
+					error instanceof Error
+						? error.message
+						: '予期しないエラーが発生しました'
+				throw new HTTPException(500, { message })
+			}
+		},
+	)
+
 	// 指定キャストへのpendingオファー確認エンドポイント
 	const pendingRoute = app.get(
 		'/pending/:castId',
@@ -228,11 +270,13 @@ export function createGuestSoloMatchingsApp(
 	const _extendRoute = extendRoute
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const _pendingRoute = pendingRoute
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _completedRoute = completedRoute
 
-	return { app, postRoute, extendRoute, pendingRoute }
+	return { app, postRoute, extendRoute, pendingRoute, completedRoute }
 }
 
-const { app, postRoute, extendRoute, pendingRoute } =
+const { app, postRoute, extendRoute, pendingRoute, completedRoute } =
 	createGuestSoloMatchingsApp()
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -241,10 +285,13 @@ const _postRoute = postRoute
 const _extendRoute = extendRoute
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _pendingRoute = pendingRoute
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _completedRoute = completedRoute
 
 export type GuestSoloMatchingsPostRouteType = typeof postRoute
 export type GuestSoloMatchingsExtendRouteType = typeof extendRoute
 export type GuestSoloMatchingsPendingRouteType = typeof pendingRoute
+export type GuestSoloMatchingsCompletedRouteType = typeof completedRoute
 
 export const GET = handle(app)
 export const POST = handle(app)

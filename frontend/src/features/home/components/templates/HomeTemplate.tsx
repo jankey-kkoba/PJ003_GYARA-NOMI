@@ -7,6 +7,7 @@ import { ROUTES } from '@/libs/constants/routes'
 import { LogoutButton } from '@/features/auth/components/atoms/LogoutButton'
 import { MatchingStatusList } from '@/features/solo-matching/components/organisms/MatchingStatusList'
 import { CastMatchingStatusList } from '@/features/solo-matching/components/organisms/CastMatchingStatusList'
+import { CompletedMatchingList } from '@/features/solo-matching/components/organisms/CompletedMatchingList'
 import { useAuth } from '@/features/auth/hooks/useAuth'
 
 /**
@@ -53,11 +54,21 @@ export function HomeTemplate() {
 					) : userRole === 'cast' ? (
 						<CastMatchingStatusList />
 					) : (
-						<div className="flex items-center justify-center min-h-[200px]">
+						<div className="flex min-h-[200px] items-center justify-center">
 							<p className="text-muted-foreground">ロールを確認しています...</p>
 						</div>
 					)}
 				</div>
+
+				{/* 完了済みマッチング（ゲストのみ） */}
+				{userRole === 'guest' && (
+					<div className="rounded-lg bg-card p-6 shadow">
+						<h2 className="mb-4 text-lg font-semibold text-foreground">
+							完了済みマッチング
+						</h2>
+						<CompletedMatchingList />
+					</div>
+				)}
 			</div>
 		</div>
 	)

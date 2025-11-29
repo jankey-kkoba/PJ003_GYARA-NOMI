@@ -66,3 +66,26 @@ export function formatDateOnly(date: Date): string {
 export function formatDateTime(date: Date): string {
 	return formatISO(date)
 }
+
+/**
+ * 日付文字列またはnullをDateオブジェクトまたはnullに変換する
+ * @param dateString - 変換する日付文字列（nullも可）
+ * @returns Dateオブジェクトまたはnull
+ */
+export function parseNullableDate(
+	dateString: string | null | undefined,
+): Date | null {
+	if (!dateString) {
+		return null
+	}
+	return new Date(dateString)
+}
+
+/**
+ * 日付文字列をDateオブジェクトに変換する
+ * @param dateString - 変換する日付文字列
+ * @returns Dateオブジェクト
+ */
+export function parseDate(dateString: string): Date {
+	return new Date(dateString)
+}

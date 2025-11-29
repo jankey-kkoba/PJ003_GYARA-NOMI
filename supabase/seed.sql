@@ -250,3 +250,8 @@ INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, propose
 INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, created_at, updated_at) VALUES
   ('seed-solo-matching-pending-004', 'seed-user-guest-003', 'seed-user-cast-002', NULL, 'pending', NOW() + INTERVAL '7 days', 90, '池袋駅周辺', 5000, 7500, NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes');
 
+-- 完了済みマッチング（評価テスト用）
+INSERT INTO solo_matchings (id, guest_id, cast_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, total_points, started_at, scheduled_end_at, actual_end_at, created_at, updated_at) VALUES
+  ('seed-solo-matching-completed-001', 'seed-user-guest-001', 'seed-user-cast-001', NULL, 'completed', NOW() - INTERVAL '3 days', 120, '渋谷駅周辺', 5000, 10000, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '2 hours', NOW() - INTERVAL '3 days' + INTERVAL '2 hours 10 minutes', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
+  ('seed-solo-matching-completed-002', 'seed-user-guest-001', 'seed-user-cast-002', NULL, 'completed', NOW() - INTERVAL '5 days', 90, '新宿駅周辺', 6000, 9000, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days' + INTERVAL '90 minutes', NOW() - INTERVAL '5 days' + INTERVAL '95 minutes', NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days');
+

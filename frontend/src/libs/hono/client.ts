@@ -3,6 +3,7 @@ import type { UsersAppType } from '@/app/api/users/[[...route]]/route'
 import type { CastsAppType } from '@/app/api/casts/[[...route]]/route'
 import type { FavoritesAppType } from '@/app/api/favorites/[[...route]]/route'
 import type { PhotosAppType } from '@/app/api/casts/photos/[[...route]]/route'
+import type { CastReviewsAppType } from '@/app/api/cast-reviews/[[...route]]/route'
 
 /**
  * Honoクライアントのベースオプション
@@ -36,3 +37,9 @@ export const favoritesClient = hc<FavoritesAppType>('/', clientOptions)
  * 型安全なRPCクライアント
  */
 export const photosClient = hc<PhotosAppType>('/', clientOptions)
+
+/**
+ * キャスト評価APIクライアント
+ * 型安全なRPCクライアント
+ */
+export const castReviewsClient = hc<CastReviewsAppType>('/', clientOptions)
