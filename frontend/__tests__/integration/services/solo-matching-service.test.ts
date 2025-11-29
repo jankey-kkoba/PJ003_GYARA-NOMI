@@ -855,4 +855,112 @@ describe('soloMatchingService Integration', () => {
 				.where(eq(soloMatchings.id, matching.id))
 		})
 	})
+
+	describe('getPendingOfferForCast', () => {
+		it('pendingオファーがある場合はオファーを返す', async () => {
+			// テスト用のpendingマッチングを作成
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// pendingオファーを取得
+			const result = await soloMatchingService.getPendingOfferForCast(
+				'seed-user-guest-001',
+				'seed-user-cast-001',
+			)
+
+			// オファーが取得できることを確認
+			expect(result).not.toBeNull()
+			expect(result?.guestId).toBe('seed-user-guest-001')
+			expect(result?.castId).toBe('seed-user-cast-001')
+			expect(result?.status).toBe('pending')
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('pendingオファーがない場合はnullを返す', async () => {
+			// 存在しない組み合わせで検索
+			const result = await soloMatchingService.getPendingOfferForCast(
+				'non-existent-guest-id',
+				'non-existent-cast-id',
+			)
+
+			expect(result).toBeNull()
+		})
+
+		it('acceptedオファーはpendingとして取得されない', async () => {
+			// テスト用のマッチングを作成して承認済みにする
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// マッチングを承認済みにする
+			await soloMatchingService.respondToSoloMatching(
+				matching.id,
+				'seed-user-cast-001',
+				'accepted',
+			)
+
+			// pendingオファーを取得（acceptedなので取得されないはず）
+			const result = await soloMatchingService.getPendingOfferForCast(
+				'seed-user-guest-001',
+				'seed-user-cast-001',
+			)
+
+			// acceptedのオファーはpendingではないのでnull
+			expect(result).toBeNull()
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+
+		it('異なるゲスト・キャストの組み合わせでは取得されない', async () => {
+			// テスト用のpendingマッチングを作成
+			const matching = await soloMatchingService.createSoloMatching({
+				guestId: 'seed-user-guest-001',
+				castId: 'seed-user-cast-001',
+				proposedDate: new Date(Date.now() + 86400000),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+			})
+
+			// 異なるゲストIDで検索
+			const result1 = await soloMatchingService.getPendingOfferForCast(
+				'seed-user-guest-002',
+				'seed-user-cast-001',
+			)
+			expect(result1).toBeNull()
+
+			// 異なるキャストIDで検索
+			const result2 = await soloMatchingService.getPendingOfferForCast(
+				'seed-user-guest-001',
+				'seed-user-cast-002',
+			)
+			expect(result2).toBeNull()
+
+			// クリーンアップのためIDにプレフィックスを追加
+			await db
+				.update(soloMatchings)
+				.set({ id: `${TEST_PREFIX}${matching.id}` })
+				.where(eq(soloMatchings.id, matching.id))
+		})
+	})
 })

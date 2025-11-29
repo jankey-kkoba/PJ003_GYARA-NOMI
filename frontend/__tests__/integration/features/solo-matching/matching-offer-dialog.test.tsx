@@ -3,6 +3,7 @@
  *
  * マッチングオファー送信ダイアログの動作を検証
  * ダイアログの開閉、フォーム統合、成功時の処理をテスト
+ * pendingオファーがある場合の「回答待ちです」表示をテスト
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -31,6 +32,29 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 	)
 }
 
+/**
+ * pendingオファーがない場合のレスポンスを返すモックを設定
+ */
+function setupNoPendingOfferMock() {
+	mockFetch.mockImplementation((url: string) => {
+		if (url.includes('/api/solo-matchings/guest/pending/')) {
+			return Promise.resolve({
+				ok: true,
+				json: async () => ({
+					success: true,
+					hasPendingOffer: false,
+					pendingOffer: null,
+				}),
+			} as Response)
+		}
+		// その他のリクエストはデフォルトのレスポンス
+		return Promise.resolve({
+			ok: true,
+			json: async () => ({ success: true }),
+		} as Response)
+	})
+}
+
 describe('MatchingOfferDialog', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -40,6 +64,8 @@ describe('MatchingOfferDialog', () => {
 				mutations: { retry: false },
 			},
 		})
+		// デフォルトではpendingオファーがない状態をモック
+		setupNoPendingOfferMock()
 	})
 
 	describe('初期表示', () => {
@@ -164,13 +190,26 @@ describe('MatchingOfferDialog', () => {
 				updatedAt: new Date(),
 			}
 
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					success: true,
-					soloMatching: mockSoloMatching,
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				if (url.includes('/api/solo-matchings/guest/pending/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							hasPendingOffer: false,
+							pendingOffer: null,
+						}),
+					} as Response)
+				}
+				// POSTリクエスト
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatching: mockSoloMatching,
+					}),
+				} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -239,13 +278,25 @@ describe('MatchingOfferDialog', () => {
 				updatedAt: new Date(),
 			}
 
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					success: true,
-					soloMatching: mockSoloMatching,
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				if (url.includes('/api/solo-matchings/guest/pending/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							hasPendingOffer: false,
+							pendingOffer: null,
+						}),
+					} as Response)
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatching: mockSoloMatching,
+					}),
+				} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -298,13 +349,25 @@ describe('MatchingOfferDialog', () => {
 				updatedAt: new Date(),
 			}
 
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					success: true,
-					soloMatching: mockSoloMatching,
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				if (url.includes('/api/solo-matchings/guest/pending/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							hasPendingOffer: false,
+							pendingOffer: null,
+						}),
+					} as Response)
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatching: mockSoloMatching,
+					}),
+				} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -342,12 +405,24 @@ describe('MatchingOfferDialog', () => {
 
 	describe('エラーハンドリング', () => {
 		it('送信失敗時にエラートーストが表示され、ダイアログは開いたまま', async () => {
-			mockFetch.mockResolvedValue({
-				ok: false,
-				json: async () => ({
-					error: '時給が低すぎます',
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				if (url.includes('/api/solo-matchings/guest/pending/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							hasPendingOffer: false,
+							pendingOffer: null,
+						}),
+					} as Response)
+				}
+				return Promise.resolve({
+					ok: false,
+					json: async () => ({
+						error: '時給が低すぎます',
+					}),
+				} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -381,6 +456,72 @@ describe('MatchingOfferDialog', () => {
 			await expect
 				.element(page.getByText('鈴木さくらへのマッチングオファー'))
 				.toBeInTheDocument()
+		})
+	})
+
+	describe('重複オファー防止', () => {
+		it('pendingオファーがある場合は「回答待ちです」が表示される', async () => {
+			mockFetch.mockImplementation((url: string) => {
+				if (url.includes('/api/solo-matchings/guest/pending/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							hasPendingOffer: true,
+							pendingOffer: {
+								id: 'pending-matching-123',
+								guestId: 'guest-123',
+								castId: 'cast-pending',
+								status: 'pending',
+							},
+						}),
+					} as Response)
+				}
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({ success: true }),
+				} as Response)
+			})
+
+			render(
+				<TestWrapper>
+					<MatchingOfferDialog castId="cast-pending" castName="田中美香" />
+				</TestWrapper>,
+			)
+
+			// 「回答待ちです」ボタンが表示される
+			await expect
+				.element(page.getByRole('button', { name: '回答待ちです' }))
+				.toBeInTheDocument()
+
+			// ボタンが無効化されている
+			const button = page.getByRole('button', { name: '回答待ちです' })
+			await expect.element(button).toBeDisabled()
+
+			// 「マッチングオファーを送る」ボタンは表示されない
+			await expect
+				.element(page.getByRole('button', { name: 'マッチングオファーを送る' }))
+				.not.toBeInTheDocument()
+		})
+
+		it('pendingオファーがない場合は通常のオファーボタンが表示される', async () => {
+			// beforeEachでsetupNoPendingOfferMockが設定されている
+
+			render(
+				<TestWrapper>
+					<MatchingOfferDialog castId="cast-no-pending" castName="佐々木愛" />
+				</TestWrapper>,
+			)
+
+			// 「マッチングオファーを送る」ボタンが表示される
+			await expect
+				.element(page.getByRole('button', { name: 'マッチングオファーを送る' }))
+				.toBeInTheDocument()
+
+			// 「回答待ちです」ボタンは表示されない
+			await expect
+				.element(page.getByRole('button', { name: '回答待ちです' }))
+				.not.toBeInTheDocument()
 		})
 	})
 })

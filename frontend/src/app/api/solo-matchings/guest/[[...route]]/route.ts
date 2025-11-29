@@ -180,23 +180,71 @@ export function createGuestSoloMatchingsApp(
 		},
 	)
 
+	// 指定キャストへのpendingオファー確認エンドポイント
+	const pendingRoute = app.get(
+		'/pending/:castId',
+		verifyAuthMiddleware,
+		async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
+
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
+
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
+
+			// ゲストのみ確認可能
+			if (user.role !== 'guest') {
+				throw new HTTPException(403, {
+					message: 'ゲストのみpendingオファーを確認できます',
+				})
+			}
+
+			const castId = c.req.param('castId')
+
+			// pendingオファーを取得
+			const pendingOffer = await soloMatchingService.getPendingOfferForCast(
+				userId,
+				castId,
+			)
+
+			return c.json({
+				success: true,
+				hasPendingOffer: pendingOffer !== null,
+				pendingOffer,
+			})
+		},
+	)
+
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const _postRoute = postRoute
 	// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	const _extendRoute = extendRoute
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	const _pendingRoute = pendingRoute
 
-	return { app, postRoute, extendRoute }
+	return { app, postRoute, extendRoute, pendingRoute }
 }
 
-const { app, postRoute, extendRoute } = createGuestSoloMatchingsApp()
+const { app, postRoute, extendRoute, pendingRoute } =
+	createGuestSoloMatchingsApp()
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _postRoute = postRoute
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const _extendRoute = extendRoute
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _pendingRoute = pendingRoute
 
 export type GuestSoloMatchingsPostRouteType = typeof postRoute
 export type GuestSoloMatchingsExtendRouteType = typeof extendRoute
+export type GuestSoloMatchingsPendingRouteType = typeof pendingRoute
 
 export const GET = handle(app)
 export const POST = handle(app)

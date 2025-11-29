@@ -12,6 +12,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { MatchingOfferForm } from './MatchingOfferForm'
 import { useToast } from '@/hooks/useToast'
+import { usePendingOffer } from '@/features/solo-matching/hooks/usePendingOffer'
+import { useQueryClient } from '@tanstack/react-query'
 
 /**
  * MatchingOfferDialogのProps
@@ -32,10 +34,34 @@ export function MatchingOfferDialog({
 }: MatchingOfferDialogProps) {
 	const [open, setOpen] = useState(false)
 	const { showToast } = useToast()
+	const queryClient = useQueryClient()
+	const { data, isLoading } = usePendingOffer(castId)
+
+	const hasPendingOffer = data?.hasPendingOffer ?? false
 
 	const handleSuccess = () => {
 		showToast('マッチングオファーを送信しました', 'success')
 		setOpen(false)
+		// pendingオファーのキャッシュを無効化して再取得
+		queryClient.invalidateQueries({ queryKey: ['pendingOffer', castId] })
+	}
+
+	// ローディング中はボタンを無効化
+	if (isLoading) {
+		return (
+			<Button className="w-full" size="lg" disabled>
+				読み込み中...
+			</Button>
+		)
+	}
+
+	// 回答待ちのオファーがある場合は「回答待ちです」を表示
+	if (hasPendingOffer) {
+		return (
+			<Button className="w-full" size="lg" variant="secondary" disabled>
+				回答待ちです
+			</Button>
+		)
 	}
 
 	return (

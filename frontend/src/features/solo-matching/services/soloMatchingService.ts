@@ -3,7 +3,7 @@ import { soloMatchings } from '@/libs/db/schema/solo-matchings'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 import { addMinutesToDate } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
-import { eq, desc } from 'drizzle-orm'
+import { eq, desc, and } from 'drizzle-orm'
 
 /**
  * ソロマッチング作成の入力パラメータ
@@ -477,6 +477,55 @@ export const soloMatchingService = {
 			castRespondedAt: updated.castRespondedAt,
 			createdAt: updated.createdAt,
 			updatedAt: updated.updatedAt,
+		}
+	},
+
+	/**
+	 * ゲストが指定キャストに対して送信中（回答待ち）のオファーを取得
+	 * @param guestId - ゲストID
+	 * @param castId - キャストID
+	 * @returns 回答待ちのオファーがあればそのオファー、なければnull
+	 */
+	async getPendingOfferForCast(
+		guestId: string,
+		castId: string,
+	): Promise<SoloMatching | null> {
+		const [result] = await db
+			.select()
+			.from(soloMatchings)
+			.where(
+				and(
+					eq(soloMatchings.guestId, guestId),
+					eq(soloMatchings.castId, castId),
+					eq(soloMatchings.status, 'pending'),
+				),
+			)
+			.limit(1)
+
+		if (!result) {
+			return null
+		}
+
+		// DB型からアプリケーション型に変換
+		return {
+			id: result.id,
+			guestId: result.guestId,
+			castId: result.castId,
+			chatRoomId: result.chatRoomId,
+			status: result.status,
+			proposedDate: result.proposedDate,
+			proposedDuration: result.proposedDuration,
+			proposedLocation: result.proposedLocation,
+			hourlyRate: result.hourlyRate,
+			totalPoints: result.totalPoints,
+			startedAt: result.startedAt,
+			scheduledEndAt: result.scheduledEndAt,
+			actualEndAt: result.actualEndAt,
+			extensionMinutes: result.extensionMinutes ?? 0,
+			extensionPoints: result.extensionPoints ?? 0,
+			castRespondedAt: result.castRespondedAt,
+			createdAt: result.createdAt,
+			updatedAt: result.updatedAt,
 		}
 	},
 }

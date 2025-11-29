@@ -33,6 +33,7 @@ vi.mock('@/features/solo-matching/services/soloMatchingService', () => ({
 		createSoloMatching: vi.fn(),
 		getGuestSoloMatchings: vi.fn(),
 		extendSoloMatching: vi.fn(),
+		getPendingOfferForCast: vi.fn(),
 	},
 }))
 
@@ -856,6 +857,161 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				'guest-1',
 				60,
 			)
+		})
+	})
+})
+
+describe('GET /api/solo-matchings/guest/pending/:castId', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	describe('認証チェック', () => {
+		it('認証されていない場合は 401 エラーを返す', async () => {
+			const app = createTestApp() // token なし
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-123',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+
+		it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
+			const app = createTestApp({ role: 'guest' }) // id なし
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-123',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+	})
+
+	describe('権限チェック', () => {
+		it('ユーザーが見つからない場合は 404 エラーを返す', async () => {
+			const app = createTestApp({ id: 'guest-1', role: 'guest' })
+			mockUserService.findUserById.mockResolvedValue(null as unknown as User)
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-123',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(404)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ユーザーが見つかりません')
+		})
+
+		it('キャストユーザーの場合は 403 エラーを返す', async () => {
+			const app = createTestApp({ id: 'cast-1', role: 'cast' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'cast-1',
+				role: 'cast',
+			} as User)
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-123',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(403)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ゲストのみpendingオファーを確認できます')
+		})
+	})
+
+	describe('正常系', () => {
+		it('pendingオファーがある場合はオファー情報を返す', async () => {
+			const app = createTestApp({ id: 'guest-1', role: 'guest' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				role: 'guest',
+			} as User)
+
+			const mockPendingOffer: SoloMatching = {
+				id: 'matching-123',
+				guestId: 'guest-1',
+				castId: 'cast-123',
+				chatRoomId: null,
+				status: 'pending',
+				proposedDate: new Date(),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				hourlyRate: 3000,
+				totalPoints: 6000,
+				startedAt: null,
+				scheduledEndAt: null,
+				actualEndAt: null,
+				extensionMinutes: 0,
+				extensionPoints: 0,
+				castRespondedAt: null,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			}
+			mockSoloMatchingService.getPendingOfferForCast.mockResolvedValue(
+				mockPendingOffer,
+			)
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-123',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.hasPendingOffer).toBe(true)
+			expect(body.pendingOffer).toBeDefined()
+			expect(body.pendingOffer.id).toBe('matching-123')
+			expect(
+				mockSoloMatchingService.getPendingOfferForCast,
+			).toHaveBeenCalledWith('guest-1', 'cast-123')
+		})
+
+		it('pendingオファーがない場合はnullを返す', async () => {
+			const app = createTestApp({ id: 'guest-1', role: 'guest' })
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-1',
+				role: 'guest',
+			} as User)
+			mockSoloMatchingService.getPendingOfferForCast.mockResolvedValue(null)
+
+			const res = await app.request(
+				'/api/solo-matchings/guest/pending/cast-456',
+				{
+					method: 'GET',
+				},
+			)
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.hasPendingOffer).toBe(false)
+			expect(body.pendingOffer).toBeNull()
+			expect(
+				mockSoloMatchingService.getPendingOfferForCast,
+			).toHaveBeenCalledWith('guest-1', 'cast-456')
 		})
 	})
 })
