@@ -251,32 +251,42 @@ frontend/__tests__/
 ├── unit/                       # Vitest (jsdom) - 純粋関数のみ
 │   ├── utils/
 │   │   └── cn.test.ts
+│   ├── libs/
+│   │   └── auth/
+│   │       └── adapter.test.ts
 │   └── features/
 │       └── user/
 │           └── validation.test.ts
 ├── integration/                # Vitest Browser Mode & Node.js
-│   ├── api/
+│   ├── api/                    # API層テスト
 │   │   └── users.test.ts
-│   ├── services/              # サービス層テスト（Node.js環境）
+│   ├── services/               # サービス層テスト（Node.js環境）
 │   │   ├── user-service.test.ts
 │   │   └── cast-service.test.ts
-│   ├── features/
-│   │   ├── auth/
-│   │   │   └── register-flow.test.tsx
-│   │   └── user/
-│   └── auth/
-│       └── adapter.test.ts
+│   ├── hooks/                  # Hooks層テスト（全hooksを集約）
+│   │   ├── use-auth.test.tsx
+│   │   ├── use-cast-list.test.tsx
+│   │   └── use-favorite.test.tsx
+│   └── ui/                     # UI/コンポーネント層テスト（featureで分類）
+│       ├── auth/
+│       │   ├── login-template.test.tsx
+│       │   └── register-flow.test.tsx
+│       ├── cast/
+│       │   └── cast-list-template.test.tsx
+│       └── solo-matching/
+│           └── matching-offer-form.test.tsx
 └── e2e/                        # Playwright
-    ├── auth/
-    │   └── login-flow.spec.ts
+    ├── home/
+    │   └── home-navigation.spec.ts
     └── routing/
         └── protected-routes.spec.ts
 ```
 
-**サービス層テストの配置ルール**:
-- サービス層のテストは `__tests__/integration/services/` 配下に集約する
-- ファイル名は `[domain]-service.test.ts` の形式にする（例: `user-service.test.ts`, `cast-service.test.ts`）
-- これにより vitest.node.config.ts の設定が簡潔になり、サービス層テストの管理が容易になる
+**テスト配置ルール**:
+- **サービス層**: `__tests__/integration/services/` に集約、ファイル名は `[domain]-service.test.ts`
+- **Hooks層**: `__tests__/integration/hooks/` に集約、ファイル名は `use-[name].test.tsx`
+- **UI層**: `__tests__/integration/ui/[feature]/` に配置、同名テストの衝突を防ぎつつfeature単位で整理
+- **API層**: `__tests__/integration/api/` に集約、ファイル名は `[domain].test.ts`
 
 #### テストの原則
 1. **ユーザー視点でテストを書く**

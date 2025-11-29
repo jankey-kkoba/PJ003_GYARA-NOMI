@@ -73,17 +73,29 @@ frontend/__tests__/
 ├── utils/                      # テストユーティリティ
 ├── unit/                       # Vitest (jsdom)
 │   ├── utils/
+│   ├── libs/
 │   └── features/
 ├── integration/                # Vitest Browser Mode & Node.js
 │   ├── api/                    # API層テスト
 │   ├── services/               # サービス層テスト（Node.js環境）
-│   └── features/               # コンポーネント/Hooks層テスト
+│   ├── hooks/                  # Hooks層テスト（全hooksを集約）
+│   │   ├── use-auth.test.tsx
+│   │   ├── use-cast-list.test.tsx
+│   │   └── use-*.test.tsx
+│   └── ui/                     # UI/コンポーネント層テスト（featureで分類）
 │       ├── auth/
 │       ├── cast/
 │       ├── favorite/
-│       └── user/
+│       ├── solo-matching/
+│       └── home/
 └── e2e/                        # Playwright
 ```
+
+**テスト配置ルール**:
+- **Hooks層**: `hooks/` に集約（ファイル名: `use-[name].test.tsx`）
+- **UI層**: `ui/[feature]/` に配置（feature単位で整理、同名テストの衝突を防止）
+- **API層**: `api/` に集約（ファイル名: `[domain].test.ts`）
+- **サービス層**: `services/` に集約（ファイル名: `[domain]-service.test.ts`）
 
 ## テストの原則
 
@@ -126,22 +138,34 @@ npm run test -- --run __tests__/integration/features/cast/
 ## 現在のテストカバレッジ状況
 
 ### お気に入り機能
-- ✅ `favorites.test.ts` - API層（認証、ロール、CRUD）
-- ✅ `favorite-service.test.ts` - サービス層（実DB）
-- ✅ `use-favorite.test.tsx` - Hooks層
-- ✅ `favorite-button.test.tsx` - コンポーネント層
+- ✅ `api/favorites.test.ts` - API層（認証、ロール、CRUD）
+- ✅ `services/favorite-service.test.ts` - サービス層（実DB）
+- ✅ `hooks/use-favorite.test.tsx` - Hooks層
+- ✅ `ui/favorite/favorite-button.test.tsx` - UI層
 
 ### キャスト一覧/検索機能
-- ✅ `casts.test.ts` - API層（認証、ロール、バリデーション、ページネーション、フィルター）
-- ✅ `cast-service.test.ts` - サービス層（実DB、年齢フィルタ）
-- ✅ `use-cast-list.test.tsx` - Hooks層
-- ✅ `cast-list-template.test.tsx` - コンポーネント層（フィルター統合含む）
-- ✅ `cast-detail-template.test.tsx` - コンポーネント層
-- ✅ `cast-filter-dialog.test.tsx` - フィルターダイアログ
+- ✅ `api/casts.test.ts` - API層（認証、ロール、バリデーション、ページネーション、フィルター）
+- ✅ `services/cast-service.test.ts` - サービス層（実DB、年齢フィルタ）
+- ✅ `hooks/use-cast-list.test.tsx` - Hooks層
+- ✅ `ui/cast/cast-list-template.test.tsx` - UI層（フィルター統合含む）
+- ✅ `ui/cast/cast-detail-template.test.tsx` - UI層
+- ✅ `ui/cast/cast-filter-dialog.test.tsx` - フィルターダイアログ
 
 ### 認証機能
-- ✅ `adapter.test.ts` - Auth.jsカスタムアダプター
-- ✅ `users.test.ts` - ユーザー登録API
+- ✅ `unit/libs/auth/adapter.test.ts` - Auth.jsカスタムアダプター
+- ✅ `api/users.test.ts` - ユーザー登録API
+- ✅ `hooks/use-auth.test.tsx` - Hooks層
+- ✅ `ui/auth/*.test.tsx` - UI層（login, register, logout等）
+
+### ソロマッチング機能
+- ✅ `api/solo-matchings.test.ts` - API層（ゲスト向け）
+- ✅ `api/solo-matchings-cast.test.ts` - API層（キャスト向け）
+- ✅ `services/solo-matching-service.test.ts` - サービス層
+- ✅ `hooks/use-create-solo-matching.test.tsx` - Hooks層
+- ✅ `hooks/use-extend-solo-matching.test.tsx` - Hooks層
+- ✅ `hooks/use-complete-solo-matching.test.tsx` - Hooks層
+- ✅ `hooks/use-pending-offer.test.tsx` - Hooks層
+- ✅ `ui/solo-matching/*.test.tsx` - UI層
 
 ## 注意事項
 
