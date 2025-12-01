@@ -263,10 +263,6 @@ frontend/__tests__/
 │   ├── services/               # サービス層テスト（Node.js環境）
 │   │   ├── user-service.test.ts
 │   │   └── cast-service.test.ts
-│   ├── hooks/                  # Hooks層テスト（全hooksを集約）
-│   │   ├── use-auth.test.tsx
-│   │   ├── use-cast-list.test.tsx
-│   │   └── use-favorite.test.tsx
 │   └── ui/                     # UI/コンポーネント層テスト（featureで分類）
 │       ├── auth/
 │       │   ├── login-template.test.tsx
@@ -284,9 +280,13 @@ frontend/__tests__/
 
 **テスト配置ルール**:
 - **サービス層**: `__tests__/integration/services/` に集約、ファイル名は `[domain]-service.test.ts`
-- **Hooks層**: `__tests__/integration/hooks/` に集約、ファイル名は `use-[name].test.tsx`
 - **UI層**: `__tests__/integration/ui/[feature]/` に配置、同名テストの衝突を防ぎつつfeature単位で整理
 - **API層**: `__tests__/integration/api/` に集約、ファイル名は `[domain].test.ts`
+
+**Hooks層テストについて**:
+- hooks層の単体テストは作成しない（Testing Trophy戦略に基づく）
+- hooksは実装詳細として扱い、UI層テストで間接的に検証する
+- 例外: 複数UIから共有され、複雑なキャッシュロジックを持つ場合のみ検討
 
 #### テストの原則
 1. **ユーザー視点でテストを書く**

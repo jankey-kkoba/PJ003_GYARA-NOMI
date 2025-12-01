@@ -48,7 +48,7 @@ vi.mock('@/features/cast/services/castService', () => ({
 const GUEST_ID = 'seed-user-guest-001'
 ```
 
-### 3. コンポーネント/Hooks層テスト (`__tests__/integration/features/`)
+### 3. UI/コンポーネント層テスト (`__tests__/integration/ui/`)
 - Vitest Browser Modeで実ブラウザ環境テスト
 - Hono クライアントをモック
 - 検証項目:
@@ -78,10 +78,6 @@ frontend/__tests__/
 ├── integration/                # Vitest Browser Mode & Node.js
 │   ├── api/                    # API層テスト
 │   ├── services/               # サービス層テスト（Node.js環境）
-│   ├── hooks/                  # Hooks層テスト（全hooksを集約）
-│   │   ├── use-auth.test.tsx
-│   │   ├── use-cast-list.test.tsx
-│   │   └── use-*.test.tsx
 │   └── ui/                     # UI/コンポーネント層テスト（featureで分類）
 │       ├── auth/
 │       ├── cast/
@@ -92,10 +88,14 @@ frontend/__tests__/
 ```
 
 **テスト配置ルール**:
-- **Hooks層**: `hooks/` に集約（ファイル名: `use-[name].test.tsx`）
 - **UI層**: `ui/[feature]/` に配置（feature単位で整理、同名テストの衝突を防止）
 - **API層**: `api/` に集約（ファイル名: `[domain].test.ts`）
 - **サービス層**: `services/` に集約（ファイル名: `[domain]-service.test.ts`）
+
+**Hooks層テストについて**:
+- hooks層の単体テストは作成しない（Testing Trophy戦略に基づく）
+- hooksは実装詳細として扱い、UI層テストで間接的に検証
+- 例外: 複数UIから共有され、複雑なキャッシュロジックを持つ場合のみ検討
 
 ## テストの原則
 
@@ -140,13 +140,11 @@ npm run test -- --run __tests__/integration/features/cast/
 ### お気に入り機能
 - ✅ `api/favorites.test.ts` - API層（認証、ロール、CRUD）
 - ✅ `services/favorite-service.test.ts` - サービス層（実DB）
-- ✅ `hooks/use-favorite.test.tsx` - Hooks層
 - ✅ `ui/favorite/favorite-button.test.tsx` - UI層
 
 ### キャスト一覧/検索機能
 - ✅ `api/casts.test.ts` - API層（認証、ロール、バリデーション、ページネーション、フィルター）
 - ✅ `services/cast-service.test.ts` - サービス層（実DB、年齢フィルタ）
-- ✅ `hooks/use-cast-list.test.tsx` - Hooks層
 - ✅ `ui/cast/cast-list-template.test.tsx` - UI層（フィルター統合含む）
 - ✅ `ui/cast/cast-detail-template.test.tsx` - UI層
 - ✅ `ui/cast/cast-filter-dialog.test.tsx` - フィルターダイアログ
@@ -154,17 +152,12 @@ npm run test -- --run __tests__/integration/features/cast/
 ### 認証機能
 - ✅ `unit/libs/auth/adapter.test.ts` - Auth.jsカスタムアダプター
 - ✅ `api/users.test.ts` - ユーザー登録API
-- ✅ `hooks/use-auth.test.tsx` - Hooks層
 - ✅ `ui/auth/*.test.tsx` - UI層（login, register, logout等）
 
 ### ソロマッチング機能
 - ✅ `api/solo-matchings.test.ts` - API層（ゲスト向け）
 - ✅ `api/solo-matchings-cast.test.ts` - API層（キャスト向け）
 - ✅ `services/solo-matching-service.test.ts` - サービス層
-- ✅ `hooks/use-create-solo-matching.test.tsx` - Hooks層
-- ✅ `hooks/use-extend-solo-matching.test.tsx` - Hooks層
-- ✅ `hooks/use-complete-solo-matching.test.tsx` - Hooks層
-- ✅ `hooks/use-pending-offer.test.tsx` - Hooks層
 - ✅ `ui/solo-matching/*.test.tsx` - UI層
 
 ## 注意事項
