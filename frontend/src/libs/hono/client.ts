@@ -4,6 +4,8 @@ import type { CastsAppType } from '@/app/api/casts/[[...route]]/route'
 import type { FavoritesAppType } from '@/app/api/favorites/[[...route]]/route'
 import type { PhotosAppType } from '@/app/api/casts/photos/[[...route]]/route'
 import type { CastReviewsAppType } from '@/app/api/cast-reviews/[[...route]]/route'
+import type { CastSoloMatchingsAppType } from '@/app/api/solo-matchings/cast/[[...route]]/route'
+import type { GuestSoloMatchingsAppType } from '@/app/api/solo-matchings/guest/[[...route]]/route'
 
 /**
  * Honoクライアントのベースオプション
@@ -43,3 +45,21 @@ export const photosClient = hc<PhotosAppType>('/', clientOptions)
  * 型安全なRPCクライアント
  */
 export const castReviewsClient = hc<CastReviewsAppType>('/', clientOptions)
+
+/**
+ * キャストソロマッチングAPIクライアント
+ * 型安全なRPCクライアント
+ */
+export const castSoloMatchingsClient = hc<CastSoloMatchingsAppType>(
+	'/',
+	clientOptions,
+)
+
+/**
+ * ゲストソロマッチングAPIクライアント
+ * 型安全なRPCクライアント
+ */
+export const guestSoloMatchingsClient = hc<GuestSoloMatchingsAppType>(
+	'/',
+	clientOptions,
+)

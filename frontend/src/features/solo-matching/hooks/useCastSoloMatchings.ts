@@ -1,33 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { castSoloMatchingsClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-
-/**
- * APIレスポンスの型
- */
-type GetCastSoloMatchingsResponse = {
-	success: true
-	soloMatchings: SoloMatching[]
-}
-
-/**
- * キャストのソロマッチング一覧を取得
- */
-async function getCastSoloMatchings(): Promise<SoloMatching[]> {
-	const response = await fetch('/api/solo-matchings/cast', {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-	})
-
-	if (!response.ok) {
-		const error = await response.json()
-		throw new Error(error.error || 'マッチング一覧の取得に失敗しました')
-	}
-
-	const data: GetCastSoloMatchingsResponse = await response.json()
-	return data.soloMatchings
-}
+import { parseSoloMatchings } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * キャストのソロマッチング一覧取得のカスタムフック
@@ -35,6 +10,19 @@ async function getCastSoloMatchings(): Promise<SoloMatching[]> {
 export function useCastSoloMatchings() {
 	return useQuery({
 		queryKey: ['castSoloMatchings'],
-		queryFn: getCastSoloMatchings,
+		queryFn: async (): Promise<SoloMatching[]> => {
+			const res =
+				await castSoloMatchingsClient.api['solo-matchings'].cast.$get()
+
+			await handleApiError(res, 'マッチング一覧の取得に失敗しました')
+
+			const result = await res.json()
+
+			if (!result.success) {
+				throw new Error('マッチング一覧の取得に失敗しました')
+			}
+
+			return parseSoloMatchings(result.soloMatchings)
+		},
 	})
 }

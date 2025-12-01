@@ -9,7 +9,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useCreateSoloMatching } from '@/features/solo-matching/hooks/useCreateSoloMatching'
 import type { CreateSoloMatchingInput } from '@/features/solo-matching/schemas/createSoloMatching'
 
 // Toast のモック
@@ -20,9 +19,24 @@ vi.mock('@/hooks/useToast', () => ({
 	}),
 }))
 
-// Fetch APIのモック
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch as unknown as typeof fetch
+// Hono クライアントのモック
+const mockPost = vi.fn()
+vi.mock('@/libs/hono/client', () => ({
+	guestSoloMatchingsClient: {
+		api: {
+			'solo-matchings': {
+				guest: {
+					$post: mockPost,
+				},
+			},
+		},
+	},
+}))
+
+// モック後にインポート
+const { useCreateSoloMatching } = await import(
+	'@/features/solo-matching/hooks/useCreateSoloMatching'
+)
 
 let queryClient: QueryClient
 
@@ -93,20 +107,26 @@ describe('useCreateSoloMatching', () => {
 				castId: 'cast-123',
 				chatRoomId: null,
 				status: 'pending' as const,
-				proposedDate: new Date(Date.now() + 86400000),
+				proposedDate: new Date(Date.now() + 86400000).toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				hourlyRate: 3000,
 				totalPoints: 6000,
+				startedAt: null,
+				scheduledEndAt: null,
+				actualEndAt: null,
+				castRespondedAt: null,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPost.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -124,12 +144,10 @@ describe('useCreateSoloMatching', () => {
 					.toHaveTextContent('true')
 			})
 
-			expect(mockFetch).toHaveBeenCalledWith('/api/solo-matchings/guest', {
-				method: 'POST',
-				headers: {
-					'Content-Type': 'application/json',
-				},
-				body: JSON.stringify(input),
+			// API が正しいパラメータで呼ばれたか確認
+			expect(mockPost).toHaveBeenCalledTimes(1)
+			expect(mockPost).toHaveBeenCalledWith({
+				json: input,
 			})
 		})
 
@@ -148,20 +166,26 @@ describe('useCreateSoloMatching', () => {
 				castId: 'cast-456',
 				chatRoomId: null,
 				status: 'pending' as const,
-				proposedDate: new Date(Date.now() + 86400000),
+				proposedDate: new Date(Date.now() + 86400000).toISOString(),
 				proposedDuration: 90,
 				proposedLocation: '新宿',
 				hourlyRate: 4000,
 				totalPoints: 6000,
+				startedAt: null,
+				scheduledEndAt: null,
+				actualEndAt: null,
+				castRespondedAt: null,
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPost.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			const onSuccess = vi.fn()
 
@@ -191,12 +215,12 @@ describe('useCreateSoloMatching', () => {
 				hourlyRate: 3000,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPost.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'キャストが見つかりません',
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -229,10 +253,10 @@ describe('useCreateSoloMatching', () => {
 				hourlyRate: 3000,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPost.mockResolvedValue({
 				ok: false,
 				json: async () => ({}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -265,12 +289,12 @@ describe('useCreateSoloMatching', () => {
 				hourlyRate: 3000,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPost.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'サーバーエラー',
 				}),
-			} as Response)
+			})
 
 			const onError = vi.fn()
 
@@ -300,12 +324,12 @@ describe('useCreateSoloMatching', () => {
 				hourlyRate: 3000,
 			}
 
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
+			let resolvePromise: (value: unknown) => void = () => {}
+			const pendingPromise = new Promise((resolve) => {
 				resolvePromise = resolve
 			})
 
-			mockFetch.mockReturnValue(pendingPromise)
+			mockPost.mockReturnValue(pendingPromise)
 
 			render(
 				<TestWrapper>
@@ -333,14 +357,20 @@ describe('useCreateSoloMatching', () => {
 						guestId: 'guest-123',
 						castId: 'cast-123',
 						status: 'pending',
-						proposedDate: new Date(Date.now() + 86400000),
+						proposedDate: new Date(Date.now() + 86400000).toISOString(),
 						proposedDuration: 120,
 						proposedLocation: '渋谷',
 						hourlyRate: 3000,
 						totalPoints: 6000,
+						startedAt: null,
+						scheduledEndAt: null,
+						actualEndAt: null,
+						castRespondedAt: null,
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
 					},
 				}),
-			} as Response)
+			})
 		})
 	})
 })

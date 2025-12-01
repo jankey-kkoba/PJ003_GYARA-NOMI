@@ -9,12 +9,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useExtendSoloMatching } from '@/features/solo-matching/hooks/useExtendSoloMatching'
 import type { ExtendSoloMatchingParams } from '@/features/solo-matching/hooks/useExtendSoloMatching'
 
-// Fetch APIのモック
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch as unknown as typeof fetch
+// Hono クライアントのモック
+const mockPatch = vi.fn()
+vi.mock('@/libs/hono/client', () => ({
+	guestSoloMatchingsClient: {
+		api: {
+			'solo-matchings': {
+				guest: {
+					':id': {
+						extend: {
+							$patch: mockPatch,
+						},
+					},
+				},
+			},
+		},
+	},
+}))
+
+// モック後にインポート
+const { useExtendSoloMatching } = await import(
+	'@/features/solo-matching/hooks/useExtendSoloMatching'
+)
 
 let queryClient: QueryClient
 
@@ -82,24 +100,28 @@ describe('useExtendSoloMatching', () => {
 				castId: 'cast-123',
 				chatRoomId: null,
 				status: 'in_progress' as const,
-				proposedDate: new Date('2025-11-28T17:00:00Z'),
+				proposedDate: '2025-11-28T17:00:00Z',
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				hourlyRate: 5000,
 				totalPoints: 12500,
-				startedAt: new Date('2025-11-28T17:00:00Z'),
-				scheduledEndAt: new Date('2025-11-28T19:30:00Z'),
+				startedAt: '2025-11-28T17:00:00Z',
+				scheduledEndAt: '2025-11-28T19:30:00Z',
+				actualEndAt: null,
+				castRespondedAt: '2025-11-28T16:00:00Z',
 				extensionMinutes: 30,
 				extensionPoints: 2500,
+				createdAt: '2025-11-28T15:00:00Z',
+				updatedAt: '2025-11-28T17:00:00Z',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -117,16 +139,12 @@ describe('useExtendSoloMatching', () => {
 					.toHaveTextContent('true')
 			})
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				'/api/solo-matchings/guest/matching-123/extend',
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ extensionMinutes: 30 }),
-				},
-			)
+			// API が正しいパラメータで呼ばれたか確認
+			expect(mockPatch).toHaveBeenCalledTimes(1)
+			expect(mockPatch).toHaveBeenCalledWith({
+				param: { id: 'matching-123' },
+				json: { extensionMinutes: 30 },
+			})
 		})
 
 		it('60分延長できる', async () => {
@@ -141,24 +159,28 @@ describe('useExtendSoloMatching', () => {
 				castId: 'cast-456',
 				chatRoomId: null,
 				status: 'in_progress' as const,
-				proposedDate: new Date('2025-11-28T17:00:00Z'),
+				proposedDate: '2025-11-28T17:00:00Z',
 				proposedDuration: 120,
 				proposedLocation: '新宿',
 				hourlyRate: 4000,
 				totalPoints: 12000,
-				startedAt: new Date('2025-11-28T17:00:00Z'),
-				scheduledEndAt: new Date('2025-11-28T20:00:00Z'),
+				startedAt: '2025-11-28T17:00:00Z',
+				scheduledEndAt: '2025-11-28T20:00:00Z',
+				actualEndAt: null,
+				castRespondedAt: '2025-11-28T16:00:00Z',
 				extensionMinutes: 60,
 				extensionPoints: 4000,
+				createdAt: '2025-11-28T15:00:00Z',
+				updatedAt: '2025-11-28T17:00:00Z',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -176,16 +198,11 @@ describe('useExtendSoloMatching', () => {
 					.toHaveTextContent('true')
 			})
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				'/api/solo-matchings/guest/matching-456/extend',
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-					body: JSON.stringify({ extensionMinutes: 60 }),
-				},
-			)
+			// API が正しいパラメータで呼ばれたか確認
+			expect(mockPatch).toHaveBeenCalledWith({
+				param: { id: 'matching-456' },
+				json: { extensionMinutes: 60 },
+			})
 		})
 
 		it('onSuccessコールバックが呼ばれる', async () => {
@@ -200,24 +217,28 @@ describe('useExtendSoloMatching', () => {
 				castId: 'cast-789',
 				chatRoomId: null,
 				status: 'in_progress' as const,
-				proposedDate: new Date('2025-11-28T17:00:00Z'),
+				proposedDate: '2025-11-28T17:00:00Z',
 				proposedDuration: 90,
 				proposedLocation: '六本木',
 				hourlyRate: 5000,
 				totalPoints: 10000,
-				startedAt: new Date('2025-11-28T17:00:00Z'),
-				scheduledEndAt: new Date('2025-11-28T19:00:00Z'),
+				startedAt: '2025-11-28T17:00:00Z',
+				scheduledEndAt: '2025-11-28T19:00:00Z',
+				actualEndAt: null,
+				castRespondedAt: '2025-11-28T16:00:00Z',
 				extensionMinutes: 30,
 				extensionPoints: 2500,
+				createdAt: '2025-11-28T15:00:00Z',
+				updatedAt: '2025-11-28T17:00:00Z',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			const onSuccess = vi.fn()
 
@@ -244,12 +265,12 @@ describe('useExtendSoloMatching', () => {
 				extensionMinutes: 30,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'マッチングが見つかりません',
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -278,10 +299,10 @@ describe('useExtendSoloMatching', () => {
 				extensionMinutes: 30,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -310,12 +331,12 @@ describe('useExtendSoloMatching', () => {
 				extensionMinutes: 30,
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'サーバーエラー',
 				}),
-			} as Response)
+			})
 
 			const onError = vi.fn()
 
@@ -342,12 +363,12 @@ describe('useExtendSoloMatching', () => {
 				extensionMinutes: 30,
 			}
 
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
+			let resolvePromise: (value: unknown) => void = () => {}
+			const pendingPromise = new Promise((resolve) => {
 				resolvePromise = resolve
 			})
 
-			mockFetch.mockReturnValue(pendingPromise)
+			mockPatch.mockReturnValue(pendingPromise)
 
 			render(
 				<TestWrapper>
@@ -375,18 +396,22 @@ describe('useExtendSoloMatching', () => {
 						guestId: 'guest-123',
 						castId: 'cast-123',
 						status: 'in_progress',
-						proposedDate: new Date('2025-11-28T17:00:00Z'),
+						proposedDate: '2025-11-28T17:00:00Z',
 						proposedDuration: 120,
 						proposedLocation: '渋谷',
 						hourlyRate: 5000,
 						totalPoints: 12500,
-						startedAt: new Date('2025-11-28T17:00:00Z'),
-						scheduledEndAt: new Date('2025-11-28T19:30:00Z'),
+						startedAt: '2025-11-28T17:00:00Z',
+						scheduledEndAt: '2025-11-28T19:30:00Z',
+						actualEndAt: null,
+						castRespondedAt: '2025-11-28T16:00:00Z',
 						extensionMinutes: 30,
 						extensionPoints: 2500,
+						createdAt: '2025-11-28T15:00:00Z',
+						updatedAt: '2025-11-28T17:00:00Z',
 					},
 				}),
-			} as Response)
+			})
 		})
 	})
 })

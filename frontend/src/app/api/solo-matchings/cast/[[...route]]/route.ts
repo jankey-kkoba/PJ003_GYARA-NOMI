@@ -2,19 +2,11 @@ import { Hono, type MiddlewareHandler } from 'hono'
 import { handle } from 'hono/vercel'
 import { HTTPException } from 'hono/http-exception'
 import { verifyAuth } from '@hono/auth-js'
+import { zValidator } from '@hono/zod-validator'
 import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
+import { respondToSoloMatchingSchema } from '@/features/solo-matching/schemas/respondToSoloMatching'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 import { userService } from '@/features/user/services/userService'
-import { z } from 'zod'
-
-/**
- * マッチング回答のリクエストボディのスキーマ
- */
-const respondToMatchingSchema = z.object({
-	response: z.enum(['accepted', 'rejected'], {
-		message: 'responseは "accepted" または "rejected" である必要があります',
-	}),
-})
 
 type CreateCastSoloMatchingsAppOptions = {
 	/** Auth.js設定の初期化ミドルウェア */
@@ -52,153 +44,147 @@ export function createCastSoloMatchingsApp(
 		)
 	})
 
-	// キャストのソロマッチング一覧取得エンドポイント
-	app.get('/', verifyAuthMiddleware, async (c) => {
-		// 認証済みユーザー情報を取得
-		const authUser = c.get('authUser')
-		const userId = authUser.token?.id as string | undefined
+	// チェーンルート形式で定義
+	const route = app
+		// キャストのソロマッチング一覧取得エンドポイント
+		.get('/', verifyAuthMiddleware, async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
 
-		if (!userId) {
-			throw new HTTPException(401, { message: '認証が必要です' })
-		}
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
 
-		// ユーザー情報を取得してロールを確認
-		const user = await userService.findUserById(userId)
-		if (!user) {
-			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-		}
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
 
-		// キャストのみマッチング一覧を取得可能
-		if (user.role !== 'cast') {
-			throw new HTTPException(403, {
-				message: 'キャストのみマッチング一覧を取得できます',
-			})
-		}
+			// キャストのみマッチング一覧を取得可能
+			if (user.role !== 'cast') {
+				throw new HTTPException(403, {
+					message: 'キャストのみマッチング一覧を取得できます',
+				})
+			}
 
-		// ソロマッチング一覧を取得
-		const soloMatchings = await soloMatchingService.getCastSoloMatchings(userId)
+			// ソロマッチング一覧を取得
+			const soloMatchings = await soloMatchingService.getCastSoloMatchings(userId)
 
-		return c.json({ success: true, soloMatchings })
-	})
+			return c.json({ success: true, soloMatchings })
+		})
+		// キャストのマッチング開始エンドポイント
+		.patch('/:id/start', verifyAuthMiddleware, async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
 
-	// キャストのマッチング開始エンドポイント (/:id/start は /:id より前に定義)
-	app.patch('/:id/start', verifyAuthMiddleware, async (c) => {
-		// 認証済みユーザー情報を取得
-		const authUser = c.get('authUser')
-		const userId = authUser.token?.id as string | undefined
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
 
-		if (!userId) {
-			throw new HTTPException(401, { message: '認証が必要です' })
-		}
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
 
-		// ユーザー情報を取得してロールを確認
-		const user = await userService.findUserById(userId)
-		if (!user) {
-			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-		}
+			// キャストのみ開始可能
+			if (user.role !== 'cast') {
+				throw new HTTPException(403, {
+					message: 'キャストのみマッチングを開始できます',
+				})
+			}
 
-		// キャストのみ開始可能
-		if (user.role !== 'cast') {
-			throw new HTTPException(403, {
-				message: 'キャストのみマッチングを開始できます',
-			})
-		}
+			// マッチングIDを取得
+			const matchingId = c.req.param('id')
 
-		// マッチングIDを取得
-		const matchingId = c.req.param('id')
+			// マッチングを開始
+			const updatedMatching = await soloMatchingService.startSoloMatching(
+				matchingId,
+				userId,
+			)
 
-		// マッチングを開始
-		const updatedMatching = await soloMatchingService.startSoloMatching(
-			matchingId,
-			userId,
+			return c.json({ success: true, matching: updatedMatching })
+		})
+		// キャストのマッチング終了エンドポイント
+		.patch('/:id/end', verifyAuthMiddleware, async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
+
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
+
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
+
+			// キャストのみ終了可能
+			if (user.role !== 'cast') {
+				throw new HTTPException(403, {
+					message: 'キャストのみマッチングを終了できます',
+				})
+			}
+
+			// マッチングIDを取得
+			const matchingId = c.req.param('id')
+
+			// マッチングを終了
+			const updatedMatching = await soloMatchingService.completeSoloMatching(
+				matchingId,
+				userId,
+			)
+
+			return c.json({ success: true, matching: updatedMatching })
+		})
+		// キャストのマッチング回答エンドポイント
+		.patch(
+			'/:id',
+			verifyAuthMiddleware,
+			zValidator('json', respondToSoloMatchingSchema),
+			async (c) => {
+				// 認証済みユーザー情報を取得
+				const authUser = c.get('authUser')
+				const userId = authUser.token?.id as string | undefined
+
+				if (!userId) {
+					throw new HTTPException(401, { message: '認証が必要です' })
+				}
+
+				// ユーザー情報を取得してロールを確認
+				const user = await userService.findUserById(userId)
+				if (!user) {
+					throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+				}
+
+				// キャストのみ回答可能
+				if (user.role !== 'cast') {
+					throw new HTTPException(403, {
+						message: 'キャストのみマッチングに回答できます',
+					})
+				}
+
+				// マッチングIDを取得
+				const matchingId = c.req.param('id')
+
+				// バリデーション済みのリクエストボディを取得
+				const { response } = c.req.valid('json')
+
+				// マッチングに回答
+				const updatedMatching = await soloMatchingService.respondToSoloMatching(
+					matchingId,
+					userId,
+					response,
+				)
+
+				return c.json({ success: true, matching: updatedMatching })
+			},
 		)
-
-		return c.json({ success: true, matching: updatedMatching })
-	})
-
-	// キャストのマッチング終了エンドポイント
-	app.patch('/:id/end', verifyAuthMiddleware, async (c) => {
-		// 認証済みユーザー情報を取得
-		const authUser = c.get('authUser')
-		const userId = authUser.token?.id as string | undefined
-
-		if (!userId) {
-			throw new HTTPException(401, { message: '認証が必要です' })
-		}
-
-		// ユーザー情報を取得してロールを確認
-		const user = await userService.findUserById(userId)
-		if (!user) {
-			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-		}
-
-		// キャストのみ終了可能
-		if (user.role !== 'cast') {
-			throw new HTTPException(403, {
-				message: 'キャストのみマッチングを終了できます',
-			})
-		}
-
-		// マッチングIDを取得
-		const matchingId = c.req.param('id')
-
-		// マッチングを終了
-		const updatedMatching = await soloMatchingService.completeSoloMatching(
-			matchingId,
-			userId,
-		)
-
-		return c.json({ success: true, matching: updatedMatching })
-	})
-
-	// キャストのマッチング回答エンドポイント
-	const route = app.patch('/:id', verifyAuthMiddleware, async (c) => {
-		// 認証済みユーザー情報を取得
-		const authUser = c.get('authUser')
-		const userId = authUser.token?.id as string | undefined
-
-		if (!userId) {
-			throw new HTTPException(401, { message: '認証が必要です' })
-		}
-
-		// ユーザー情報を取得してロールを確認
-		const user = await userService.findUserById(userId)
-		if (!user) {
-			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-		}
-
-		// キャストのみ回答可能
-		if (user.role !== 'cast') {
-			throw new HTTPException(403, {
-				message: 'キャストのみマッチングに回答できます',
-			})
-		}
-
-		// マッチングIDを取得
-		const matchingId = c.req.param('id')
-
-		// リクエストボディをパース＆バリデーション
-		const body = await c.req.json()
-		const validationResult = respondToMatchingSchema.safeParse(body)
-
-		if (!validationResult.success) {
-			throw new HTTPException(400, {
-				message:
-					validationResult.error.issues[0]?.message || 'バリデーションエラー',
-			})
-		}
-
-		const { response } = validationResult.data
-
-		// マッチングに回答
-		const updatedMatching = await soloMatchingService.respondToSoloMatching(
-			matchingId,
-			userId,
-			response,
-		)
-
-		return c.json({ success: true, matching: updatedMatching })
-	})
 
 	return { app, route }
 }

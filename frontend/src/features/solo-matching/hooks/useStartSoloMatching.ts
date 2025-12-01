@@ -1,46 +1,14 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
+import { castSoloMatchingsClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
+import { parseSoloMatching } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * マッチング開始のパラメータ
  */
 export type StartSoloMatchingParams = {
 	matchingId: string
-}
-
-/**
- * APIレスポンスの型
- */
-type StartSoloMatchingResponse = {
-	success: true
-	matching: SoloMatching
-}
-
-/**
- * マッチングを開始する
- */
-async function startSoloMatching(
-	params: StartSoloMatchingParams,
-): Promise<SoloMatching> {
-	const { matchingId } = params
-
-	const apiResponse = await fetch(
-		`/api/solo-matchings/cast/${matchingId}/start`,
-		{
-			method: 'PATCH',
-			headers: {
-				'Content-Type': 'application/json',
-			},
-		},
-	)
-
-	if (!apiResponse.ok) {
-		const error = await apiResponse.json()
-		throw new Error(error.error || 'マッチングの開始に失敗しました')
-	}
-
-	const data: StartSoloMatchingResponse = await apiResponse.json()
-	return data.matching
 }
 
 /**
@@ -51,7 +19,28 @@ export function useStartSoloMatching() {
 	const queryClient = useQueryClient()
 
 	return useMutation({
-		mutationFn: startSoloMatching,
+		mutationFn: async (
+			params: StartSoloMatchingParams,
+		): Promise<SoloMatching> => {
+			const { matchingId } = params
+
+			const res =
+				await castSoloMatchingsClient.api['solo-matchings'].cast[':id'].start.$patch(
+					{
+						param: { id: matchingId },
+					},
+				)
+
+			await handleApiError(res, 'マッチングの開始に失敗しました')
+
+			const result = await res.json()
+
+			if (!result.success) {
+				throw new Error('マッチングの開始に失敗しました')
+			}
+
+			return parseSoloMatching(result.matching)
+		},
 		onSuccess: () => {
 			// マッチング一覧のキャッシュを無効化して再取得
 			queryClient.invalidateQueries({ queryKey: ['castSoloMatchings'] })

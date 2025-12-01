@@ -45,42 +45,10 @@ export function createGuestSoloMatchingsApp(
 		)
 	})
 
-	// ゲストのソロマッチング一覧取得エンドポイント
-	app.get('/', verifyAuthMiddleware, async (c) => {
-		// 認証済みユーザー情報を取得
-		const authUser = c.get('authUser')
-		const userId = authUser.token?.id as string | undefined
-
-		if (!userId) {
-			throw new HTTPException(401, { message: '認証が必要です' })
-		}
-
-		// ユーザー情報を取得してロールを確認
-		const user = await userService.findUserById(userId)
-		if (!user) {
-			throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-		}
-
-		// ゲストのみマッチング一覧を取得可能
-		if (user.role !== 'guest') {
-			throw new HTTPException(403, {
-				message: 'ゲストのみマッチング一覧を取得できます',
-			})
-		}
-
-		// ソロマッチング一覧を取得
-		const soloMatchings =
-			await soloMatchingService.getGuestSoloMatchings(userId)
-
-		return c.json({ success: true, soloMatchings })
-	})
-
-	// ソロマッチングオファー作成エンドポイント
-	const postRoute = app.post(
-		'/',
-		verifyAuthMiddleware,
-		zValidator('json', createSoloMatchingSchema),
-		async (c) => {
+	// チェーンルート形式で定義
+	const route = app
+		// ゲストのソロマッチング一覧取得エンドポイント
+		.get('/', verifyAuthMiddleware, async (c) => {
 			// 認証済みユーザー情報を取得
 			const authUser = c.get('authUser')
 			const userId = authUser.token?.id as string | undefined
@@ -95,96 +63,76 @@ export function createGuestSoloMatchingsApp(
 				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
 			}
 
-			// ゲストのみマッチングオファーを送信可能
+			// ゲストのみマッチング一覧を取得可能
 			if (user.role !== 'guest') {
 				throw new HTTPException(403, {
-					message: 'ゲストのみマッチングオファーを送信できます',
+					message: 'ゲストのみマッチング一覧を取得できます',
 				})
 			}
 
-			const data = c.req.valid('json')
+			// ソロマッチング一覧を取得
+			const soloMatchings =
+				await soloMatchingService.getGuestSoloMatchings(userId)
 
-			// proposedDateとproposedTimeOffsetMinutesの処理
-			let proposedDate: Date | undefined
-			let proposedTimeOffsetMinutes: number | undefined
+			return c.json({ success: true, soloMatchings })
+		})
+		// ソロマッチングオファー作成エンドポイント
+		.post(
+			'/',
+			verifyAuthMiddleware,
+			zValidator('json', createSoloMatchingSchema),
+			async (c) => {
+				// 認証済みユーザー情報を取得
+				const authUser = c.get('authUser')
+				const userId = authUser.token?.id as string | undefined
 
-			if (data.proposedTimeOffsetMinutes) {
-				// 相対時間指定の場合
-				proposedTimeOffsetMinutes = data.proposedTimeOffsetMinutes
-			} else if (data.proposedDate) {
-				// カスタム日時指定の場合（過去の日時チェックはスキーマで実施済み）
-				proposedDate = new Date(data.proposedDate)
-			}
+				if (!userId) {
+					throw new HTTPException(401, { message: '認証が必要です' })
+				}
 
-			// ソロマッチングを作成
-			const soloMatching = await soloMatchingService.createSoloMatching({
-				guestId: userId,
-				castId: data.castId,
-				proposedDate,
-				proposedTimeOffsetMinutes,
-				proposedDuration: data.proposedDuration,
-				proposedLocation: data.proposedLocation,
-				hourlyRate: data.hourlyRate,
-			})
+				// ユーザー情報を取得してロールを確認
+				const user = await userService.findUserById(userId)
+				if (!user) {
+					throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+				}
 
-			return c.json({ success: true, soloMatching }, 201)
-		},
-	)
+				// ゲストのみマッチングオファーを送信可能
+				if (user.role !== 'guest') {
+					throw new HTTPException(403, {
+						message: 'ゲストのみマッチングオファーを送信できます',
+					})
+				}
 
-	// ソロマッチング延長エンドポイント
-	const extendRoute = app.patch(
-		'/:id/extend',
-		verifyAuthMiddleware,
-		zValidator('json', extendSoloMatchingSchema),
-		async (c) => {
-			// 認証済みユーザー情報を取得
-			const authUser = c.get('authUser')
-			const userId = authUser.token?.id as string | undefined
+				const data = c.req.valid('json')
 
-			if (!userId) {
-				throw new HTTPException(401, { message: '認証が必要です' })
-			}
+				// proposedDateとproposedTimeOffsetMinutesの処理
+				let proposedDate: Date | undefined
+				let proposedTimeOffsetMinutes: number | undefined
 
-			// ユーザー情報を取得してロールを確認
-			const user = await userService.findUserById(userId)
-			if (!user) {
-				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
-			}
+				if (data.proposedTimeOffsetMinutes) {
+					// 相対時間指定の場合
+					proposedTimeOffsetMinutes = data.proposedTimeOffsetMinutes
+				} else if (data.proposedDate) {
+					// カスタム日時指定の場合（過去の日時チェックはスキーマで実施済み）
+					proposedDate = new Date(data.proposedDate)
+				}
 
-			// ゲストのみ延長可能
-			if (user.role !== 'guest') {
-				throw new HTTPException(403, {
-					message: 'ゲストのみマッチングを延長できます',
+				// ソロマッチングを作成
+				const soloMatching = await soloMatchingService.createSoloMatching({
+					guestId: userId,
+					castId: data.castId,
+					proposedDate,
+					proposedTimeOffsetMinutes,
+					proposedDuration: data.proposedDuration,
+					proposedLocation: data.proposedLocation,
+					hourlyRate: data.hourlyRate,
 				})
-			}
 
-			const matchingId = c.req.param('id')
-			const data = c.req.valid('json')
-
-			try {
-				const soloMatching = await soloMatchingService.extendSoloMatching(
-					matchingId,
-					userId,
-					data.extensionMinutes,
-				)
-				return c.json({ success: true, soloMatching })
-			} catch (error) {
-				// サービス層のエラーは全て500として返す
-				console.error('Service error:', error)
-				const message =
-					error instanceof Error
-						? error.message
-						: '予期しないエラーが発生しました'
-				throw new HTTPException(500, { message })
-			}
-		},
-	)
-
-	// 完了済みソロマッチング一覧取得エンドポイント
-	const completedRoute = app.get(
-		'/completed',
-		verifyAuthMiddleware,
-		async (c) => {
+				return c.json({ success: true, soloMatching }, 201)
+			},
+		)
+		// 完了済みソロマッチング一覧取得エンドポイント
+		.get('/completed', verifyAuthMiddleware, async (c) => {
 			// 認証済みユーザー情報を取得
 			const authUser = c.get('authUser')
 			const userId = authUser.token?.id as string | undefined
@@ -219,14 +167,9 @@ export function createGuestSoloMatchingsApp(
 						: '予期しないエラーが発生しました'
 				throw new HTTPException(500, { message })
 			}
-		},
-	)
-
-	// 指定キャストへのpendingオファー確認エンドポイント
-	const pendingRoute = app.get(
-		'/pending/:castId',
-		verifyAuthMiddleware,
-		async (c) => {
+		})
+		// 指定キャストへのpendingオファー確認エンドポイント
+		.get('/pending/:castId', verifyAuthMiddleware, async (c) => {
 			// 認証済みユーザー情報を取得
 			const authUser = c.get('authUser')
 			const userId = authUser.token?.id as string | undefined
@@ -261,37 +204,65 @@ export function createGuestSoloMatchingsApp(
 				hasPendingOffer: pendingOffer !== null,
 				pendingOffer,
 			})
-		},
-	)
+		})
+		// ソロマッチング延長エンドポイント
+		.patch(
+			'/:id/extend',
+			verifyAuthMiddleware,
+			zValidator('json', extendSoloMatchingSchema),
+			async (c) => {
+				// 認証済みユーザー情報を取得
+				const authUser = c.get('authUser')
+				const userId = authUser.token?.id as string | undefined
 
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const _postRoute = postRoute
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const _extendRoute = extendRoute
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const _pendingRoute = pendingRoute
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
-	const _completedRoute = completedRoute
+				if (!userId) {
+					throw new HTTPException(401, { message: '認証が必要です' })
+				}
 
-	return { app, postRoute, extendRoute, pendingRoute, completedRoute }
+				// ユーザー情報を取得してロールを確認
+				const user = await userService.findUserById(userId)
+				if (!user) {
+					throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+				}
+
+				// ゲストのみ延長可能
+				if (user.role !== 'guest') {
+					throw new HTTPException(403, {
+						message: 'ゲストのみマッチングを延長できます',
+					})
+				}
+
+				const matchingId = c.req.param('id')
+				const data = c.req.valid('json')
+
+				try {
+					const soloMatching = await soloMatchingService.extendSoloMatching(
+						matchingId,
+						userId,
+						data.extensionMinutes,
+					)
+					return c.json({ success: true, soloMatching })
+				} catch (error) {
+					// サービス層のエラーは全て500として返す
+					console.error('Service error:', error)
+					const message =
+						error instanceof Error
+							? error.message
+							: '予期しないエラーが発生しました'
+					throw new HTTPException(500, { message })
+				}
+			},
+		)
+
+	return { app, route }
 }
 
-const { app, postRoute, extendRoute, pendingRoute, completedRoute } =
-	createGuestSoloMatchingsApp()
+const { app, route } = createGuestSoloMatchingsApp()
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _postRoute = postRoute
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _extendRoute = extendRoute
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _pendingRoute = pendingRoute
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-const _completedRoute = completedRoute
+const _route = route
 
-export type GuestSoloMatchingsPostRouteType = typeof postRoute
-export type GuestSoloMatchingsExtendRouteType = typeof extendRoute
-export type GuestSoloMatchingsPendingRouteType = typeof pendingRoute
-export type GuestSoloMatchingsCompletedRouteType = typeof completedRoute
+export type GuestSoloMatchingsAppType = typeof route
 
 export const GET = handle(app)
 export const POST = handle(app)

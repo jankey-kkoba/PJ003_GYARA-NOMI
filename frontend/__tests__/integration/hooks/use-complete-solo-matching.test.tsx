@@ -9,12 +9,30 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useCompleteSoloMatching } from '@/features/solo-matching/hooks/useCompleteSoloMatching'
 import type { CompleteSoloMatchingParams } from '@/features/solo-matching/hooks/useCompleteSoloMatching'
 
-// Fetch APIのモック
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch as unknown as typeof fetch
+// Hono クライアントのモック
+const mockPatch = vi.fn()
+vi.mock('@/libs/hono/client', () => ({
+	castSoloMatchingsClient: {
+		api: {
+			'solo-matchings': {
+				cast: {
+					':id': {
+						end: {
+							$patch: mockPatch,
+						},
+					},
+				},
+			},
+		},
+	},
+}))
+
+// モック後にインポート
+const { useCompleteSoloMatching } = await import(
+	'@/features/solo-matching/hooks/useCompleteSoloMatching'
+)
 
 let queryClient: QueryClient
 
@@ -81,21 +99,26 @@ describe('useCompleteSoloMatching', () => {
 				castId: 'cast-123',
 				chatRoomId: null,
 				status: 'completed' as const,
-				proposedDate: new Date(Date.now() + 86400000),
+				proposedDate: new Date(Date.now() + 86400000).toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				hourlyRate: 3000,
 				totalPoints: 6000,
-				actualEndAt: new Date(),
+				startedAt: new Date().toISOString(),
+				scheduledEndAt: new Date().toISOString(),
+				actualEndAt: new Date().toISOString(),
+				castRespondedAt: new Date().toISOString(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					matching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -113,15 +136,11 @@ describe('useCompleteSoloMatching', () => {
 					.toHaveTextContent('true')
 			})
 
-			expect(mockFetch).toHaveBeenCalledWith(
-				'/api/solo-matchings/cast/matching-123/end',
-				{
-					method: 'PATCH',
-					headers: {
-						'Content-Type': 'application/json',
-					},
-				},
-			)
+			// API が正しいパラメータで呼ばれたか確認
+			expect(mockPatch).toHaveBeenCalledTimes(1)
+			expect(mockPatch).toHaveBeenCalledWith({
+				param: { id: 'matching-123' },
+			})
 		})
 
 		it('onSuccessコールバックが呼ばれる', async () => {
@@ -135,21 +154,26 @@ describe('useCompleteSoloMatching', () => {
 				castId: 'cast-456',
 				chatRoomId: null,
 				status: 'completed' as const,
-				proposedDate: new Date(Date.now() + 86400000),
+				proposedDate: new Date(Date.now() + 86400000).toISOString(),
 				proposedDuration: 90,
 				proposedLocation: '新宿',
 				hourlyRate: 4000,
 				totalPoints: 6000,
-				actualEndAt: new Date(),
+				startedAt: new Date().toISOString(),
+				scheduledEndAt: new Date().toISOString(),
+				actualEndAt: new Date().toISOString(),
+				castRespondedAt: new Date().toISOString(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					matching: mockSoloMatching,
 				}),
-			} as Response)
+			})
 
 			const onSuccess = vi.fn()
 
@@ -175,12 +199,12 @@ describe('useCompleteSoloMatching', () => {
 				matchingId: 'invalid-matching',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'マッチングが見つかりません',
 				}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -208,10 +232,10 @@ describe('useCompleteSoloMatching', () => {
 				matchingId: 'matching-123',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({}),
-			} as Response)
+			})
 
 			render(
 				<TestWrapper>
@@ -239,12 +263,12 @@ describe('useCompleteSoloMatching', () => {
 				matchingId: 'matching-123',
 			}
 
-			mockFetch.mockResolvedValue({
+			mockPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'サーバーエラー',
 				}),
-			} as Response)
+			})
 
 			const onError = vi.fn()
 
@@ -270,12 +294,12 @@ describe('useCompleteSoloMatching', () => {
 				matchingId: 'matching-123',
 			}
 
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
+			let resolvePromise: (value: unknown) => void = () => {}
+			const pendingPromise = new Promise((resolve) => {
 				resolvePromise = resolve
 			})
 
-			mockFetch.mockReturnValue(pendingPromise)
+			mockPatch.mockReturnValue(pendingPromise)
 
 			render(
 				<TestWrapper>
@@ -303,15 +327,20 @@ describe('useCompleteSoloMatching', () => {
 						guestId: 'guest-123',
 						castId: 'cast-123',
 						status: 'completed',
-						proposedDate: new Date(Date.now() + 86400000),
+						proposedDate: new Date(Date.now() + 86400000).toISOString(),
 						proposedDuration: 120,
 						proposedLocation: '渋谷',
 						hourlyRate: 3000,
 						totalPoints: 6000,
-						actualEndAt: new Date(),
+						startedAt: new Date().toISOString(),
+						scheduledEndAt: new Date().toISOString(),
+						actualEndAt: new Date().toISOString(),
+						castRespondedAt: new Date().toISOString(),
+						createdAt: new Date().toISOString(),
+						updatedAt: new Date().toISOString(),
 					},
 				}),
-			} as Response)
+			})
 		})
 	})
 })

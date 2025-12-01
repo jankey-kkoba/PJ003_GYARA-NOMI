@@ -9,12 +9,51 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { render } from 'vitest-browser-react'
 import { page } from 'vitest/browser'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { MatchingStatusCard } from '@/features/solo-matching/components/molecules/MatchingStatusCard'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 
-// Fetch APIのモック
-const mockFetch = vi.fn()
-globalThis.fetch = mockFetch as unknown as typeof fetch
+// Hono クライアントのモック
+const mockExtendPatch = vi.fn()
+vi.mock('@/libs/hono/client', () => ({
+	usersClient: { api: { users: {} } },
+	castsClient: { api: { casts: {} } },
+	favoritesClient: { api: { favorites: {} } },
+	photosClient: { api: { 'casts': { photos: {} } } },
+	castReviewsClient: { api: { 'cast-reviews': {} } },
+	castSoloMatchingsClient: {
+		api: {
+			'solo-matchings': {
+				cast: {
+					$get: vi.fn(),
+					':id': {
+						start: { $patch: vi.fn() },
+						end: { $patch: vi.fn() },
+						$patch: vi.fn(),
+					},
+				},
+			},
+		},
+	},
+	guestSoloMatchingsClient: {
+		api: {
+			'solo-matchings': {
+				guest: {
+					$get: vi.fn(),
+					$post: vi.fn(),
+					completed: { $get: vi.fn() },
+					pending: { ':castId': { $get: vi.fn() } },
+					':id': {
+						extend: { $patch: mockExtendPatch },
+					},
+				},
+			},
+		},
+	},
+}))
+
+// モック後にインポート
+const { MatchingStatusCard } = await import(
+	'@/features/solo-matching/components/molecules/MatchingStatusCard'
+)
 
 let queryClient: QueryClient
 
@@ -144,12 +183,18 @@ describe('MatchingStatusCard 延長機能', () => {
 		it('延長ボタンをクリックするとAPIが呼ばれる', async () => {
 			const matching = createInProgressMatching()
 
-			mockFetch.mockResolvedValue({
+			mockExtendPatch.mockResolvedValue({
 				ok: true,
 				json: async () => ({
 					success: true,
 					soloMatching: {
 						...matching,
+						proposedDate: matching.proposedDate.toISOString(),
+						startedAt: matching.startedAt?.toISOString(),
+						scheduledEndAt: matching.scheduledEndAt?.toISOString(),
+						castRespondedAt: matching.castRespondedAt?.toISOString(),
+						createdAt: matching.createdAt.toISOString(),
+						updatedAt: matching.updatedAt.toISOString(),
 						extensionMinutes: 30,
 						extensionPoints: 2500,
 						totalPoints: 12500,
@@ -166,21 +211,17 @@ describe('MatchingStatusCard 延長機能', () => {
 
 			// APIが呼ばれることを確認
 			await vi.waitFor(() => {
-				expect(mockFetch).toHaveBeenCalledWith(
-					'/api/solo-matchings/guest/matching-in-progress/extend',
-					expect.objectContaining({
-						method: 'PATCH',
-						headers: { 'Content-Type': 'application/json' },
-						body: JSON.stringify({ extensionMinutes: 30 }),
-					}),
-				)
+				expect(mockExtendPatch).toHaveBeenCalledWith({
+					param: { id: 'matching-in-progress' },
+					json: { extensionMinutes: 30 },
+				})
 			})
 		})
 
 		it('APIエラー時にエラーメッセージを表示する', async () => {
 			const matching = createInProgressMatching()
 
-			mockFetch.mockResolvedValue({
+			mockExtendPatch.mockResolvedValue({
 				ok: false,
 				json: async () => ({
 					error: 'マッチングが見つかりません',

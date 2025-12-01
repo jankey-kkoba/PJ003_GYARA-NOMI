@@ -1,40 +1,8 @@
 import { useQuery } from '@tanstack/react-query'
+import { guestSoloMatchingsClient } from '@/libs/hono/client'
+import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-
-/**
- * APIレスポンスの型
- */
-type GetPendingOfferResponse = {
-	success: true
-	hasPendingOffer: boolean
-	pendingOffer: SoloMatching | null
-}
-
-/**
- * 指定キャストへのpendingオファーを取得
- */
-async function getPendingOffer(castId: string): Promise<{
-	hasPendingOffer: boolean
-	pendingOffer: SoloMatching | null
-}> {
-	const response = await fetch(`/api/solo-matchings/guest/pending/${castId}`, {
-		method: 'GET',
-		headers: {
-			'Content-Type': 'application/json',
-		},
-	})
-
-	if (!response.ok) {
-		const error = await response.json()
-		throw new Error(error.error || 'pendingオファーの取得に失敗しました')
-	}
-
-	const data: GetPendingOfferResponse = await response.json()
-	return {
-		hasPendingOffer: data.hasPendingOffer,
-		pendingOffer: data.pendingOffer,
-	}
-}
+import { parseSoloMatchingOrNull } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * 指定キャストへのpendingオファー取得のカスタムフック
@@ -43,6 +11,29 @@ async function getPendingOffer(castId: string): Promise<{
 export function usePendingOffer(castId: string) {
 	return useQuery({
 		queryKey: ['pendingOffer', castId],
-		queryFn: () => getPendingOffer(castId),
+		queryFn: async (): Promise<{
+			hasPendingOffer: boolean
+			pendingOffer: SoloMatching | null
+		}> => {
+			const res =
+				await guestSoloMatchingsClient.api['solo-matchings'].guest.pending[
+					':castId'
+				].$get({
+					param: { castId },
+				})
+
+			await handleApiError(res, 'pendingオファーの取得に失敗しました')
+
+			const result = await res.json()
+
+			if (!result.success) {
+				throw new Error('pendingオファーの取得に失敗しました')
+			}
+
+			return {
+				hasPendingOffer: result.hasPendingOffer,
+				pendingOffer: parseSoloMatchingOrNull(result.pendingOffer),
+			}
+		},
 	})
 }
