@@ -24,12 +24,11 @@ export function useCompleteSoloMatching() {
 		): Promise<SoloMatching> => {
 			const { matchingId } = params
 
-			const res =
-				await castSoloMatchingsClient.api['solo-matchings'].cast[':id'].end.$patch(
-					{
-						param: { id: matchingId },
-					},
-				)
+			const res = await castSoloMatchingsClient.api['solo-matchings'].cast[
+				':id'
+			].end.$patch({
+				param: { id: matchingId },
+			})
 
 			await handleApiError(res, 'マッチングの終了に失敗しました')
 

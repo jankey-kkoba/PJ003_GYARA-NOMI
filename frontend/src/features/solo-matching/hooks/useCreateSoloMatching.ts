@@ -13,11 +13,14 @@ export function useCreateSoloMatching() {
 	const { showToast } = useToast()
 
 	return useMutation({
-		mutationFn: async (input: CreateSoloMatchingInput): Promise<SoloMatching> => {
-			const res =
-				await guestSoloMatchingsClient.api['solo-matchings'].guest.$post({
-					json: input,
-				})
+		mutationFn: async (
+			input: CreateSoloMatchingInput,
+		): Promise<SoloMatching> => {
+			const res = await guestSoloMatchingsClient.api[
+				'solo-matchings'
+			].guest.$post({
+				json: input,
+			})
 
 			await handleApiError(res, 'マッチングオファーの送信に失敗しました')
 

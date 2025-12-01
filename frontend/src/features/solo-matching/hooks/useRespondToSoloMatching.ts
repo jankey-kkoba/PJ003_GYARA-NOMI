@@ -25,11 +25,12 @@ export function useRespondToSoloMatching() {
 		): Promise<SoloMatching> => {
 			const { matchingId, response } = params
 
-			const res =
-				await castSoloMatchingsClient.api['solo-matchings'].cast[':id'].$patch({
-					param: { id: matchingId },
-					json: { response },
-				})
+			const res = await castSoloMatchingsClient.api['solo-matchings'].cast[
+				':id'
+			].$patch({
+				param: { id: matchingId },
+				json: { response },
+			})
 
 			await handleApiError(res, 'マッチングへの回答に失敗しました')
 

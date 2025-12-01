@@ -17,7 +17,7 @@ vi.mock('@/libs/hono/client', () => ({
 	usersClient: { api: { users: {} } },
 	castsClient: { api: { casts: {} } },
 	favoritesClient: { api: { favorites: {} } },
-	photosClient: { api: { 'casts': { photos: {} } } },
+	photosClient: { api: { casts: { photos: {} } } },
 	castReviewsClient: { api: { 'cast-reviews': {} } },
 	castSoloMatchingsClient: {
 		api: {
@@ -51,9 +51,8 @@ vi.mock('@/libs/hono/client', () => ({
 }))
 
 // モック後にインポート
-const { MatchingStatusCard } = await import(
-	'@/features/solo-matching/components/molecules/MatchingStatusCard'
-)
+const { MatchingStatusCard } =
+	await import('@/features/solo-matching/components/molecules/MatchingStatusCard')
 
 let queryClient: QueryClient
 

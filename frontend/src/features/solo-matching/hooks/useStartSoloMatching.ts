@@ -24,12 +24,11 @@ export function useStartSoloMatching() {
 		): Promise<SoloMatching> => {
 			const { matchingId } = params
 
-			const res =
-				await castSoloMatchingsClient.api['solo-matchings'].cast[':id'].start.$patch(
-					{
-						param: { id: matchingId },
-					},
-				)
+			const res = await castSoloMatchingsClient.api['solo-matchings'].cast[
+				':id'
+			].start.$patch({
+				param: { id: matchingId },
+			})
 
 			await handleApiError(res, 'マッチングの開始に失敗しました')
 

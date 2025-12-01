@@ -15,12 +15,11 @@ export function usePendingOffer(castId: string) {
 			hasPendingOffer: boolean
 			pendingOffer: SoloMatching | null
 		}> => {
-			const res =
-				await guestSoloMatchingsClient.api['solo-matchings'].guest.pending[
-					':castId'
-				].$get({
-					param: { castId },
-				})
+			const res = await guestSoloMatchingsClient.api[
+				'solo-matchings'
+			].guest.pending[':castId'].$get({
+				param: { castId },
+			})
 
 			await handleApiError(res, 'pendingオファーの取得に失敗しました')
 

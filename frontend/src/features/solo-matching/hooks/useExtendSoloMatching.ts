@@ -25,13 +25,12 @@ export function useExtendSoloMatching() {
 		): Promise<SoloMatching> => {
 			const { matchingId, extensionMinutes } = params
 
-			const res =
-				await guestSoloMatchingsClient.api['solo-matchings'].guest[':id'].extend.$patch(
-					{
-						param: { id: matchingId },
-						json: { extensionMinutes },
-					},
-				)
+			const res = await guestSoloMatchingsClient.api['solo-matchings'].guest[
+				':id'
+			].extend.$patch({
+				param: { id: matchingId },
+				json: { extensionMinutes },
+			})
 
 			await handleApiError(res, 'マッチングの延長に失敗しました')
 

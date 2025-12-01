@@ -12,7 +12,9 @@ export function useCompletedSoloMatchings() {
 		queryKey: ['completedSoloMatchings'],
 		queryFn: async (): Promise<SoloMatching[]> => {
 			const res =
-				await guestSoloMatchingsClient.api['solo-matchings'].guest.completed.$get()
+				await guestSoloMatchingsClient.api[
+					'solo-matchings'
+				].guest.completed.$get()
 
 			await handleApiError(res, '完了済みマッチング一覧の取得に失敗しました')
 

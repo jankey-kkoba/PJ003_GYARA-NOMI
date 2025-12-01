@@ -1,5 +1,8 @@
 import { parseDate, parseNullableDate } from '@/utils/date'
-import type { SoloMatching, MatchingStatus } from '@/features/solo-matching/types/soloMatching'
+import type {
+	SoloMatching,
+	MatchingStatus,
+} from '@/features/solo-matching/types/soloMatching'
 
 /**
  * APIレスポンスのSoloMatchingの型（日付が文字列）

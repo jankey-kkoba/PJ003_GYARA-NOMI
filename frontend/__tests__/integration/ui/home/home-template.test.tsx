@@ -18,7 +18,7 @@ vi.mock('@/libs/hono/client', () => ({
 	usersClient: { api: { users: {} } },
 	castsClient: { api: { casts: {} } },
 	favoritesClient: { api: { favorites: {} } },
-	photosClient: { api: { 'casts': { photos: {} } } },
+	photosClient: { api: { casts: { photos: {} } } },
 	castReviewsClient: { api: { 'cast-reviews': {} } },
 	castSoloMatchingsClient: {
 		api: {
@@ -52,9 +52,8 @@ vi.mock('@/libs/hono/client', () => ({
 }))
 
 // モック後にインポート
-const { HomeTemplate } = await import(
-	'@/features/home/components/templates/HomeTemplate'
-)
+const { HomeTemplate } =
+	await import('@/features/home/components/templates/HomeTemplate')
 
 /**
  * テスト用のマッチングデータ（APIレスポンス形式: 日付は文字列）

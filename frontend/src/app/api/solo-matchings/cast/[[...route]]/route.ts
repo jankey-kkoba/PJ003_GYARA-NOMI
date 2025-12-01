@@ -70,7 +70,8 @@ export function createCastSoloMatchingsApp(
 			}
 
 			// ソロマッチング一覧を取得
-			const soloMatchings = await soloMatchingService.getCastSoloMatchings(userId)
+			const soloMatchings =
+				await soloMatchingService.getCastSoloMatchings(userId)
 
 			return c.json({ success: true, soloMatchings })
 		})
