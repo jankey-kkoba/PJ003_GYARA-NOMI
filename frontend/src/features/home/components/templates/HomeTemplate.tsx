@@ -29,9 +29,14 @@ export function HomeTemplate() {
 
 					<div className="space-y-3">
 						{userRole === 'guest' && (
-							<Button asChild className="w-full">
-								<Link href={ROUTES.CASTS.LIST}>キャスト一覧を見る</Link>
-							</Button>
+							<>
+								<Button asChild className="w-full">
+									<Link href={ROUTES.CASTS.LIST}>キャスト一覧を見る</Link>
+								</Button>
+								<Button asChild variant="secondary" className="w-full">
+									<Link href={ROUTES.GROUP_MATCHING.OFFER}>呼ぶ</Link>
+								</Button>
+							</>
 						)}
 
 						{userRole === 'cast' && (

@@ -44,6 +44,14 @@ export const ROUTES = {
 		/** プロフィール作成 */
 		CREATE: '/profile/create',
 	},
+
+	/**
+	 * グループマッチング関連
+	 */
+	GROUP_MATCHING: {
+		/** グループマッチングオファー */
+		OFFER: '/group-matching/offer',
+	},
 } as const
 
 /**
