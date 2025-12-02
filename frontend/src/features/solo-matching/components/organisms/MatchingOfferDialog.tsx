@@ -75,7 +75,7 @@ export function MatchingOfferDialog({
 				<DialogHeader>
 					<DialogTitle>{castName}へのマッチングオファー</DialogTitle>
 					<DialogDescription>
-						希望日時、時間、場所、時給を入力してオファーを送信してください。
+						希望日時、時間、場所を入力してオファーを送信してください。
 					</DialogDescription>
 				</DialogHeader>
 				<MatchingOfferForm castId={castId} onSuccess={handleSuccess} />

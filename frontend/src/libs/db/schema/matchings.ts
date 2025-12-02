@@ -39,9 +39,8 @@ export const matchings = pgTable('matchings', {
 	proposedDate: timestamp('proposed_date', { withTimezone: true }).notNull(), // 希望日時
 	proposedDuration: integer('proposed_duration').notNull(), // 希望時間（分）
 	proposedLocation: text('proposed_location').notNull(), // 希望場所（文字列）
-	hourlyRate: integer('hourly_rate').notNull(), // 時給（オファー時点での金額・ポイント）
 	requestedCastCount: integer('requested_cast_count').notNull().default(1), // 希望キャスト数（ソロは1）
-	totalPoints: integer('total_points').notNull(), // 合計ポイント
+	totalPoints: integer('total_points').notNull(), // 合計ポイント（時給×時間で算出）
 
 	// ギャラ飲み実施情報
 	startedAt: timestamp('started_at', { withTimezone: true }), // 開始時刻（合流ボタン押下時）

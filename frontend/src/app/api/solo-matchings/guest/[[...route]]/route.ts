@@ -117,18 +117,25 @@ export function createGuestSoloMatchingsApp(
 					proposedDate = new Date(data.proposedDate)
 				}
 
-				// ソロマッチングを作成
-				const soloMatching = await soloMatchingService.createSoloMatching({
-					guestId: userId,
-					castId: data.castId,
-					proposedDate,
-					proposedTimeOffsetMinutes,
-					proposedDuration: data.proposedDuration,
-					proposedLocation: data.proposedLocation,
-					hourlyRate: data.hourlyRate,
-				})
-
-				return c.json({ success: true, soloMatching }, 201)
+				try {
+					// ソロマッチングを作成（時給はサービス層でキャストのランクから計算される）
+					const soloMatching = await soloMatchingService.createSoloMatching({
+						guestId: userId,
+						castId: data.castId,
+						proposedDate,
+						proposedTimeOffsetMinutes,
+						proposedDuration: data.proposedDuration,
+						proposedLocation: data.proposedLocation,
+					})
+					return c.json({ success: true, soloMatching }, 201)
+				} catch (error) {
+					console.error('Service error:', error)
+					const message =
+						error instanceof Error
+							? error.message
+							: '予期しないエラーが発生しました'
+					throw new HTTPException(500, { message })
+				}
 			},
 		)
 		// 完了済みソロマッチング一覧取得エンドポイント

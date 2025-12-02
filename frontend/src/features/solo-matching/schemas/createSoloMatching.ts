@@ -2,6 +2,7 @@ import { z } from 'zod'
 
 /**
  * ソロマッチングオファー作成のバリデーションスキーマ
+ * 時給（hourlyRate）はサーバー側でキャストのランクから自動計算されるため、クライアントからは送信不要
  */
 export const createSoloMatchingSchema = z
 	.object({
@@ -29,11 +30,6 @@ export const createSoloMatchingSchema = z
 			.string()
 			.min(1, '場所は必須です')
 			.max(200, '場所は200文字以内で入力してください'),
-		/** 時給（ポイント） */
-		hourlyRate: z
-			.number()
-			.int('整数で指定してください')
-			.min(1000, '最低1000ポイントから指定できます'),
 	})
 	.refine((data) => data.proposedDate || data.proposedTimeOffsetMinutes, {
 		message: '開始日時または相対時間指定のいずれかを指定してください',

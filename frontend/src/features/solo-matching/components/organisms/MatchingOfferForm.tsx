@@ -25,6 +25,8 @@ import {
 	createSoloMatchingSchema,
 	type CreateSoloMatchingInput,
 } from '@/features/solo-matching/schemas/createSoloMatching'
+import { useCastDetail } from '@/features/cast/hooks/useCastDetail'
+import { getHourlyRateByRank, getRankName } from '@/features/cast/constants'
 import { useMemo, useState } from 'react'
 
 /**
@@ -73,13 +75,22 @@ const durationOptions = [
 
 /**
  * マッチングオファー送信フォーム
+ * 時給はサーバー側でキャストのランクから自動計算される
+ * クライアント側では目安として表示のみ行う
  */
 export function MatchingOfferForm({
 	castId,
 	onSuccess,
 }: MatchingOfferFormProps) {
 	const { mutate, isPending } = useCreateSoloMatching()
+	const { data: cast, isLoading: isCastLoading } = useCastDetail(castId)
 	const [timeSelectMode, setTimeSelectMode] = useState<string>('1hour') // デフォルト1時間後
+
+	// キャストのランクから時給を計算
+	const hourlyRate = useMemo(() => {
+		if (!cast) return 0
+		return getHourlyRateByRank(cast.rank)
+	}, [cast])
 
 	const form = useForm<CreateSoloMatchingInput>({
 		resolver: zodResolver(createSoloMatchingSchema),
@@ -88,7 +99,6 @@ export function MatchingOfferForm({
 			proposedTimeOffsetMinutes: 60, // デフォルト1時間後（60分）
 			proposedDuration: 120, // デフォルト2時間
 			proposedLocation: '',
-			hourlyRate: 3000, // デフォルト3000ポイント/時間
 		},
 	})
 
@@ -114,12 +124,12 @@ export function MatchingOfferForm({
 		control: form.control,
 		name: 'proposedDuration',
 	})
-	const hourlyRate = useWatch({ control: form.control, name: 'hourlyRate' })
 	const totalPoints = useMemo(() => {
 		return Math.round((proposedDuration / 60) * hourlyRate)
 	}, [proposedDuration, hourlyRate])
 
 	const onSubmit = (data: CreateSoloMatchingInput) => {
+		// 時給はサーバー側で計算されるため、クライアントからは送信不要
 		mutate(data, {
 			onSuccess: () => {
 				form.reset()
@@ -127,6 +137,24 @@ export function MatchingOfferForm({
 				onSuccess?.()
 			},
 		})
+	}
+
+	// キャスト情報のローディング中
+	if (isCastLoading) {
+		return (
+			<div className="flex items-center justify-center p-4">
+				<p className="text-muted-foreground">読み込み中...</p>
+			</div>
+		)
+	}
+
+	// キャスト情報が取得できなかった場合
+	if (!cast) {
+		return (
+			<div className="flex items-center justify-center p-4">
+				<p className="text-destructive">キャスト情報の取得に失敗しました</p>
+			</div>
+		)
 	}
 
 	return (
@@ -216,28 +244,21 @@ export function MatchingOfferForm({
 					)}
 				/>
 
-				{/* 時給 */}
-				<FormField
-					control={form.control}
-					name="hourlyRate"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>時給（ポイント）</FormLabel>
-							<FormControl>
-								<Input
-									type="number"
-									min={1000}
-									step={100}
-									placeholder="3000"
-									{...field}
-									onChange={(e) => field.onChange(Number(e.target.value))}
-								/>
-							</FormControl>
-							<FormDescription>最低1000ポイント</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+				{/* ランク別時給表示（読み取り専用） */}
+				<div className="rounded-lg border bg-muted/50 p-4">
+					<div className="flex items-center justify-between">
+						<div>
+							<p className="text-sm text-muted-foreground">キャストランク</p>
+							<p className="font-medium">{getRankName(cast.rank)}</p>
+						</div>
+						<div className="text-right">
+							<p className="text-sm text-muted-foreground">時給</p>
+							<p className="font-medium">
+								{hourlyRate.toLocaleString()}ポイント/時間
+							</p>
+						</div>
+					</div>
+				</div>
 
 				{/* 合計ポイント表示 */}
 				<div className="rounded-lg bg-muted p-4">

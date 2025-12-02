@@ -3,6 +3,7 @@
  *
  * マッチングオファー送信フォームの動作を検証
  * フォーム入力、バリデーション、送信処理、合計ポイント計算をテスト
+ * 時給はキャストのランクから自動計算される
  */
 
 import { describe, it, expect, vi, beforeEach } from 'vitest'
@@ -31,6 +32,53 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 	)
 }
 
+/**
+ * キャスト詳細のモックレスポンス（ランク1 = 3000ポイント/時間）
+ */
+const mockCastDetail = {
+	id: 'cast-123',
+	name: 'テストキャスト',
+	age: 25,
+	bio: 'テスト用のキャストです',
+	rank: 1,
+	areaName: '東京都',
+}
+
+/**
+ * ランク2のキャスト詳細モック（4000ポイント/時間）
+ */
+const mockCastDetailRank2 = {
+	id: 'cast-456',
+	name: 'ランク2キャスト',
+	age: 28,
+	bio: 'ランク2のキャストです',
+	rank: 2,
+	areaName: '東京都',
+}
+
+/**
+ * デフォルトのモック設定（キャスト詳細API対応）
+ */
+function setupDefaultMocks(castDetail = mockCastDetail) {
+	mockFetch.mockImplementation((url: string) => {
+		// キャスト詳細API
+		if (url.includes('/api/casts/')) {
+			return Promise.resolve({
+				ok: true,
+				json: async () => ({
+					success: true,
+					data: { cast: castDetail },
+				}),
+			} as Response)
+		}
+		// その他のリクエストはデフォルトのレスポンス
+		return Promise.resolve({
+			ok: true,
+			json: async () => ({ success: true }),
+		} as Response)
+	})
+}
+
 describe('MatchingOfferForm', () => {
 	beforeEach(() => {
 		vi.clearAllMocks()
@@ -40,6 +88,7 @@ describe('MatchingOfferForm', () => {
 				mutations: { retry: false },
 			},
 		})
+		setupDefaultMocks()
 	})
 
 	describe('初期表示', () => {
@@ -62,10 +111,9 @@ describe('MatchingOfferForm', () => {
 				.element(page.getByPlaceholder('例：渋谷駅周辺'))
 				.toBeInTheDocument()
 
-			// 時給入力
-			await expect
-				.element(page.getByText('時給（ポイント）'))
-				.toBeInTheDocument()
+			// ランク別時給表示（読み取り専用）
+			await expect.element(page.getByText('キャストランク')).toBeInTheDocument()
+			await expect.element(page.getByText('時給')).toBeInTheDocument()
 
 			// 合計ポイント表示
 			await expect.element(page.getByText('合計ポイント')).toBeInTheDocument()
@@ -85,6 +133,12 @@ describe('MatchingOfferForm', () => {
 
 			// デフォルトの合計ポイント（2時間 × 3000ポイント/時間 = 6000ポイント）
 			await expect.element(page.getByText('6,000ポイント')).toBeInTheDocument()
+			// ランク1のランク名「ブロンズ」が表示される
+			await expect.element(page.getByText('ブロンズ')).toBeInTheDocument()
+			// 時給が表示される
+			await expect
+				.element(page.getByText('3,000ポイント/時間'))
+				.toBeInTheDocument()
 		})
 	})
 
@@ -130,42 +184,24 @@ describe('MatchingOfferForm', () => {
 			await expect.element(page.getByText('9,000ポイント')).toBeInTheDocument()
 		})
 
-		it('時給を変更すると合計ポイントが再計算される', async () => {
+		it('ランクによって時給が異なる', async () => {
+			// ランク2のキャストを設定
+			setupDefaultMocks(mockCastDetailRank2)
+
 			render(
 				<TestWrapper>
-					<MatchingOfferForm castId="cast-123" />
+					<MatchingOfferForm castId="cast-456" />
 				</TestWrapper>,
 			)
 
-			// 初期値: 2時間 × 3000ポイント = 6000ポイント
-			await expect.element(page.getByText('6,000ポイント')).toBeInTheDocument()
-
-			// 時給を4000ポイントに変更
-			const hourlyRateInput = page.getByRole('spinbutton')
-			await hourlyRateInput.fill('4000')
-
-			// 2時間 × 4000ポイント = 8000ポイント
+			// ランク2の時給4000ポイント × 2時間 = 8000ポイント
 			await expect.element(page.getByText('8,000ポイント')).toBeInTheDocument()
-		})
-
-		it('時間と時給を両方変更すると正しく計算される', async () => {
-			render(
-				<TestWrapper>
-					<MatchingOfferForm castId="cast-123" />
-				</TestWrapper>,
-			)
-
-			// 時間を1時間30分に変更
-			const durationSelect = page.getByRole('combobox').nth(1)
-			await durationSelect.click()
-			await page.getByRole('option', { name: '1時間30分' }).click()
-
-			// 時給を5000ポイントに変更
-			const hourlyRateInput = page.getByRole('spinbutton')
-			await hourlyRateInput.fill('5000')
-
-			// 1.5時間 × 5000ポイント = 7500ポイント
-			await expect.element(page.getByText('7,500ポイント')).toBeInTheDocument()
+			// ランク2のランク名「シルバー」が表示される
+			await expect.element(page.getByText('シルバー')).toBeInTheDocument()
+			// 時給が表示される
+			await expect
+				.element(page.getByText('4,000ポイント/時間'))
+				.toBeInTheDocument()
 		})
 	})
 
@@ -180,7 +216,6 @@ describe('MatchingOfferForm', () => {
 				proposedDate: new Date(Date.now() + 3600000), // 1時間後
 				proposedDuration: 120,
 				proposedLocation: '渋谷駅周辺',
-				hourlyRate: 3000,
 				totalPoints: 6000,
 				startedAt: null,
 				scheduledEndAt: null,
@@ -192,13 +227,26 @@ describe('MatchingOfferForm', () => {
 				updatedAt: new Date(),
 			}
 
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					success: true,
-					soloMatching: mockSoloMatching,
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
+				// POSTリクエスト
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatching: mockSoloMatching,
+					}),
+				} as Response)
+			})
 
 			const onSuccess = vi.fn()
 
@@ -233,7 +281,19 @@ describe('MatchingOfferForm', () => {
 				resolvePromise = resolve
 			})
 
-			mockFetch.mockReturnValue(pendingPromise)
+			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
+				return pendingPromise
+			})
 
 			render(
 				<TestWrapper>
@@ -273,7 +333,6 @@ describe('MatchingOfferForm', () => {
 						proposedDate: new Date(Date.now() + 3600000),
 						proposedDuration: 120,
 						proposedLocation: '新宿',
-						hourlyRate: 3000,
 						totalPoints: 6000,
 					},
 				}),
@@ -281,16 +340,29 @@ describe('MatchingOfferForm', () => {
 		})
 
 		it('エラー時にエラートーストが表示される', async () => {
-			mockFetch.mockResolvedValue({
-				ok: false,
-				json: async () => ({
-					error: 'キャストが見つかりません',
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
+				// エラーレスポンス
+				return Promise.resolve({
+					ok: false,
+					json: async () => ({
+						error: 'エラーが発生しました',
+					}),
+				} as Response)
+			})
 
 			render(
 				<TestWrapper>
-					<MatchingOfferForm castId="invalid-cast" />
+					<MatchingOfferForm castId="cast-123" />
 				</TestWrapper>,
 			)
 
@@ -306,7 +378,7 @@ describe('MatchingOfferForm', () => {
 			await vi.waitFor(
 				() => {
 					expect(mockShowToast).toHaveBeenCalledWith(
-						'キャストが見つかりません',
+						'エラーが発生しました',
 						'error',
 					)
 				},
@@ -326,8 +398,7 @@ describe('MatchingOfferForm', () => {
 				proposedDate: new Date(Date.now() + 3600000),
 				proposedDuration: 90,
 				proposedLocation: '池袋',
-				hourlyRate: 4000,
-				totalPoints: 6000,
+				totalPoints: 4500,
 				startedAt: null,
 				scheduledEndAt: null,
 				actualEndAt: null,
@@ -338,13 +409,26 @@ describe('MatchingOfferForm', () => {
 				updatedAt: new Date(),
 			}
 
-			mockFetch.mockResolvedValue({
-				ok: true,
-				json: async () => ({
-					success: true,
-					soloMatching: mockSoloMatching,
-				}),
-			} as Response)
+			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
+				// POSTリクエスト
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						soloMatching: mockSoloMatching,
+					}),
+				} as Response)
+			})
 
 			const onSuccess = vi.fn()
 
@@ -358,9 +442,13 @@ describe('MatchingOfferForm', () => {
 			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
 			await locationInput.fill('池袋')
 
-			// 時給を変更
-			const hourlyRateInput = page.getByRole('spinbutton')
-			await hourlyRateInput.fill('4000')
+			// 時間を1時間30分に変更
+			const durationSelect = page.getByRole('combobox').nth(1)
+			await durationSelect.click()
+			await page.getByRole('option', { name: '1時間30分' }).click()
+
+			// 1.5時間 × 3000 = 4500ポイント
+			await expect.element(page.getByText('4,500ポイント')).toBeInTheDocument()
 
 			// 送信
 			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
@@ -377,6 +465,55 @@ describe('MatchingOfferForm', () => {
 			// フォームがデフォルト値にリセットされる
 			// 合計ポイントがデフォルトの6000ポイントに戻る
 			await expect.element(page.getByText('6,000ポイント')).toBeInTheDocument()
+		})
+	})
+
+	describe('キャスト情報取得', () => {
+		it('キャスト情報取得中はローディング表示', async () => {
+			let resolvePromise: (value: Response) => void = () => {}
+			const pendingPromise = new Promise<Response>((resolve) => {
+				resolvePromise = resolve
+			})
+
+			mockFetch.mockReturnValue(pendingPromise)
+
+			render(
+				<TestWrapper>
+					<MatchingOfferForm castId="cast-123" />
+				</TestWrapper>,
+			)
+
+			// ローディング表示
+			await expect.element(page.getByText('読み込み中...')).toBeInTheDocument()
+
+			// 後処理
+			resolvePromise({
+				ok: true,
+				json: async () => ({
+					success: true,
+					data: { cast: mockCastDetail },
+				}),
+			} as Response)
+		})
+
+		it('キャスト情報取得失敗時はエラー表示', async () => {
+			mockFetch.mockResolvedValue({
+				ok: false,
+				json: async () => ({
+					error: 'キャストが見つかりません',
+				}),
+			} as Response)
+
+			render(
+				<TestWrapper>
+					<MatchingOfferForm castId="invalid-cast" />
+				</TestWrapper>,
+			)
+
+			// エラー表示
+			await expect
+				.element(page.getByText('キャスト情報の取得に失敗しました'))
+				.toBeInTheDocument()
 		})
 	})
 })

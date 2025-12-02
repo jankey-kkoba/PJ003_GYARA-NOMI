@@ -77,7 +77,6 @@ function createInProgressMatching(
 		proposedDate: new Date('2025-11-28T17:00:00Z'),
 		proposedDuration: 120,
 		proposedLocation: '渋谷駅周辺',
-		hourlyRate: 5000,
 		totalPoints: 10000,
 		startedAt: new Date('2025-11-28T17:00:00Z'),
 		// 終了予定時刻を過去に設定

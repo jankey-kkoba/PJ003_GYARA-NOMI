@@ -84,7 +84,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() + 86400000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -105,7 +104,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() + 86400000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -139,7 +137,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() + 86400000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -172,7 +169,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() - 86400000).toISOString(), // 過去の日時
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -204,7 +200,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() + 86400000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -235,7 +230,6 @@ describe('POST /api/solo-matchings', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 				totalPoints: 6000,
 				startedAt: null,
 				scheduledEndAt: null,
@@ -259,7 +253,6 @@ describe('POST /api/solo-matchings', () => {
 					proposedDate: new Date(Date.now() + 86400000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					hourlyRate: 3000,
 				}),
 			})
 
@@ -286,7 +279,6 @@ const mockMatching: SoloMatching = {
 	proposedDate: new Date('2025-12-01T19:00:00Z'),
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
-	hourlyRate: 5000,
 	totalPoints: 10000,
 	startedAt: null,
 	scheduledEndAt: null,
@@ -505,7 +497,6 @@ const mockInProgressMatching: SoloMatching = {
 	proposedDate: new Date('2025-11-28T17:00:00Z'),
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
-	hourlyRate: 5000,
 	totalPoints: 10000,
 	startedAt: new Date('2025-11-28T17:00:00Z'),
 	scheduledEndAt: new Date('2025-11-28T19:00:00Z'),
@@ -956,7 +947,6 @@ describe('GET /api/solo-matchings/guest/pending/:castId', () => {
 				proposedDate: new Date(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 				totalPoints: 6000,
 				startedAt: null,
 				scheduledEndAt: null,

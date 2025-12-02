@@ -1,12 +1,15 @@
 import { db } from '@/libs/db'
 import { matchings, matchingParticipants } from '@/libs/db/schema'
+import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
 import { addMinutesToDate } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
+import { getHourlyRateByRank } from '@/features/cast/constants'
 import { eq, desc, and } from 'drizzle-orm'
 
 /**
  * ソロマッチング作成の入力パラメータ
+ * 時給はキャストのランクから自動計算されるため、パラメータには含めない
  */
 export type CreateSoloMatchingParams = {
 	guestId: string
@@ -15,11 +18,11 @@ export type CreateSoloMatchingParams = {
 	proposedTimeOffsetMinutes?: number
 	proposedDuration: number
 	proposedLocation: string
-	hourlyRate: number
 }
 
 /**
  * matchingsとmatching_participantsの結合結果からSoloMatchingへ変換するヘルパー関数
+ * 時給（hourlyRate）はキャストのランクから動的に計算されるため、ここでは含めない
  */
 function toSoloMatching(
 	matching: typeof matchings.$inferSelect,
@@ -34,7 +37,6 @@ function toSoloMatching(
 		proposedDate: matching.proposedDate,
 		proposedDuration: matching.proposedDuration,
 		proposedLocation: matching.proposedLocation,
-		hourlyRate: matching.hourlyRate,
 		totalPoints: matching.totalPoints,
 		startedAt: matching.startedAt,
 		scheduledEndAt: matching.scheduledEndAt,
@@ -54,6 +56,7 @@ function toSoloMatching(
 export const soloMatchingService = {
 	/**
 	 * ソロマッチングオファーを作成
+	 * 時給はキャストのランクから自動計算される
 	 * @param params - マッチングオファー情報
 	 * @returns 作成されたソロマッチング
 	 */
@@ -67,7 +70,6 @@ export const soloMatchingService = {
 			proposedTimeOffsetMinutes,
 			proposedDuration,
 			proposedLocation,
-			hourlyRate,
 		} = params
 
 		// proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
@@ -81,6 +83,20 @@ export const soloMatchingService = {
 			)
 		}
 
+		// キャストのランクを取得
+		const [castProfile] = await db
+			.select({ rank: castProfiles.rank })
+			.from(castProfiles)
+			.where(eq(castProfiles.id, castId))
+			.limit(1)
+
+		if (!castProfile) {
+			throw new Error('キャストが見つかりません')
+		}
+
+		// 時給をランクから計算
+		const hourlyRate = getHourlyRateByRank(castProfile.rank)
+
 		// 合計ポイントを計算（時給 × 時間）
 		const totalPoints = calculatePoints(proposedDuration, hourlyRate)
 
@@ -93,7 +109,6 @@ export const soloMatchingService = {
 				proposedDate: finalProposedDate,
 				proposedDuration,
 				proposedLocation,
-				hourlyRate,
 				requestedCastCount: 1,
 				totalPoints,
 				chatRoomId: null,
@@ -436,11 +451,21 @@ export const soloMatchingService = {
 			extensionMinutes,
 		)
 
+		// キャストのランクを取得して時給を計算
+		const [castProfile] = await db
+			.select({ rank: castProfiles.rank })
+			.from(castProfiles)
+			.where(eq(castProfiles.id, result.participant.castId))
+			.limit(1)
+
+		if (!castProfile) {
+			throw new Error('キャスト情報が見つかりません')
+		}
+
+		const hourlyRate = getHourlyRateByRank(castProfile.rank)
+
 		// 延長ポイントを計算（時給 × 時間）
-		const additionalPoints = calculatePoints(
-			extensionMinutes,
-			result.matching.hourlyRate,
-		)
+		const additionalPoints = calculatePoints(extensionMinutes, hourlyRate)
 
 		// 累積値を計算
 		const newExtensionMinutes =

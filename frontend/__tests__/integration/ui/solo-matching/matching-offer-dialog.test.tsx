@@ -33,10 +33,32 @@ function TestWrapper({ children }: { children: React.ReactNode }) {
 }
 
 /**
+ * キャスト詳細のモックレスポンス
+ */
+const mockCastDetail = {
+	id: 'cast-123',
+	name: 'テストキャスト',
+	age: 25,
+	bio: 'テスト用のキャストです',
+	rank: 1,
+	areaName: '東京都',
+}
+
+/**
  * pendingオファーがない場合のレスポンスを返すモックを設定
  */
 function setupNoPendingOfferMock() {
 	mockFetch.mockImplementation((url: string) => {
+		// キャスト詳細API
+		if (url.includes('/api/casts/')) {
+			return Promise.resolve({
+				ok: true,
+				json: async () => ({
+					success: true,
+					data: { cast: mockCastDetail },
+				}),
+			} as Response)
+		}
 		if (url.includes('/api/solo-matchings/guest/pending/')) {
 			return Promise.resolve({
 				ok: true,
@@ -116,7 +138,7 @@ describe('MatchingOfferDialog', () => {
 			await expect
 				.element(
 					page.getByText(
-						'希望日時、時間、場所、時給を入力してオファーを送信してください。',
+						'希望日時、時間、場所を入力してオファーを送信してください。',
 					),
 				)
 				.toBeInTheDocument()
@@ -160,9 +182,9 @@ describe('MatchingOfferDialog', () => {
 			await expect.element(page.getByText('希望開始時刻')).toBeInTheDocument()
 			await expect.element(page.getByText('希望時間')).toBeInTheDocument()
 			await expect.element(page.getByText('希望場所')).toBeInTheDocument()
-			await expect
-				.element(page.getByText('時給（ポイント）'))
-				.toBeInTheDocument()
+			// 時給はランクから自動計算されるため、読み取り専用で表示される
+			await expect.element(page.getByText('キャストランク')).toBeInTheDocument()
+			await expect.element(page.getByText('時給')).toBeInTheDocument()
 			await expect
 				.element(page.getByRole('button', { name: 'オファーを送信' }))
 				.toBeInTheDocument()
@@ -178,8 +200,7 @@ describe('MatchingOfferDialog', () => {
 				proposedDate: new Date(Date.now() + 3600000),
 				proposedDuration: 120,
 				proposedLocation: '原宿',
-				hourlyRate: 3500,
-				totalPoints: 7000,
+				totalPoints: 6000,
 				startedAt: null,
 				scheduledEndAt: null,
 				actualEndAt: null,
@@ -191,6 +212,16 @@ describe('MatchingOfferDialog', () => {
 			}
 
 			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
 				if (url.includes('/api/solo-matchings/guest/pending/')) {
 					return Promise.resolve({
 						ok: true,
@@ -232,9 +263,7 @@ describe('MatchingOfferDialog', () => {
 			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
 			await locationInput.fill('原宿')
 
-			// 時給を変更
-			const hourlyRateInput = page.getByRole('spinbutton')
-			await hourlyRateInput.fill('3500')
+			// 時給はランクから自動計算されるため入力不要
 
 			// 送信
 			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
@@ -266,8 +295,7 @@ describe('MatchingOfferDialog', () => {
 				proposedDate: new Date(Date.now() + 3600000),
 				proposedDuration: 150,
 				proposedLocation: '銀座',
-				hourlyRate: 4000,
-				totalPoints: 10000,
+				totalPoints: 7500,
 				startedAt: null,
 				scheduledEndAt: null,
 				actualEndAt: null,
@@ -279,6 +307,16 @@ describe('MatchingOfferDialog', () => {
 			}
 
 			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
 				if (url.includes('/api/solo-matchings/guest/pending/')) {
 					return Promise.resolve({
 						ok: true,
@@ -337,8 +375,7 @@ describe('MatchingOfferDialog', () => {
 				proposedDate: new Date(Date.now() + 7200000),
 				proposedDuration: 180,
 				proposedLocation: '六本木',
-				hourlyRate: 5000,
-				totalPoints: 15000,
+				totalPoints: 9000,
 				startedAt: null,
 				scheduledEndAt: null,
 				actualEndAt: null,
@@ -350,6 +387,16 @@ describe('MatchingOfferDialog', () => {
 			}
 
 			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
 				if (url.includes('/api/solo-matchings/guest/pending/')) {
 					return Promise.resolve({
 						ok: true,
@@ -406,6 +453,16 @@ describe('MatchingOfferDialog', () => {
 	describe('エラーハンドリング', () => {
 		it('送信失敗時にエラートーストが表示され、ダイアログは開いたまま', async () => {
 			mockFetch.mockImplementation((url: string) => {
+				// キャスト詳細API
+				if (url.includes('/api/casts/')) {
+					return Promise.resolve({
+						ok: true,
+						json: async () => ({
+							success: true,
+							data: { cast: mockCastDetail },
+						}),
+					} as Response)
+				}
 				if (url.includes('/api/solo-matchings/guest/pending/')) {
 					return Promise.resolve({
 						ok: true,
@@ -419,7 +476,7 @@ describe('MatchingOfferDialog', () => {
 				return Promise.resolve({
 					ok: false,
 					json: async () => ({
-						error: '時給が低すぎます',
+						error: 'エラーが発生しました',
 					}),
 				} as Response)
 			})
@@ -445,7 +502,7 @@ describe('MatchingOfferDialog', () => {
 			await vi.waitFor(
 				() => {
 					expect(mockShowToast).toHaveBeenCalledWith(
-						'時給が低すぎます',
+						'エラーが発生しました',
 						'error',
 					)
 				},

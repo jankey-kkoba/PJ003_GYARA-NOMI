@@ -12,6 +12,7 @@ export type MatchingStatus =
 
 /**
  * ソロマッチング
+ * 時給（hourlyRate）はキャストのランクから動的に計算されるため、型には含めない
  */
 export type SoloMatching = {
 	id: string
@@ -22,7 +23,6 @@ export type SoloMatching = {
 	proposedDate: Date
 	proposedDuration: number
 	proposedLocation: string
-	hourlyRate: number
 	totalPoints: number
 	startedAt: Date | null
 	scheduledEndAt: Date | null

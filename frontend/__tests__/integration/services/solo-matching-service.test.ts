@@ -91,7 +91,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate,
 				proposedDuration: 120, // 2時間
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// 戻り値の検証
@@ -100,7 +99,7 @@ describe('soloMatchingService Integration', () => {
 			expect(result.castId).toBe('seed-user-cast-001')
 			expect(result.proposedDuration).toBe(120)
 			expect(result.proposedLocation).toBe('渋谷')
-			expect(result.hourlyRate).toBe(3000)
+			// 時給はキャストのランクから自動計算される（seed-user-cast-001はランク1 = 3000ポイント/時間）
 			expect(result.totalPoints).toBe(6000) // 2時間 × 3000円/時
 			expect(result.status).toBe('pending')
 			expect(result.chatRoomId).toBeNull()
@@ -141,11 +140,10 @@ describe('soloMatchingService Integration', () => {
 				proposedDate,
 				proposedDuration: 30, // 30分
 				proposedLocation: '新宿',
-				hourlyRate: 4000,
 			})
 
-			// 30分 = 0.5時間 → 0.5 × 4000 = 2000ポイント
-			expect(result.totalPoints).toBe(2000)
+			// 30分 = 0.5時間 → 0.5 × 3000（ランク1の時給） = 1500ポイント
+			expect(result.totalPoints).toBe(1500)
 
 			// クリーンアップ
 			await markForCleanup(result.id)
@@ -160,11 +158,10 @@ describe('soloMatchingService Integration', () => {
 				proposedDate,
 				proposedDuration: 210, // 3時間30分
 				proposedLocation: '池袋',
-				hourlyRate: 5000,
 			})
 
-			// 3.5時間 × 5000 = 17500ポイント
-			expect(result.totalPoints).toBe(17500)
+			// 3.5時間 × 3000（ランク1の時給） = 10500ポイント
+			expect(result.totalPoints).toBe(10500)
 
 			// クリーンアップ
 			await markForCleanup(result.id)
@@ -246,8 +243,9 @@ describe('soloMatchingService Integration', () => {
 				expect(result.guestId).toBe('seed-user-guest-002')
 			})
 
-			// seed-user-guest-001には4件、seed-user-guest-002には1件のマッチングがある
-			expect(results1.length).toBe(4)
+			// seed-user-guest-001には最低6件（通常4件 + 完了済み2件）、seed-user-guest-002には最低1件のマッチングがある
+			// テスト実行中に作成されたマッチングも含まれる可能性があるため、最低値で検証
+			expect(results1.length).toBeGreaterThanOrEqual(6)
 			expect(results2.length).toBe(1)
 		})
 	})
@@ -261,7 +259,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングに承認で回答
@@ -308,7 +305,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングに拒否で回答
@@ -353,7 +349,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// 異なるキャストIDで回答しようとする
@@ -377,7 +372,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// 最初の回答
@@ -410,7 +404,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120, // 2時間
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングを承認済みにする
@@ -472,7 +465,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -501,7 +493,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// pending状態で開始しようとする
@@ -528,7 +519,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120, // 2時間
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングを承認済みにする
@@ -585,7 +575,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -619,7 +608,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -650,7 +638,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// pending状態で終了しようとする
@@ -677,7 +664,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120, // 2時間
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングを承認済みにする
@@ -741,7 +727,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120, // 2時間
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -798,7 +783,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -833,7 +817,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			await soloMatchingService.respondToSoloMatching(
@@ -867,7 +850,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// pendingオファーを取得
@@ -905,7 +887,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// マッチングを承認済みにする
@@ -937,7 +918,6 @@ describe('soloMatchingService Integration', () => {
 				proposedDate: new Date(Date.now() + 86400000),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
-				hourlyRate: 3000,
 			})
 
 			// 異なるゲストIDで検索（シードデータにも該当なし）

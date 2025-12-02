@@ -277,7 +277,8 @@ export function MatchingStatusCard({
 					<p className="text-xs text-muted-foreground">
 						延長ポイント:{' '}
 						{Math.round(
-							(parseInt(selectedExtension, 10) / 60) * matching.hourlyRate,
+							(parseInt(selectedExtension, 10) / 60) *
+								((matching.totalPoints * 60) / matching.proposedDuration),
 						).toLocaleString()}
 						ポイント
 					</p>

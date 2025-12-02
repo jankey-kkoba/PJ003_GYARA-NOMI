@@ -6,6 +6,7 @@ import type {
 
 /**
  * APIレスポンスのSoloMatchingの型（日付が文字列）
+ * 時給（hourlyRate）はキャストのランクから動的に計算されるため含まない
  */
 type ApiSoloMatching = {
 	id: string
@@ -16,7 +17,6 @@ type ApiSoloMatching = {
 	proposedDate: string
 	proposedDuration: number
 	proposedLocation: string
-	hourlyRate: number
 	totalPoints: number
 	startedAt: string | null
 	scheduledEndAt: string | null

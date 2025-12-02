@@ -230,11 +230,11 @@ INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, 
 -- マッチング (matchings + matching_participants)
 -- ================================================================================
 -- ゲスト seed-user-guest-001 のマッチング
-INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, requested_cast_count, total_points, created_at, updated_at) VALUES
-  ('seed-matching-pending-001', 'solo', 'seed-user-guest-001', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 5000, 1, 10000, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'),
-  ('seed-matching-accepted-001', 'solo', 'seed-user-guest-001', NULL, 'accepted', NOW() + INTERVAL '2 days', 90, '新宿駅周辺', 6000, 1, 9000, NOW() - INTERVAL '2 hours', NOW() - INTERVAL '1 hour 30 minutes'),
-  ('seed-matching-rejected-001', 'solo', 'seed-user-guest-001', NULL, 'rejected', NOW() + INTERVAL '3 days', 60, '六本木駅周辺', 7000, 1, 7000, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours 30 minutes'),
-  ('seed-matching-cancelled-001', 'solo', 'seed-user-guest-001', NULL, 'cancelled', NOW() + INTERVAL '4 days', 180, '銀座駅周辺', 4000, 1, 12000, NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours 30 minutes');
+INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, requested_cast_count, total_points, created_at, updated_at) VALUES
+  ('seed-matching-pending-001', 'solo', 'seed-user-guest-001', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 1, 10000, NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'),
+  ('seed-matching-accepted-001', 'solo', 'seed-user-guest-001', NULL, 'accepted', NOW() + INTERVAL '2 days', 90, '新宿駅周辺', 1, 9000, NOW() - INTERVAL '2 hours', NOW() - INTERVAL '1 hour 30 minutes'),
+  ('seed-matching-rejected-001', 'solo', 'seed-user-guest-001', NULL, 'rejected', NOW() + INTERVAL '3 days', 60, '六本木駅周辺', 1, 7000, NOW() - INTERVAL '3 hours', NOW() - INTERVAL '2 hours 30 minutes'),
+  ('seed-matching-cancelled-001', 'solo', 'seed-user-guest-001', NULL, 'cancelled', NOW() + INTERVAL '4 days', 180, '銀座駅周辺', 1, 12000, NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours 30 minutes');
 
 INSERT INTO matching_participants (id, matching_id, cast_id, status, created_at, updated_at) VALUES
   ('seed-participant-pending-001', 'seed-matching-pending-001', 'seed-user-cast-001', 'pending', NOW() - INTERVAL '1 hour', NOW() - INTERVAL '1 hour'),
@@ -243,33 +243,33 @@ INSERT INTO matching_participants (id, matching_id, cast_id, status, created_at,
   ('seed-participant-cancelled-001', 'seed-matching-cancelled-001', 'seed-user-cast-004', 'rejected', NOW() - INTERVAL '4 hours', NOW() - INTERVAL '3 hours 30 minutes');
 
 -- ゲスト seed-user-guest-002 のマッチング
-INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, requested_cast_count, total_points, created_at, updated_at) VALUES
-  ('seed-matching-pending-002', 'solo', 'seed-user-guest-002', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 5000, 1, 10000, NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes');
+INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, requested_cast_count, total_points, created_at, updated_at) VALUES
+  ('seed-matching-pending-002', 'solo', 'seed-user-guest-002', NULL, 'pending', NOW() + INTERVAL '1 day', 120, '渋谷駅周辺', 1, 10000, NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes');
 
 INSERT INTO matching_participants (id, matching_id, cast_id, status, created_at, updated_at) VALUES
   ('seed-participant-pending-002', 'seed-matching-pending-002', 'seed-user-cast-001', 'pending', NOW() - INTERVAL '30 minutes', NOW() - INTERVAL '30 minutes');
 
 -- ゲスト seed-user-guest-003 のマッチング（キャスト向けテストデータ）
 -- seed-user-cast-001 が受信したマッチング
-INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, requested_cast_count, total_points, created_at, updated_at) VALUES
-  ('seed-matching-pending-003', 'solo', 'seed-user-guest-003', NULL, 'pending', NOW() + INTERVAL '5 days', 150, '表参道駅周辺', 5500, 1, 13750, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '10 minutes'),
-  ('seed-matching-accepted-002', 'solo', 'seed-user-guest-003', NULL, 'accepted', NOW() + INTERVAL '6 days', 180, '恵比寿駅周辺', 6000, 1, 18000, NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
+INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, requested_cast_count, total_points, created_at, updated_at) VALUES
+  ('seed-matching-pending-003', 'solo', 'seed-user-guest-003', NULL, 'pending', NOW() + INTERVAL '5 days', 150, '表参道駅周辺', 1, 13750, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '10 minutes'),
+  ('seed-matching-accepted-002', 'solo', 'seed-user-guest-003', NULL, 'accepted', NOW() + INTERVAL '6 days', 180, '恵比寿駅周辺', 1, 18000, NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
 
 INSERT INTO matching_participants (id, matching_id, cast_id, status, responded_at, created_at, updated_at) VALUES
   ('seed-participant-pending-003', 'seed-matching-pending-003', 'seed-user-cast-001', 'pending', NULL, NOW() - INTERVAL '10 minutes', NOW() - INTERVAL '10 minutes'),
   ('seed-participant-accepted-002', 'seed-matching-accepted-002', 'seed-user-cast-001', 'accepted', NOW() - INTERVAL '20 hours', NOW() - INTERVAL '1 day', NOW() - INTERVAL '20 hours');
 
 -- seed-user-cast-002 が受信したマッチング
-INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, requested_cast_count, total_points, created_at, updated_at) VALUES
-  ('seed-matching-pending-004', 'solo', 'seed-user-guest-003', NULL, 'pending', NOW() + INTERVAL '7 days', 90, '池袋駅周辺', 5000, 1, 7500, NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes');
+INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, requested_cast_count, total_points, created_at, updated_at) VALUES
+  ('seed-matching-pending-004', 'solo', 'seed-user-guest-003', NULL, 'pending', NOW() + INTERVAL '7 days', 90, '池袋駅周辺', 1, 7500, NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes');
 
 INSERT INTO matching_participants (id, matching_id, cast_id, status, created_at, updated_at) VALUES
   ('seed-participant-pending-004', 'seed-matching-pending-004', 'seed-user-cast-002', 'pending', NOW() - INTERVAL '5 minutes', NOW() - INTERVAL '5 minutes');
 
 -- 完了済みマッチング（評価テスト用）
-INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, hourly_rate, requested_cast_count, total_points, started_at, scheduled_end_at, actual_end_at, created_at, updated_at) VALUES
-  ('seed-matching-completed-001', 'solo', 'seed-user-guest-001', NULL, 'completed', NOW() - INTERVAL '3 days', 120, '渋谷駅周辺', 5000, 1, 10000, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '2 hours', NOW() - INTERVAL '3 days' + INTERVAL '2 hours 10 minutes', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
-  ('seed-matching-completed-002', 'solo', 'seed-user-guest-001', NULL, 'completed', NOW() - INTERVAL '5 days', 90, '新宿駅周辺', 6000, 1, 9000, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days' + INTERVAL '90 minutes', NOW() - INTERVAL '5 days' + INTERVAL '95 minutes', NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days');
+INSERT INTO matchings (id, type, guest_id, chat_room_id, status, proposed_date, proposed_duration, proposed_location, requested_cast_count, total_points, started_at, scheduled_end_at, actual_end_at, created_at, updated_at) VALUES
+  ('seed-matching-completed-001', 'solo', 'seed-user-guest-001', NULL, 'completed', NOW() - INTERVAL '3 days', 120, '渋谷駅周辺', 1, 10000, NOW() - INTERVAL '3 days', NOW() - INTERVAL '3 days' + INTERVAL '2 hours', NOW() - INTERVAL '3 days' + INTERVAL '2 hours 10 minutes', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
+  ('seed-matching-completed-002', 'solo', 'seed-user-guest-001', NULL, 'completed', NOW() - INTERVAL '5 days', 90, '新宿駅周辺', 1, 9000, NOW() - INTERVAL '5 days', NOW() - INTERVAL '5 days' + INTERVAL '90 minutes', NOW() - INTERVAL '5 days' + INTERVAL '95 minutes', NOW() - INTERVAL '6 days', NOW() - INTERVAL '5 days');
 
 INSERT INTO matching_participants (id, matching_id, cast_id, status, joined_at, created_at, updated_at) VALUES
   ('seed-participant-completed-001', 'seed-matching-completed-001', 'seed-user-cast-001', 'completed', NOW() - INTERVAL '3 days', NOW() - INTERVAL '4 days', NOW() - INTERVAL '3 days'),
