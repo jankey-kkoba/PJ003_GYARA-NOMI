@@ -15,7 +15,10 @@ import {
 } from '@tests/utils/mock-auth'
 import { userService } from '@/features/user/services/userService'
 import { groupMatchingService } from '@/features/group-matching/services/groupMatchingService'
-import type { CreateGroupMatchingResult } from '@/features/group-matching/types/groupMatching'
+import type {
+	CreateGroupMatchingResult,
+	GuestGroupMatching,
+} from '@/features/group-matching/types/groupMatching'
 import type { InferSelectModel } from 'drizzle-orm'
 import { users } from '@/libs/db/schema/users'
 
@@ -31,6 +34,7 @@ vi.mock('@/features/user/services/userService', () => ({
 vi.mock('@/features/group-matching/services/groupMatchingService', () => ({
 	groupMatchingService: {
 		createGroupMatching: vi.fn(),
+		getGuestGroupMatchings: vi.fn(),
 	},
 }))
 
@@ -697,6 +701,222 @@ describe('POST /api/group-matchings/guest', () => {
 			const body = await res.json()
 			expect(body.success).toBe(false)
 			expect(body.error).toBe('Database error')
+		})
+	})
+})
+
+describe('GET /api/group-matchings/guest', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	describe('認証チェック', () => {
+		it('認証されていない場合は 401 エラーを返す', async () => {
+			const app = createTestApp() // token なし
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+
+		it('トークンにユーザー ID がない場合は 401 エラーを返す', async () => {
+			const app = createTestApp({ role: 'guest' }) // id なし
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+	})
+
+	describe('ロールチェック', () => {
+		it('キャストがグループマッチング一覧を取得しようとした場合は 403 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'cast' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'cast@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'cast',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(403)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe(
+				'ゲストのみグループマッチング一覧を取得できます',
+			)
+		})
+
+		it('管理者がグループマッチング一覧を取得しようとした場合は 403 エラーを返す', async () => {
+			const app = createTestApp({ id: 'admin-123', role: 'admin' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'admin-123',
+				email: 'admin@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'admin',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(403)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe(
+				'ゲストのみグループマッチング一覧を取得できます',
+			)
+		})
+	})
+
+	describe('正常系', () => {
+		it('ゲストがグループマッチング一覧を取得できる', async () => {
+			const app = createTestApp({ id: 'guest-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const mockMatchings: GuestGroupMatching[] = [
+				{
+					id: 'matching-1',
+					guestId: 'guest-123',
+					chatRoomId: null,
+					status: 'pending',
+					proposedDate: new Date(),
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					totalPoints: 18000,
+					startedAt: null,
+					scheduledEndAt: null,
+					actualEndAt: null,
+					extensionMinutes: 0,
+					extensionPoints: 0,
+					recruitingEndedAt: null,
+					requestedCastCount: 3,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					type: 'group',
+					participantSummary: {
+						pendingCount: 2,
+						acceptedCount: 1,
+						rejectedCount: 0,
+						joinedCount: 0,
+					},
+				},
+				{
+					id: 'matching-2',
+					guestId: 'guest-123',
+					chatRoomId: null,
+					status: 'accepted',
+					proposedDate: new Date(),
+					proposedDuration: 180,
+					proposedLocation: '新宿',
+					totalPoints: 27000,
+					startedAt: null,
+					scheduledEndAt: null,
+					actualEndAt: null,
+					extensionMinutes: 0,
+					extensionPoints: 0,
+					recruitingEndedAt: null,
+					requestedCastCount: 3,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+					type: 'group',
+					participantSummary: {
+						pendingCount: 0,
+						acceptedCount: 3,
+						rejectedCount: 0,
+						joinedCount: 0,
+					},
+				},
+			]
+
+			mockGroupMatchingService.getGuestGroupMatchings.mockResolvedValue(
+				mockMatchings,
+			)
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.groupMatchings).toHaveLength(2)
+			expect(body.groupMatchings[0].id).toBe('matching-1')
+			expect(body.groupMatchings[0].participantSummary.pendingCount).toBe(2)
+			expect(body.groupMatchings[1].id).toBe('matching-2')
+			expect(body.groupMatchings[1].status).toBe('accepted')
+		})
+
+		it('グループマッチングがない場合は空配列を返す', async () => {
+			const app = createTestApp({ id: 'guest-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			mockGroupMatchingService.getGuestGroupMatchings.mockResolvedValue([])
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.groupMatchings).toEqual([])
+		})
+	})
+
+	describe('エラーハンドリング', () => {
+		it('ユーザーが見つからない場合は 404 エラーを返す', async () => {
+			const app = createTestApp({ id: 'nonexistent-user', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue(null as unknown as User)
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'GET',
+			})
+
+			expect(res.status).toBe(404)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ユーザーが見つかりません')
 		})
 	})
 })

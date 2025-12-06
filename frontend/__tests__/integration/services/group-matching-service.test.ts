@@ -194,81 +194,211 @@ describe('groupMatchingService Integration', () => {
 		// 注: proposedDateとproposedTimeOffsetMinutesの必須バリデーションはスキーマ（API層）で行われる
 		// そのため、サービス層の直接呼び出しではチェックされない
 
-		describe('年齢フィルタリング', () => {
-			it('minAgeを指定すると、その年齢以上のキャストのみにオファーが送信される', async () => {
-				const proposedDate = new Date(Date.now() + 86400000)
+	})
 
-				const result = await groupMatchingService.createGroupMatching({
+	describe('getGuestGroupMatchings', () => {
+		it('ゲストのグループマッチング一覧を取得できる', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000) // 明日
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 一覧を取得
+			const matchingList =
+				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+
+			// 作成したマッチングが一覧に含まれていることを確認
+			expect(matchingList.length).toBeGreaterThanOrEqual(1)
+			const foundMatching = matchingList.find(
+				(m) => m.id === createResult.matching.id,
+			)
+			expect(foundMatching).toBeDefined()
+			expect(foundMatching!.guestId).toBe('seed-user-guest-001')
+			expect(foundMatching!.type).toBe('group')
+			expect(foundMatching!.participantSummary).toBeDefined()
+			expect(foundMatching!.participantSummary.pendingCount).toBeGreaterThan(0)
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('他のゲストのグループマッチングは取得されない', async () => {
+			// ゲスト1でマッチング作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 存在しないゲストIDで取得（空の配列が返る）
+			const matchingList =
+				await groupMatchingService.getGuestGroupMatchings('non-existent-guest')
+
+			expect(matchingList.length).toBe(0)
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('completedステータスのマッチングは一覧に含まれない', async () => {
+			// テスト用のグループマッチングを作成してステータスをcompletedに変更
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// ステータスをcompletedに変更
+			await db
+				.update(matchings)
+				.set({ status: 'completed' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// 一覧を取得
+			const matchingList =
+				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+
+			// completedのマッチングは含まれない
+			const foundMatching = matchingList.find(
+				(m) => m.id === createResult.matching.id,
+			)
+			expect(foundMatching).toBeUndefined()
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('参加者サマリーが正しく計算される', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 一人の参加者のステータスをacceptedに変更
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			if (participants.length > 0) {
+				await db
+					.update(matchingParticipants)
+					.set({ status: 'accepted' })
+					.where(eq(matchingParticipants.id, participants[0].id))
+			}
+
+			// 一覧を取得
+			const matchingList =
+				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+
+			const foundMatching = matchingList.find(
+				(m) => m.id === createResult.matching.id,
+			)
+			expect(foundMatching).toBeDefined()
+			expect(foundMatching!.participantSummary.acceptedCount).toBe(1)
+			expect(foundMatching!.participantSummary.pendingCount).toBe(
+				participants.length - 1,
+			)
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+	})
+
+	describe('createGroupMatching - 年齢フィルタリング', () => {
+		it('minAgeを指定すると、その年齢以上のキャストのみにオファーが送信される', async () => {
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const result = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				minAge: 27, // 27歳以上（1997年以前生まれ）
+			})
+
+			// オファーが送信されていることを確認
+			expect(result.participantCount).toBeGreaterThan(0)
+
+			// クリーンアップ
+			await markForCleanup(result.matching.id)
+		})
+
+		it('maxAgeを指定すると、その年齢以下のキャストのみにオファーが送信される', async () => {
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const result = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				maxAge: 25, // 25歳以下（1999年以降生まれ）
+			})
+
+			// オファーが送信されていることを確認
+			expect(result.participantCount).toBeGreaterThan(0)
+
+			// クリーンアップ
+			await markForCleanup(result.matching.id)
+		})
+
+		it('minAgeとmaxAgeを両方指定すると、その範囲内のキャストのみにオファーが送信される', async () => {
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const result = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				minAge: 25,
+				maxAge: 27, // 25〜27歳
+			})
+
+			// オファーが送信されていることを確認
+			expect(result.participantCount).toBeGreaterThan(0)
+
+			// クリーンアップ
+			await markForCleanup(result.matching.id)
+		})
+
+		it('条件に合うキャストがいない場合はエラー', async () => {
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			// 99歳以上というありえない条件
+			await expect(
+				groupMatchingService.createGroupMatching({
 					guestId: 'seed-user-guest-001',
 					requestedCastCount: 2,
 					proposedDate,
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
-					minAge: 27, // 27歳以上（1997年以前生まれ）
-				})
-
-				// オファーが送信されていることを確認
-				expect(result.participantCount).toBeGreaterThan(0)
-
-				// クリーンアップ
-				await markForCleanup(result.matching.id)
-			})
-
-			it('maxAgeを指定すると、その年齢以下のキャストのみにオファーが送信される', async () => {
-				const proposedDate = new Date(Date.now() + 86400000)
-
-				const result = await groupMatchingService.createGroupMatching({
-					guestId: 'seed-user-guest-001',
-					requestedCastCount: 2,
-					proposedDate,
-					proposedDuration: 120,
-					proposedLocation: '渋谷',
-					maxAge: 25, // 25歳以下（1999年以降生まれ）
-				})
-
-				// オファーが送信されていることを確認
-				expect(result.participantCount).toBeGreaterThan(0)
-
-				// クリーンアップ
-				await markForCleanup(result.matching.id)
-			})
-
-			it('minAgeとmaxAgeを両方指定すると、その範囲内のキャストのみにオファーが送信される', async () => {
-				const proposedDate = new Date(Date.now() + 86400000)
-
-				const result = await groupMatchingService.createGroupMatching({
-					guestId: 'seed-user-guest-001',
-					requestedCastCount: 2,
-					proposedDate,
-					proposedDuration: 120,
-					proposedLocation: '渋谷',
-					minAge: 25,
-					maxAge: 27, // 25〜27歳
-				})
-
-				// オファーが送信されていることを確認
-				expect(result.participantCount).toBeGreaterThan(0)
-
-				// クリーンアップ
-				await markForCleanup(result.matching.id)
-			})
-
-			it('条件に合うキャストがいない場合はエラー', async () => {
-				const proposedDate = new Date(Date.now() + 86400000)
-
-				// 99歳以上というありえない条件
-				await expect(
-					groupMatchingService.createGroupMatching({
-						guestId: 'seed-user-guest-001',
-						requestedCastCount: 2,
-						proposedDate,
-						proposedDuration: 120,
-						proposedLocation: '渋谷',
-						minAge: 99,
-						maxAge: 99,
-					}),
-				).rejects.toThrow('アクティブなキャストが見つかりません')
-			})
+					minAge: 99,
+					maxAge: 99,
+				}),
+			).rejects.toThrow('アクティブなキャストが見つかりません')
 		})
 	})
 })

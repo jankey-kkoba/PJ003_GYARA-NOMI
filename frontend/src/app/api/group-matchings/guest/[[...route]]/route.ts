@@ -46,6 +46,35 @@ export function createGuestGroupMatchingsApp(
 
 	// チェーンルート形式で定義
 	const route = app
+		// ゲストのグループマッチング一覧取得エンドポイント
+		.get('/', verifyAuthMiddleware, async (c) => {
+			// 認証済みユーザー情報を取得
+			const authUser = c.get('authUser')
+			const userId = authUser.token?.id as string | undefined
+
+			if (!userId) {
+				throw new HTTPException(401, { message: '認証が必要です' })
+			}
+
+			// ユーザー情報を取得してロールを確認
+			const user = await userService.findUserById(userId)
+			if (!user) {
+				throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+			}
+
+			// ゲストのみマッチング一覧を取得可能
+			if (user.role !== 'guest') {
+				throw new HTTPException(403, {
+					message: 'ゲストのみグループマッチング一覧を取得できます',
+				})
+			}
+
+			// グループマッチング一覧を取得
+			const groupMatchings =
+				await groupMatchingService.getGuestGroupMatchings(userId)
+
+			return c.json({ success: true, groupMatchings })
+		})
 		// グループマッチングオファー作成エンドポイント
 		.post(
 			'/',

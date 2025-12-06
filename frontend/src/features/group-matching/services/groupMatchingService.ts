@@ -2,7 +2,10 @@ import { db } from '@/libs/db'
 import { matchings, matchingParticipants } from '@/libs/db/schema'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
-import type { CreateGroupMatchingResult } from '@/features/group-matching/types/groupMatching'
+import type {
+	CreateGroupMatchingResult,
+	GuestGroupMatching,
+} from '@/features/group-matching/types/groupMatching'
 import {
 	addMinutesToDate,
 	subtractYears,
@@ -11,7 +14,7 @@ import {
 } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
 import { RANK_HOURLY_RATES } from '@/features/cast/constants'
-import { eq, and, gte, lte, type SQL } from 'drizzle-orm'
+import { eq, and, gte, lte, desc, type SQL } from 'drizzle-orm'
 
 /**
  * グループマッチング作成の入力パラメータ
@@ -141,5 +144,76 @@ export const groupMatchingService = {
 			},
 			participantCount: activeCasts.length,
 		}
+	},
+
+	/**
+	 * ゲストのグループマッチング一覧を取得
+	 * @param guestId - ゲストID
+	 * @returns ゲストのグループマッチング一覧（pending, accepted, rejected, cancelled, in_progress）
+	 */
+	async getGuestGroupMatchings(guestId: string): Promise<GuestGroupMatching[]> {
+		// グループマッチングを取得
+		const results = await db
+			.select({
+				matching: matchings,
+			})
+			.from(matchings)
+			.where(and(eq(matchings.guestId, guestId), eq(matchings.type, 'group')))
+			.orderBy(desc(matchings.createdAt))
+
+		// フィルタリング: pending, accepted, rejected, cancelled, in_progress
+		const filteredResults = results.filter(
+			(result) =>
+				result.matching.status === 'pending' ||
+				result.matching.status === 'accepted' ||
+				result.matching.status === 'rejected' ||
+				result.matching.status === 'cancelled' ||
+				result.matching.status === 'in_progress',
+		)
+
+		// 各マッチングの参加者サマリーを取得
+		const groupMatchings: GuestGroupMatching[] = await Promise.all(
+			filteredResults.map(async (result) => {
+				// 参加者を取得してサマリーを計算
+				const participants = await db
+					.select({ status: matchingParticipants.status })
+					.from(matchingParticipants)
+					.where(eq(matchingParticipants.matchingId, result.matching.id))
+
+				const participantSummary = {
+					pendingCount: participants.filter((p) => p.status === 'pending')
+						.length,
+					acceptedCount: participants.filter((p) => p.status === 'accepted')
+						.length,
+					rejectedCount: participants.filter((p) => p.status === 'rejected')
+						.length,
+					joinedCount: participants.filter((p) => p.status === 'joined').length,
+				}
+
+				return {
+					id: result.matching.id,
+					guestId: result.matching.guestId,
+					chatRoomId: result.matching.chatRoomId,
+					status: result.matching.status,
+					proposedDate: result.matching.proposedDate,
+					proposedDuration: result.matching.proposedDuration,
+					proposedLocation: result.matching.proposedLocation,
+					requestedCastCount: result.matching.requestedCastCount ?? 1,
+					totalPoints: result.matching.totalPoints,
+					startedAt: result.matching.startedAt,
+					scheduledEndAt: result.matching.scheduledEndAt,
+					actualEndAt: result.matching.actualEndAt,
+					extensionMinutes: result.matching.extensionMinutes ?? 0,
+					extensionPoints: result.matching.extensionPoints ?? 0,
+					recruitingEndedAt: result.matching.recruitingEndedAt,
+					createdAt: result.matching.createdAt,
+					updatedAt: result.matching.updatedAt,
+					type: 'group' as const,
+					participantSummary,
+				}
+			}),
+		)
+
+		return groupMatchings
 	},
 }

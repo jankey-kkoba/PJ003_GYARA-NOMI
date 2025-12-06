@@ -50,3 +50,23 @@ export type CreateGroupMatchingResult = {
 	matching: GroupMatching
 	participantCount: number
 }
+
+/**
+ * ゲスト向けグループマッチング一覧用の型定義
+ * 参加者のサマリー情報を含む
+ */
+export type GuestGroupMatching = GroupMatching & {
+	/** マッチングのタイプ（UI表示用） */
+	type: 'group'
+	/** 参加者のサマリー情報 */
+	participantSummary: {
+		/** 回答待ち人数 */
+		pendingCount: number
+		/** 承認済み人数 */
+		acceptedCount: number
+		/** 拒否人数 */
+		rejectedCount: number
+		/** 合流済み人数 */
+		joinedCount: number
+	}
+}
