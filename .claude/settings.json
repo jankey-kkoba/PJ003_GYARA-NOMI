@@ -1,6 +1,7 @@
 {
   "permissions": {
     "allow": [
+      "Bash(date*)",
       "Bash(gh project item-list*)",
       "Bash(gh project field-list*)"
     ]
