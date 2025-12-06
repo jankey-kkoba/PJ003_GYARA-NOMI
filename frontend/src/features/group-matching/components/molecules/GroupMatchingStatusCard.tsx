@@ -21,6 +21,7 @@ import type { GuestGroupMatching } from '@/features/group-matching/types/groupMa
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useExtendGroupMatching } from '@/features/group-matching/hooks/useExtendGroupMatching'
+import { ConfirmActionDialog } from '@/components/molecules/ConfirmActionDialog'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -77,6 +78,17 @@ export function GroupMatchingStatusCard({
 	const [error, setError] = useState<string | null>(null)
 	const [selectedExtension, setSelectedExtension] = useState<string>('30')
 
+	// 確認ダイアログの状態管理
+	const [dialogOpen, setDialogOpen] = useState(false)
+
+	const openDialog = () => {
+		setDialogOpen(true)
+	}
+
+	const closeDialog = () => {
+		setDialogOpen(false)
+	}
+
 	const handleExtend = () => {
 		setError(null)
 		extendMatching(
@@ -85,12 +97,16 @@ export function GroupMatchingStatusCard({
 				extensionMinutes: parseInt(selectedExtension, 10),
 			},
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの延長に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
@@ -116,107 +132,125 @@ export function GroupMatchingStatusCard({
 	}
 
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<CardTitle className="text-base">グループ募集</CardTitle>
-						<Badge variant="outline" className="text-xs">
-							{matching.requestedCastCount}人募集
-						</Badge>
+		<>
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<CardTitle className="text-base">グループ募集</CardTitle>
+							<Badge variant="outline" className="text-xs">
+								{matching.requestedCastCount}人募集
+							</Badge>
+						</div>
+						<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 					</div>
-					<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-				</div>
-			</CardHeader>
-			<CardContent className="space-y-2">
-				<div className="grid grid-cols-2 gap-2 text-sm">
-					<div>
-						<span className="text-muted-foreground">希望日時:</span>
-					</div>
-					<div className="text-right">
-						{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
-							locale: ja,
-						})}
+				</CardHeader>
+				<CardContent className="space-y-2">
+					<div className="grid grid-cols-2 gap-2 text-sm">
+						<div>
+							<span className="text-muted-foreground">希望日時:</span>
+						</div>
+						<div className="text-right">
+							{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
+								locale: ja,
+							})}
+						</div>
+
+						<div>
+							<span className="text-muted-foreground">時間:</span>
+						</div>
+						<div className="text-right">{matching.proposedDuration}分</div>
+
+						<div>
+							<span className="text-muted-foreground">場所:</span>
+						</div>
+						<div className="text-right truncate">
+							{matching.proposedLocation}
+						</div>
+
+						<div>
+							<span className="text-muted-foreground">合計:</span>
+						</div>
+						<div className="text-right font-semibold">
+							{matching.totalPoints.toLocaleString()}ポイント
+						</div>
 					</div>
 
-					<div>
-						<span className="text-muted-foreground">時間:</span>
+					{/* 参加者サマリー */}
+					<div className="mt-3 pt-3 border-t">
+						<div className="text-sm text-muted-foreground mb-2">応募状況</div>
+						<div className="flex gap-2 flex-wrap text-xs">
+							{participantSummary.pendingCount > 0 && (
+								<Badge variant="outline">
+									回答待ち: {participantSummary.pendingCount}人
+								</Badge>
+							)}
+							{participantSummary.acceptedCount > 0 && (
+								<Badge variant="default">
+									承認: {participantSummary.acceptedCount}人
+								</Badge>
+							)}
+							{participantSummary.rejectedCount > 0 && (
+								<Badge variant="destructive">
+									拒否: {participantSummary.rejectedCount}人
+								</Badge>
+							)}
+							{participantSummary.joinedCount > 0 && (
+								<Badge variant="default">
+									合流済み: {participantSummary.joinedCount}人
+								</Badge>
+							)}
+						</div>
 					</div>
-					<div className="text-right">{matching.proposedDuration}分</div>
+					{error && (
+						<div className="mt-2 text-sm text-destructive">{error}</div>
+					)}
+				</CardContent>
+				{showExtendButton && isScheduledEndPassed && (
+					<CardFooter className="flex flex-col gap-2">
+						<div className="flex w-full gap-2">
+							<Select
+								value={selectedExtension}
+								onValueChange={setSelectedExtension}
+							>
+								<SelectTrigger className="w-[140px]">
+									<SelectValue placeholder="延長時間" />
+								</SelectTrigger>
+								<SelectContent>
+									{EXTENSION_OPTIONS.map((option) => (
+										<SelectItem key={option.value} value={option.value}>
+											{option.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<Button
+								variant="default"
+								className="flex-1"
+								onClick={openDialog}
+								disabled={isExtendPending}
+							>
+								延長する
+							</Button>
+						</div>
+						<p className="text-xs text-muted-foreground">
+							延長ポイント: {calculateExtensionPoints().toLocaleString()}
+							ポイント
+						</p>
+					</CardFooter>
+				)}
+			</Card>
 
-					<div>
-						<span className="text-muted-foreground">場所:</span>
-					</div>
-					<div className="text-right truncate">{matching.proposedLocation}</div>
-
-					<div>
-						<span className="text-muted-foreground">合計:</span>
-					</div>
-					<div className="text-right font-semibold">
-						{matching.totalPoints.toLocaleString()}ポイント
-					</div>
-				</div>
-
-				{/* 参加者サマリー */}
-				<div className="mt-3 pt-3 border-t">
-					<div className="text-sm text-muted-foreground mb-2">応募状況</div>
-					<div className="flex gap-2 flex-wrap text-xs">
-						{participantSummary.pendingCount > 0 && (
-							<Badge variant="outline">
-								回答待ち: {participantSummary.pendingCount}人
-							</Badge>
-						)}
-						{participantSummary.acceptedCount > 0 && (
-							<Badge variant="default">
-								承認: {participantSummary.acceptedCount}人
-							</Badge>
-						)}
-						{participantSummary.rejectedCount > 0 && (
-							<Badge variant="destructive">
-								拒否: {participantSummary.rejectedCount}人
-							</Badge>
-						)}
-						{participantSummary.joinedCount > 0 && (
-							<Badge variant="default">
-								合流済み: {participantSummary.joinedCount}人
-							</Badge>
-						)}
-					</div>
-				</div>
-				{error && <div className="mt-2 text-sm text-destructive">{error}</div>}
-			</CardContent>
-			{showExtendButton && isScheduledEndPassed && (
-				<CardFooter className="flex flex-col gap-2">
-					<div className="flex w-full gap-2">
-						<Select
-							value={selectedExtension}
-							onValueChange={setSelectedExtension}
-						>
-							<SelectTrigger className="w-[140px]">
-								<SelectValue placeholder="延長時間" />
-							</SelectTrigger>
-							<SelectContent>
-								{EXTENSION_OPTIONS.map((option) => (
-									<SelectItem key={option.value} value={option.value}>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
-						<Button
-							variant="default"
-							className="flex-1"
-							onClick={handleExtend}
-							disabled={isExtendPending}
-						>
-							延長する
-						</Button>
-					</div>
-					<p className="text-xs text-muted-foreground">
-						延長ポイント: {calculateExtensionPoints().toLocaleString()}ポイント
-					</p>
-				</CardFooter>
-			)}
-		</Card>
+			{/* 延長確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogOpen}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="グループギャラ飲みを延長しますか？"
+				description={`${selectedExtension}分延長します。延長ポイント: ${calculateExtensionPoints().toLocaleString()}ポイント`}
+				confirmLabel="延長する"
+				onConfirm={handleExtend}
+				isPending={isExtendPending}
+			/>
+		</>
 	)
 }

@@ -33,3 +33,15 @@ export type SoloMatching = {
 	createdAt: Date
 	updatedAt: Date
 }
+
+/**
+ * キャスト向けソロマッチング
+ * ゲスト情報を含む
+ */
+export type CastSoloMatching = SoloMatching & {
+	/** ゲスト情報 */
+	guest: {
+		id: string
+		nickname: string
+	}
+}

@@ -1,7 +1,11 @@
 import { db } from '@/libs/db'
 import { matchings, matchingParticipants } from '@/libs/db/schema'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
-import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
+import { userProfiles } from '@/libs/db/schema/users'
+import type {
+	SoloMatching,
+	CastSoloMatching,
+} from '@/features/solo-matching/types/soloMatching'
 import { addMinutesToDate } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
 import { getHourlyRateByRank } from '@/features/cast/constants'
@@ -163,21 +167,23 @@ export const soloMatchingService = {
 	},
 
 	/**
-	 * キャストのソロマッチング一覧を取得
+	 * キャストのソロマッチング一覧を取得（ゲスト情報付き）
 	 * @param castId - キャストID
 	 * @returns キャストのソロマッチング一覧（pending, accepted, in_progressのみ）
 	 */
-	async getCastSoloMatchings(castId: string): Promise<SoloMatching[]> {
+	async getCastSoloMatchings(castId: string): Promise<CastSoloMatching[]> {
 		const results = await db
 			.select({
 				matching: matchings,
 				participant: matchingParticipants,
+				guestProfile: userProfiles,
 			})
 			.from(matchings)
 			.innerJoin(
 				matchingParticipants,
 				eq(matchings.id, matchingParticipants.matchingId),
 			)
+			.innerJoin(userProfiles, eq(matchings.guestId, userProfiles.id))
 			.where(
 				and(
 					eq(matchingParticipants.castId, castId),
@@ -194,9 +200,13 @@ export const soloMatchingService = {
 				result.matching.status === 'in_progress',
 		)
 
-		return filteredResults.map((result) =>
-			toSoloMatching(result.matching, result.participant),
-		)
+		return filteredResults.map((result) => ({
+			...toSoloMatching(result.matching, result.participant),
+			guest: {
+				id: result.matching.guestId,
+				nickname: result.guestProfile.name,
+			},
+		}))
 	},
 
 	/**

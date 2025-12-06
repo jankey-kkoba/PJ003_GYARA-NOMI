@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import type {
 	SoloMatching,
+	CastSoloMatching,
 	MatchingStatus,
 } from '@/features/solo-matching/types/soloMatching'
 import { format } from 'date-fns'
@@ -27,6 +28,7 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
+import { ConfirmActionDialog } from '@/components/molecules/ConfirmActionDialog'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -56,7 +58,7 @@ function getStatusInfo(status: MatchingStatus): {
 }
 
 type MatchingStatusCardProps = {
-	matching: SoloMatching
+	matching: SoloMatching | CastSoloMatching
 	/** 回答ボタンを表示するか（キャストが回答待ちのマッチングの場合のみtrue） */
 	showActions?: boolean
 	/** ゲストビューかどうか（延長ボタン表示用） */
@@ -77,6 +79,15 @@ const EXTENSION_OPTIONS = [
 	{ value: '120', label: '2時間' },
 ]
 
+/**
+ * CastSoloMatchingかどうかを判定する型ガード
+ */
+function isCastSoloMatching(
+	matching: SoloMatching | CastSoloMatching,
+): matching is CastSoloMatching {
+	return 'guest' in matching
+}
+
 export function MatchingStatusCard({
 	matching,
 	showActions = false,
@@ -94,13 +105,33 @@ export function MatchingStatusCard({
 	const [error, setError] = useState<string | null>(null)
 	const [selectedExtension, setSelectedExtension] = useState<string>('30')
 
+	// 確認ダイアログの状態管理
+	const [dialogState, setDialogState] = useState<{
+		type: 'accept' | 'reject' | 'start' | 'complete' | 'extend' | null
+		open: boolean
+	}>({ type: null, open: false })
+
+	const openDialog = (
+		type: 'accept' | 'reject' | 'start' | 'complete' | 'extend',
+	) => {
+		setDialogState({ type, open: true })
+	}
+
+	const closeDialog = () => {
+		setDialogState({ type: null, open: false })
+	}
+
 	const handleRespond = (response: 'accepted' | 'rejected') => {
 		setError(null)
 		respondToMatching(
 			{ matchingId: matching.id, response },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(err instanceof Error ? err.message : '回答に失敗しました')
+					closeDialog()
 				},
 			},
 		)
@@ -111,12 +142,16 @@ export function MatchingStatusCard({
 		startMatching(
 			{ matchingId: matching.id },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの開始に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
@@ -127,12 +162,16 @@ export function MatchingStatusCard({
 		completeMatching(
 			{ matchingId: matching.id },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの終了に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
@@ -146,12 +185,16 @@ export function MatchingStatusCard({
 				extensionMinutes: parseInt(selectedExtension, 10),
 			},
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの延長に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
@@ -163,127 +206,220 @@ export function MatchingStatusCard({
 	const isScheduledEndPassed =
 		matching.scheduledEndAt && new Date() >= new Date(matching.scheduledEndAt)
 
+	// ゲスト情報（CastSoloMatchingの場合のみ）
+	const guestInfo = isCastSoloMatching(matching) ? matching.guest : null
+
+	// ダイアログに表示するゲスト情報コンテンツ
+	const guestInfoContent = guestInfo && (
+		<div className="rounded-md bg-muted p-3">
+			<div className="text-sm font-medium">ゲスト情報</div>
+			<div className="mt-1 text-sm text-muted-foreground">
+				{guestInfo.nickname}さん
+			</div>
+		</div>
+	)
+
+	// 延長ポイントの計算
+	const calculateExtensionPoints = () => {
+		const extensionMinutes = parseInt(selectedExtension, 10)
+		return Math.round(
+			(extensionMinutes / 60) *
+				((matching.totalPoints * 60) / matching.proposedDuration),
+		)
+	}
+
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<CardTitle className="text-base">
-						マッチングID: {matching.id.slice(0, 8)}
-					</CardTitle>
-					<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-				</div>
-			</CardHeader>
-			<CardContent className="space-y-2">
-				<div className="grid grid-cols-2 gap-2 text-sm">
-					<div>
-						<span className="text-muted-foreground">希望日時:</span>
+		<>
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<CardTitle className="text-base">
+							{guestInfo ? (
+								<span>{guestInfo.nickname}さんからのオファー</span>
+							) : (
+								<span>マッチングID: {matching.id.slice(0, 8)}</span>
+							)}
+						</CardTitle>
+						<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 					</div>
-					<div className="text-right">
-						{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
-							locale: ja,
-						})}
-					</div>
+				</CardHeader>
+				<CardContent className="space-y-2">
+					<div className="grid grid-cols-2 gap-2 text-sm">
+						<div>
+							<span className="text-muted-foreground">希望日時:</span>
+						</div>
+						<div className="text-right">
+							{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
+								locale: ja,
+							})}
+						</div>
 
-					<div>
-						<span className="text-muted-foreground">時間:</span>
-					</div>
-					<div className="text-right">{matching.proposedDuration}分</div>
+						<div>
+							<span className="text-muted-foreground">時間:</span>
+						</div>
+						<div className="text-right">{matching.proposedDuration}分</div>
 
-					<div>
-						<span className="text-muted-foreground">場所:</span>
-					</div>
-					<div className="text-right truncate">{matching.proposedLocation}</div>
+						<div>
+							<span className="text-muted-foreground">場所:</span>
+						</div>
+						<div className="text-right truncate">
+							{matching.proposedLocation}
+						</div>
 
-					<div>
-						<span className="text-muted-foreground">合計:</span>
+						<div>
+							<span className="text-muted-foreground">合計:</span>
+						</div>
+						<div className="text-right font-semibold">
+							{matching.totalPoints.toLocaleString()}ポイント
+						</div>
 					</div>
-					<div className="text-right font-semibold">
-						{matching.totalPoints.toLocaleString()}ポイント
-					</div>
-				</div>
-				{error && <div className="mt-2 text-sm text-destructive">{error}</div>}
-			</CardContent>
-			{showActions && matching.status === 'pending' && (
-				<CardFooter className="flex gap-2">
-					<Button
-						variant="default"
-						className="flex-1"
-						onClick={() => handleRespond('accepted')}
-						disabled={isRespondPending}
-					>
-						承認
-					</Button>
-					<Button
-						variant="outline"
-						className="flex-1"
-						onClick={() => handleRespond('rejected')}
-						disabled={isRespondPending}
-					>
-						拒否
-					</Button>
-				</CardFooter>
-			)}
-			{showActions && matching.status === 'accepted' && (
-				<CardFooter>
-					<Button
-						variant="default"
-						className="w-full"
-						onClick={handleStart}
-						disabled={isStartPending}
-					>
-						合流
-					</Button>
-				</CardFooter>
-			)}
-			{showActions && matching.status === 'in_progress' && (
-				<CardFooter>
-					<Button
-						variant="destructive"
-						className="w-full"
-						onClick={handleComplete}
-						disabled={isCompletePending}
-					>
-						終了
-					</Button>
-				</CardFooter>
-			)}
-			{showExtendButton && isScheduledEndPassed && (
-				<CardFooter className="flex flex-col gap-2">
-					<div className="flex w-full gap-2">
-						<Select
-							value={selectedExtension}
-							onValueChange={setSelectedExtension}
-						>
-							<SelectTrigger className="w-[140px]">
-								<SelectValue placeholder="延長時間" />
-							</SelectTrigger>
-							<SelectContent>
-								{EXTENSION_OPTIONS.map((option) => (
-									<SelectItem key={option.value} value={option.value}>
-										{option.label}
-									</SelectItem>
-								))}
-							</SelectContent>
-						</Select>
+					{error && (
+						<div className="mt-2 text-sm text-destructive">{error}</div>
+					)}
+				</CardContent>
+				{showActions && matching.status === 'pending' && (
+					<CardFooter className="flex gap-2">
 						<Button
 							variant="default"
 							className="flex-1"
-							onClick={handleExtend}
-							disabled={isExtendPending}
+							onClick={() => openDialog('accept')}
+							disabled={isRespondPending}
 						>
-							延長する
+							承認
 						</Button>
-					</div>
-					<p className="text-xs text-muted-foreground">
-						延長ポイント:{' '}
-						{Math.round(
-							(parseInt(selectedExtension, 10) / 60) *
-								((matching.totalPoints * 60) / matching.proposedDuration),
-						).toLocaleString()}
-						ポイント
-					</p>
-				</CardFooter>
-			)}
-		</Card>
+						<Button
+							variant="outline"
+							className="flex-1"
+							onClick={() => openDialog('reject')}
+							disabled={isRespondPending}
+						>
+							拒否
+						</Button>
+					</CardFooter>
+				)}
+				{showActions && matching.status === 'accepted' && (
+					<CardFooter>
+						<Button
+							variant="default"
+							className="w-full"
+							onClick={() => openDialog('start')}
+							disabled={isStartPending}
+						>
+							合流
+						</Button>
+					</CardFooter>
+				)}
+				{showActions && matching.status === 'in_progress' && (
+					<CardFooter>
+						<Button
+							variant="destructive"
+							className="w-full"
+							onClick={() => openDialog('complete')}
+							disabled={isCompletePending}
+						>
+							終了
+						</Button>
+					</CardFooter>
+				)}
+				{showExtendButton && isScheduledEndPassed && (
+					<CardFooter className="flex flex-col gap-2">
+						<div className="flex w-full gap-2">
+							<Select
+								value={selectedExtension}
+								onValueChange={setSelectedExtension}
+							>
+								<SelectTrigger className="w-[140px]">
+									<SelectValue placeholder="延長時間" />
+								</SelectTrigger>
+								<SelectContent>
+									{EXTENSION_OPTIONS.map((option) => (
+										<SelectItem key={option.value} value={option.value}>
+											{option.label}
+										</SelectItem>
+									))}
+								</SelectContent>
+							</Select>
+							<Button
+								variant="default"
+								className="flex-1"
+								onClick={() => openDialog('extend')}
+								disabled={isExtendPending}
+							>
+								延長する
+							</Button>
+						</div>
+						<p className="text-xs text-muted-foreground">
+							延長ポイント: {calculateExtensionPoints().toLocaleString()}
+							ポイント
+						</p>
+					</CardFooter>
+				)}
+			</Card>
+
+			{/* 承認確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'accept' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="オファーを承認しますか？"
+				description="このオファーを承認すると、ゲストとのギャラ飲みが成立します。"
+				confirmLabel="承認する"
+				onConfirm={() => handleRespond('accepted')}
+				isPending={isRespondPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 拒否確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'reject' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="オファーを拒否しますか？"
+				description="このオファーを拒否すると、マッチングは不成立となります。"
+				confirmLabel="拒否する"
+				variant="destructive"
+				onConfirm={() => handleRespond('rejected')}
+				isPending={isRespondPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 合流確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'start' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="ゲストと合流しましたか？"
+				description="合流ボタンを押すと、ギャラ飲みが開始されます。"
+				confirmLabel="合流した"
+				onConfirm={handleStart}
+				isPending={isStartPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 終了確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'complete' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="ギャラ飲みを終了しますか？"
+				description="終了ボタンを押すと、このギャラ飲みは完了となります。"
+				confirmLabel="終了する"
+				variant="destructive"
+				onConfirm={handleComplete}
+				isPending={isCompletePending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 延長確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'extend' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="ギャラ飲みを延長しますか？"
+				description={`${selectedExtension}分延長します。延長ポイント: ${calculateExtensionPoints().toLocaleString()}ポイント`}
+				confirmLabel="延長する"
+				onConfirm={handleExtend}
+				isPending={isExtendPending}
+			/>
+		</>
 	)
 }

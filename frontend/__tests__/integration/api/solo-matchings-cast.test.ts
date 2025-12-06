@@ -15,7 +15,7 @@ import {
 } from '@tests/utils/mock-auth'
 import { userService } from '@/features/user/services/userService'
 import { soloMatchingService } from '@/features/solo-matching/services/soloMatchingService'
-import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
+import type { CastSoloMatching } from '@/features/solo-matching/types/soloMatching'
 import type { InferSelectModel } from 'drizzle-orm'
 import { users } from '@/libs/db/schema/users'
 
@@ -68,7 +68,7 @@ function createTestApp(token?: MockAuthToken) {
 }
 
 // テスト用のモックデータ
-const mockMatching: SoloMatching = {
+const mockMatching: CastSoloMatching = {
 	id: 'matching-1',
 	guestId: 'guest-1',
 	castId: 'cast-1',
@@ -86,6 +86,10 @@ const mockMatching: SoloMatching = {
 	castRespondedAt: null,
 	createdAt: new Date(),
 	updatedAt: new Date(),
+	guest: {
+		id: 'guest-1',
+		nickname: 'テストゲスト',
+	},
 }
 
 describe('GET /api/solo-matchings/cast', () => {

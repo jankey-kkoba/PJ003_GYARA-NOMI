@@ -16,6 +16,7 @@ import { ja } from 'date-fns/locale'
 import { useRespondToGroupMatching } from '@/features/group-matching/hooks/useRespondToGroupMatching'
 import { useStartGroupMatching } from '@/features/group-matching/hooks/useStartGroupMatching'
 import { useCompleteGroupMatching } from '@/features/group-matching/hooks/useCompleteGroupMatching'
+import { ConfirmActionDialog } from '@/components/molecules/ConfirmActionDialog'
 
 /**
  * キャストの参加ステータスのラベルと色を取得
@@ -63,13 +64,31 @@ export function CastGroupMatchingStatusCard({
 		useCompleteGroupMatching()
 	const [error, setError] = useState<string | null>(null)
 
+	// 確認ダイアログの状態管理
+	const [dialogState, setDialogState] = useState<{
+		type: 'accept' | 'reject' | 'start' | 'complete' | null
+		open: boolean
+	}>({ type: null, open: false })
+
+	const openDialog = (type: 'accept' | 'reject' | 'start' | 'complete') => {
+		setDialogState({ type, open: true })
+	}
+
+	const closeDialog = () => {
+		setDialogState({ type: null, open: false })
+	}
+
 	const handleRespond = (response: 'accepted' | 'rejected') => {
 		setError(null)
 		respondToMatching(
 			{ matchingId: matching.id, response },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(err instanceof Error ? err.message : '回答に失敗しました')
+					closeDialog()
 				},
 			},
 		)
@@ -80,12 +99,16 @@ export function CastGroupMatchingStatusCard({
 		startMatching(
 			{ matchingId: matching.id },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの開始に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
@@ -96,16 +119,30 @@ export function CastGroupMatchingStatusCard({
 		completeMatching(
 			{ matchingId: matching.id },
 			{
+				onSuccess: () => {
+					closeDialog()
+				},
 				onError: (err) => {
 					setError(
 						err instanceof Error
 							? err.message
 							: 'マッチングの終了に失敗しました',
 					)
+					closeDialog()
 				},
 			},
 		)
 	}
+
+	// ゲスト情報コンテンツ（ダイアログ表示用）
+	const guestInfoContent = (
+		<div className="rounded-md bg-muted p-3">
+			<div className="text-sm font-medium">ゲスト情報</div>
+			<div className="mt-1 text-sm text-muted-foreground">
+				{matching.guest.nickname}さん
+			</div>
+		</div>
+	)
 
 	// 回答ボタンを表示するかどうか（pending状態かつマッチング全体も募集中の場合）
 	const showResponseButtons =
@@ -120,105 +157,165 @@ export function CastGroupMatchingStatusCard({
 		matching.participantStatus === 'joined' && matching.status === 'in_progress'
 
 	return (
-		<Card>
-			<CardHeader>
-				<div className="flex items-center justify-between">
-					<div className="flex items-center gap-2">
-						<CardTitle className="text-base">グループオファー</CardTitle>
-						<Badge variant="outline" className="text-xs">
-							{matching.guest.nickname}さん
-						</Badge>
-					</div>
-					<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
-				</div>
-			</CardHeader>
-			<CardContent className="space-y-2">
-				<div className="grid grid-cols-2 gap-2 text-sm">
-					<div>
-						<span className="text-muted-foreground">希望日時:</span>
-					</div>
-					<div className="text-right">
-						{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
-							locale: ja,
-						})}
-					</div>
-
-					<div>
-						<span className="text-muted-foreground">時間:</span>
-					</div>
-					<div className="text-right">{matching.proposedDuration}分</div>
-
-					<div>
-						<span className="text-muted-foreground">場所:</span>
-					</div>
-					<div className="text-right truncate">{matching.proposedLocation}</div>
-				</div>
-
-				{/* 参加者サマリー */}
-				<div className="mt-3 pt-3 border-t">
-					<div className="text-sm text-muted-foreground mb-2">募集状況</div>
-					<div className="flex gap-2 flex-wrap text-xs">
-						<Badge variant="outline">
-							募集: {participantSummary.requestedCount}人
-						</Badge>
-						{participantSummary.acceptedCount > 0 && (
-							<Badge variant="default">
-								参加予定: {participantSummary.acceptedCount}人
+		<>
+			<Card>
+				<CardHeader>
+					<div className="flex items-center justify-between">
+						<div className="flex items-center gap-2">
+							<CardTitle className="text-base">グループオファー</CardTitle>
+							<Badge variant="outline" className="text-xs">
+								{matching.guest.nickname}さん
 							</Badge>
-						)}
-						{participantSummary.joinedCount > 0 && (
-							<Badge variant="default">
-								合流済み: {participantSummary.joinedCount}人
-							</Badge>
-						)}
+						</div>
+						<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
 					</div>
-				</div>
-				{error && <div className="mt-2 text-sm text-destructive">{error}</div>}
-			</CardContent>
-			{showResponseButtons && (
-				<CardFooter className="flex gap-2">
-					<Button
-						variant="default"
-						className="flex-1"
-						onClick={() => handleRespond('accepted')}
-						disabled={isRespondPending}
-					>
-						参加する
-					</Button>
-					<Button
-						variant="outline"
-						className="flex-1"
-						onClick={() => handleRespond('rejected')}
-						disabled={isRespondPending}
-					>
-						辞退する
-					</Button>
-				</CardFooter>
-			)}
-			{showStartButton && (
-				<CardFooter>
-					<Button
-						variant="default"
-						className="w-full"
-						onClick={handleStart}
-						disabled={isStartPending}
-					>
-						合流
-					</Button>
-				</CardFooter>
-			)}
-			{showCompleteButton && (
-				<CardFooter>
-					<Button
-						variant="destructive"
-						className="w-full"
-						onClick={handleComplete}
-						disabled={isCompletePending}
-					>
-						終了
-					</Button>
-				</CardFooter>
-			)}
-		</Card>
+				</CardHeader>
+				<CardContent className="space-y-2">
+					<div className="grid grid-cols-2 gap-2 text-sm">
+						<div>
+							<span className="text-muted-foreground">希望日時:</span>
+						</div>
+						<div className="text-right">
+							{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
+								locale: ja,
+							})}
+						</div>
+
+						<div>
+							<span className="text-muted-foreground">時間:</span>
+						</div>
+						<div className="text-right">{matching.proposedDuration}分</div>
+
+						<div>
+							<span className="text-muted-foreground">場所:</span>
+						</div>
+						<div className="text-right truncate">
+							{matching.proposedLocation}
+						</div>
+					</div>
+
+					{/* 参加者サマリー */}
+					<div className="mt-3 pt-3 border-t">
+						<div className="text-sm text-muted-foreground mb-2">募集状況</div>
+						<div className="flex gap-2 flex-wrap text-xs">
+							<Badge variant="outline">
+								募集: {participantSummary.requestedCount}人
+							</Badge>
+							{participantSummary.acceptedCount > 0 && (
+								<Badge variant="default">
+									参加予定: {participantSummary.acceptedCount}人
+								</Badge>
+							)}
+							{participantSummary.joinedCount > 0 && (
+								<Badge variant="default">
+									合流済み: {participantSummary.joinedCount}人
+								</Badge>
+							)}
+						</div>
+					</div>
+					{error && (
+						<div className="mt-2 text-sm text-destructive">{error}</div>
+					)}
+				</CardContent>
+				{showResponseButtons && (
+					<CardFooter className="flex gap-2">
+						<Button
+							variant="default"
+							className="flex-1"
+							onClick={() => openDialog('accept')}
+							disabled={isRespondPending}
+						>
+							参加する
+						</Button>
+						<Button
+							variant="outline"
+							className="flex-1"
+							onClick={() => openDialog('reject')}
+							disabled={isRespondPending}
+						>
+							辞退する
+						</Button>
+					</CardFooter>
+				)}
+				{showStartButton && (
+					<CardFooter>
+						<Button
+							variant="default"
+							className="w-full"
+							onClick={() => openDialog('start')}
+							disabled={isStartPending}
+						>
+							合流
+						</Button>
+					</CardFooter>
+				)}
+				{showCompleteButton && (
+					<CardFooter>
+						<Button
+							variant="destructive"
+							className="w-full"
+							onClick={() => openDialog('complete')}
+							disabled={isCompletePending}
+						>
+							終了
+						</Button>
+					</CardFooter>
+				)}
+			</Card>
+
+			{/* 参加確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'accept' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="グループオファーに参加しますか？"
+				description="このオファーに参加すると、ゲストとのグループギャラ飲みに参加予定となります。"
+				confirmLabel="参加する"
+				onConfirm={() => handleRespond('accepted')}
+				isPending={isRespondPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 辞退確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'reject' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="グループオファーを辞退しますか？"
+				description="このオファーを辞退すると、このグループギャラ飲みには参加できません。"
+				confirmLabel="辞退する"
+				variant="destructive"
+				onConfirm={() => handleRespond('rejected')}
+				isPending={isRespondPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 合流確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'start' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="ゲストと合流しましたか？"
+				description="合流ボタンを押すと、グループギャラ飲みに参加中となります。"
+				confirmLabel="合流した"
+				onConfirm={handleStart}
+				isPending={isStartPending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+
+			{/* 終了確認ダイアログ */}
+			<ConfirmActionDialog
+				open={dialogState.type === 'complete' && dialogState.open}
+				onOpenChange={(open) => !open && closeDialog()}
+				title="ギャラ飲みを終了しますか？"
+				description="終了ボタンを押すと、あなたのギャラ飲みは完了となります。"
+				confirmLabel="終了する"
+				variant="destructive"
+				onConfirm={handleComplete}
+				isPending={isCompletePending}
+			>
+				{guestInfoContent}
+			</ConfirmActionDialog>
+		</>
 	)
 }
