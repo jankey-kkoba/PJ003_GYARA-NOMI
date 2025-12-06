@@ -2,7 +2,7 @@ import { z } from 'zod'
 
 /**
  * グループマッチング作成のスキーマ
- * ソロマッチングと共通のフィールドに加えて、希望キャスト人数を指定
+ * ソロマッチングと共通のフィールドに加えて、希望キャスト人数と年齢フィルタを指定
  */
 export const createGroupMatchingSchema = z
 	.object({
@@ -34,6 +34,20 @@ export const createGroupMatchingSchema = z
 			.string()
 			.min(1, '場所は必須です')
 			.max(200, '場所は200文字以内で入力してください'),
+		/** 最小年齢（絞り込み条件） */
+		minAge: z
+			.number()
+			.int('整数で指定してください')
+			.min(18, '18歳以上を指定してください')
+			.max(99, '99歳以下を指定してください')
+			.optional(),
+		/** 最大年齢（絞り込み条件） */
+		maxAge: z
+			.number()
+			.int('整数で指定してください')
+			.min(18, '18歳以上を指定してください')
+			.max(99, '99歳以下を指定してください')
+			.optional(),
 	})
 	.refine((data) => data.proposedDate || data.proposedTimeOffsetMinutes, {
 		message: '開始日時または相対時間指定のいずれかを指定してください',
@@ -52,6 +66,23 @@ export const createGroupMatchingSchema = z
 		{
 			message: '過去の日時は指定できません',
 			path: ['proposedDate'],
+		},
+	)
+	.refine(
+		(data) => {
+			// minAgeとmaxAgeの両方が指定されている場合、minAge <= maxAge を確認
+			if (
+				data.minAge !== undefined &&
+				data.maxAge !== undefined &&
+				data.minAge > data.maxAge
+			) {
+				return false
+			}
+			return true
+		},
+		{
+			message: '最小年齢は最大年齢以下にしてください',
+			path: ['minAge'],
 		},
 	)
 

@@ -1,11 +1,17 @@
 import { db } from '@/libs/db'
 import { matchings, matchingParticipants } from '@/libs/db/schema'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
+import { userProfiles } from '@/libs/db/schema/users'
 import type { CreateGroupMatchingResult } from '@/features/group-matching/types/groupMatching'
-import { addMinutesToDate } from '@/utils/date'
+import {
+	addMinutesToDate,
+	subtractYears,
+	addDaysToDate,
+	formatDateOnly,
+} from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
 import { RANK_HOURLY_RATES } from '@/features/cast/constants'
-import { eq } from 'drizzle-orm'
+import { eq, and, gte, lte, type SQL } from 'drizzle-orm'
 
 /**
  * グループマッチング作成の入力パラメータ
@@ -18,6 +24,10 @@ export type CreateGroupMatchingParams = {
 	proposedTimeOffsetMinutes?: number
 	proposedDuration: number
 	proposedLocation: string
+	/** 最小年齢（絞り込み条件） */
+	minAge?: number
+	/** 最大年齢（絞り込み条件） */
+	maxAge?: number
 }
 
 /**
@@ -41,29 +51,45 @@ export const groupMatchingService = {
 			proposedTimeOffsetMinutes,
 			proposedDuration,
 			proposedLocation,
+			minAge,
+			maxAge,
 		} = params
 
 		// proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
+		// 注: proposedDateとproposedTimeOffsetMinutesの必須チェックはスキーマで行われる
 		const finalProposedDate = proposedTimeOffsetMinutes
 			? addMinutesToDate(new Date(), proposedTimeOffsetMinutes)
-			: proposedDate
-
-		if (!finalProposedDate) {
-			throw new Error(
-				'proposedDate または proposedTimeOffsetMinutes のいずれかを指定してください',
-			)
-		}
+			: proposedDate!
 
 		// ブロンズランク（ランク1）の時給を基準に合計ポイントを計算
 		const baseHourlyRate = RANK_HOURLY_RATES[1]
 		const totalPoints =
 			calculatePoints(proposedDuration, baseHourlyRate) * requestedCastCount
 
-		// 全アクティブキャストを取得
+		// WHERE条件を構築
+		const conditions: SQL[] = [eq(castProfiles.isActive, true)]
+
+		// 年齢フィルタリング（生年月日から計算）
+		// minAge歳以上 = 生年月日がminAge年前の今日以前
+		// maxAge歳以下 = 生年月日がmaxAge+1年前の今日より後
+		const today = new Date()
+		if (minAge !== undefined) {
+			const maxBirthDate = subtractYears(today, minAge)
+			conditions.push(lte(userProfiles.birthDate, formatDateOnly(maxBirthDate)))
+		}
+		if (maxAge !== undefined) {
+			const minBirthDate = addDaysToDate(subtractYears(today, maxAge + 1), 1)
+			conditions.push(gte(userProfiles.birthDate, formatDateOnly(minBirthDate)))
+		}
+
+		const whereClause = and(...conditions)
+
+		// 条件に合うアクティブキャストを取得
 		const activeCasts = await db
 			.select({ id: castProfiles.id })
 			.from(castProfiles)
-			.where(eq(castProfiles.isActive, true))
+			.innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
+			.where(whereClause)
 
 		if (activeCasts.length === 0) {
 			throw new Error('アクティブなキャストが見つかりません')

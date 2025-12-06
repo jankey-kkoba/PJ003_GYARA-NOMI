@@ -9,8 +9,8 @@ import {
 	DialogTrigger,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { AgeRangeInput } from '@/components/molecules/AgeRangeInput'
 import { Filter, X } from 'lucide-react'
 
 /**
@@ -34,20 +34,20 @@ type CastFilterDialogProps = {
  */
 export function CastFilterDialog({ values, onApply }: CastFilterDialogProps) {
 	const [open, setOpen] = useState(false)
-	const [minAge, setMinAge] = useState<string>(values.minAge?.toString() ?? '')
-	const [maxAge, setMaxAge] = useState<string>(values.maxAge?.toString() ?? '')
+	const [minAge, setMinAge] = useState<number | undefined>(values.minAge)
+	const [maxAge, setMaxAge] = useState<number | undefined>(values.maxAge)
 
 	const handleApply = () => {
 		onApply({
-			minAge: minAge ? Number(minAge) : undefined,
-			maxAge: maxAge ? Number(maxAge) : undefined,
+			minAge,
+			maxAge,
 		})
 		setOpen(false)
 	}
 
 	const handleReset = () => {
-		setMinAge('')
-		setMaxAge('')
+		setMinAge(undefined)
+		setMaxAge(undefined)
 		onApply({})
 		setOpen(false)
 	}
@@ -77,26 +77,12 @@ export function CastFilterDialog({ values, onApply }: CastFilterDialogProps) {
 					{/* 年齢フィルター */}
 					<div className="space-y-2">
 						<Label>年齢</Label>
-						<div className="flex items-center gap-2">
-							<Input
-								type="number"
-								placeholder="18"
-								min={18}
-								value={minAge}
-								onChange={(e) => setMinAge(e.target.value)}
-								className="w-24"
-							/>
-							<span className="text-muted-foreground">〜</span>
-							<Input
-								type="number"
-								placeholder="99"
-								min={18}
-								value={maxAge}
-								onChange={(e) => setMaxAge(e.target.value)}
-								className="w-24"
-							/>
-							<span className="text-muted-foreground">歳</span>
-						</div>
+						<AgeRangeInput
+							minAge={minAge}
+							maxAge={maxAge}
+							onMinAgeChange={setMinAge}
+							onMaxAgeChange={setMaxAge}
+						/>
 					</div>
 				</div>
 				<div className="flex justify-between">

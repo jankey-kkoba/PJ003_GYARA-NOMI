@@ -96,6 +96,8 @@ export function createGuestGroupMatchingsApp(
 						proposedTimeOffsetMinutes,
 						proposedDuration: data.proposedDuration,
 						proposedLocation: data.proposedLocation,
+						minAge: data.minAge,
+						maxAge: data.maxAge,
 					})
 					return c.json(
 						{

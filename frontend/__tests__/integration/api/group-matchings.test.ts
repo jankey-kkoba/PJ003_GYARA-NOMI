@@ -313,6 +313,147 @@ describe('POST /api/group-matchings/guest', () => {
 
 			expect(res.status).toBe(400)
 		})
+
+		it('minAgeが18未満の場合は 400 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					minAge: 17, // 18未満
+				}),
+			})
+
+			expect(res.status).toBe(400)
+		})
+
+		it('maxAgeが18未満の場合は 400 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					maxAge: 17, // 18未満
+				}),
+			})
+
+			expect(res.status).toBe(400)
+		})
+
+		it('minAgeが99を超える場合は 400 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					minAge: 100, // 99超
+				}),
+			})
+
+			expect(res.status).toBe(400)
+		})
+
+		it('minAgeがmaxAgeより大きい場合は 400 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					minAge: 30,
+					maxAge: 25, // minAge > maxAge
+				}),
+			})
+
+			expect(res.status).toBe(400)
+		})
+
+		it('minAgeが小数の場合は 400 エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					minAge: 25.5, // 小数
+				}),
+			})
+
+			expect(res.status).toBe(400)
+		})
 	})
 
 	describe('正常系', () => {
@@ -433,6 +574,71 @@ describe('POST /api/group-matchings/guest', () => {
 			expect(body.groupMatching.requestedCastCount).toBe(5)
 			expect(body.groupMatching.totalPoints).toBe(45000)
 			expect(body.participantCount).toBe(3)
+		})
+
+		it('年齢フィルタを指定してグループマッチングオファーを送信できる', async () => {
+			const app = createTestApp({ id: 'guest-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const mockResult: CreateGroupMatchingResult = {
+				matching: {
+					id: 'matching-789',
+					guestId: 'guest-123',
+					chatRoomId: null,
+					status: 'pending',
+					proposedDate: new Date(Date.now() + 3600000),
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					totalPoints: 18000,
+					startedAt: null,
+					scheduledEndAt: null,
+					actualEndAt: null,
+					extensionMinutes: 0,
+					extensionPoints: 0,
+					recruitingEndedAt: null,
+					requestedCastCount: 3,
+					createdAt: new Date(),
+					updatedAt: new Date(),
+				},
+				participantCount: 2, // 年齢フィルタで絞られた結果
+			}
+
+			mockGroupMatchingService.createGroupMatching.mockResolvedValue(mockResult)
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+					minAge: 25,
+					maxAge: 30,
+				}),
+			})
+
+			expect(res.status).toBe(201)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.participantCount).toBe(2)
+
+			// サービスに年齢フィルタが渡されていることを確認
+			expect(mockGroupMatchingService.createGroupMatching).toHaveBeenCalledWith(
+				expect.objectContaining({
+					minAge: 25,
+					maxAge: 30,
+				}),
+			)
 		})
 	})
 
