@@ -219,6 +219,106 @@ export const groupMatchingService = {
 	},
 
 	/**
+	 * キャストがグループマッチングオファーに回答する
+	 * @param matchingId - マッチングID
+	 * @param castId - キャストID
+	 * @param response - 回答 ('accepted' or 'rejected')
+	 * @returns 更新されたキャスト向けグループマッチング情報
+	 */
+	async respondToGroupMatching(
+		matchingId: string,
+		castId: string,
+		response: 'accepted' | 'rejected',
+	): Promise<CastGroupMatching> {
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+				guestName: userProfiles.name,
+			})
+			.from(matchingParticipants)
+			.innerJoin(matchings, eq(matchingParticipants.matchingId, matchings.id))
+			.innerJoin(userProfiles, eq(matchings.guestId, userProfiles.id))
+			.where(
+				and(
+					eq(matchingParticipants.matchingId, matchingId),
+					eq(matchingParticipants.castId, castId),
+				),
+			)
+
+		if (!result) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// マッチングタイプチェック
+		if (result.matching.type !== 'group') {
+			throw new Error('グループマッチングではありません')
+		}
+
+		// ステータスチェック: pending のみ回答可能
+		if (result.participant.status !== 'pending') {
+			throw new Error('このオファーは既に回答済みです')
+		}
+
+		// マッチング全体のステータスチェック: pending のみ回答可能
+		if (result.matching.status !== 'pending') {
+			throw new Error('このマッチングは既に締め切られています')
+		}
+
+		const now = new Date()
+
+		// 参加者のステータスを更新
+		await db
+			.update(matchingParticipants)
+			.set({
+				status: response,
+				respondedAt: now,
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+
+		// 参加者サマリーを取得
+		const participants = await db
+			.select({ status: matchingParticipants.status })
+			.from(matchingParticipants)
+			.where(eq(matchingParticipants.matchingId, matchingId))
+
+		const participantSummary = {
+			requestedCount: result.matching.requestedCastCount ?? 1,
+			acceptedCount: participants.filter((p) => p.status === 'accepted').length,
+			joinedCount: participants.filter((p) => p.status === 'joined').length,
+		}
+
+		return {
+			id: result.matching.id,
+			guestId: result.matching.guestId,
+			chatRoomId: result.matching.chatRoomId,
+			status: result.matching.status,
+			proposedDate: result.matching.proposedDate,
+			proposedDuration: result.matching.proposedDuration,
+			proposedLocation: result.matching.proposedLocation,
+			requestedCastCount: result.matching.requestedCastCount ?? 1,
+			totalPoints: result.matching.totalPoints,
+			startedAt: result.matching.startedAt,
+			scheduledEndAt: result.matching.scheduledEndAt,
+			actualEndAt: result.matching.actualEndAt,
+			extensionMinutes: result.matching.extensionMinutes ?? 0,
+			extensionPoints: result.matching.extensionPoints ?? 0,
+			recruitingEndedAt: result.matching.recruitingEndedAt,
+			createdAt: result.matching.createdAt,
+			updatedAt: result.matching.updatedAt,
+			type: 'group' as const,
+			participantStatus: response,
+			guest: {
+				id: result.matching.guestId,
+				nickname: result.guestName,
+			},
+			participantSummary,
+		}
+	},
+
+	/**
 	 * キャストのグループマッチング一覧を取得
 	 * @param castId - キャストID
 	 * @returns キャストが参加しているグループマッチング一覧（pending, accepted, in_progress）

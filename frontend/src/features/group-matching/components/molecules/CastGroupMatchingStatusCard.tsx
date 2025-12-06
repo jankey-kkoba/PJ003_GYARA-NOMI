@@ -1,10 +1,19 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardFooter,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import type { CastGroupMatching } from '@/features/group-matching/types/groupMatching'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { useRespondToGroupMatching } from '@/features/group-matching/hooks/useRespondToGroupMatching'
 
 /**
  * キャストの参加ステータスのラベルと色を取得
@@ -44,6 +53,24 @@ export function CastGroupMatchingStatusCard({
 }: CastGroupMatchingStatusCardProps) {
 	const statusInfo = getParticipantStatusInfo(matching.participantStatus)
 	const { participantSummary } = matching
+	const { mutate: respondToMatching, isPending } = useRespondToGroupMatching()
+	const [error, setError] = useState<string | null>(null)
+
+	const handleRespond = (response: 'accepted' | 'rejected') => {
+		setError(null)
+		respondToMatching(
+			{ matchingId: matching.id, response },
+			{
+				onError: (err) => {
+					setError(err instanceof Error ? err.message : '回答に失敗しました')
+				},
+			},
+		)
+	}
+
+	// 回答ボタンを表示するかどうか（pending状態かつマッチング全体も募集中の場合）
+	const showResponseButtons =
+		matching.participantStatus === 'pending' && matching.status === 'pending'
 
 	return (
 		<Card>
@@ -99,7 +126,28 @@ export function CastGroupMatchingStatusCard({
 						)}
 					</div>
 				</div>
+				{error && <div className="mt-2 text-sm text-destructive">{error}</div>}
 			</CardContent>
+			{showResponseButtons && (
+				<CardFooter className="flex gap-2">
+					<Button
+						variant="default"
+						className="flex-1"
+						onClick={() => handleRespond('accepted')}
+						disabled={isPending}
+					>
+						参加する
+					</Button>
+					<Button
+						variant="outline"
+						className="flex-1"
+						onClick={() => handleRespond('rejected')}
+						disabled={isPending}
+					>
+						辞退する
+					</Button>
+				</CardFooter>
+			)}
 		</Card>
 	)
 }

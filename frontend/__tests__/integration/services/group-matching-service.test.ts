@@ -587,4 +587,252 @@ describe('groupMatchingService Integration', () => {
 			).rejects.toThrow('アクティブなキャストが見つかりません')
 		})
 	})
+
+	describe('respondToGroupMatching', () => {
+		it('キャストがグループマッチングにacceptedで回答できる', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// acceptedで回答
+			const result = await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'accepted',
+			)
+
+			// 戻り値の検証
+			expect(result).toBeDefined()
+			expect(result.participantStatus).toBe('accepted')
+			expect(result.id).toBe(createResult.matching.id)
+			expect(result.guest.id).toBe('seed-user-guest-001')
+
+			// DBの参加者ステータスが更新されていることを確認
+			const [updatedParticipant] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.id, participants[0].id))
+
+			expect(updatedParticipant.status).toBe('accepted')
+			expect(updatedParticipant.respondedAt).not.toBeNull()
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('キャストがグループマッチングにrejectedで回答できる', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// rejectedで回答
+			const result = await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'rejected',
+			)
+
+			// 戻り値の検証
+			expect(result).toBeDefined()
+			expect(result.participantStatus).toBe('rejected')
+
+			// DBの参加者ステータスが更新されていることを確認
+			const [updatedParticipant] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.id, participants[0].id))
+
+			expect(updatedParticipant.status).toBe('rejected')
+			expect(updatedParticipant.respondedAt).not.toBeNull()
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('存在しないマッチングに回答するとエラー', async () => {
+			await expect(
+				groupMatchingService.respondToGroupMatching(
+					'non-existent-matching-id',
+					'seed-user-cast-001',
+					'accepted',
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+		})
+
+		it('対象キャストでないユーザーが回答するとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 存在しないキャストIDで回答
+			await expect(
+				groupMatchingService.respondToGroupMatching(
+					createResult.matching.id,
+					'non-existent-cast-id',
+					'accepted',
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('既に回答済みのオファーに再度回答するとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// 1回目の回答
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'accepted',
+			)
+
+			// 2回目の回答はエラー
+			await expect(
+				groupMatchingService.respondToGroupMatching(
+					createResult.matching.id,
+					castId,
+					'rejected',
+				),
+			).rejects.toThrow('このオファーは既に回答済みです')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('締め切られたマッチングに回答するとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// マッチングのステータスをaccepted（成立）に変更
+			await db
+				.update(matchings)
+				.set({ status: 'accepted' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// 回答するとエラー
+			await expect(
+				groupMatchingService.respondToGroupMatching(
+					createResult.matching.id,
+					castId,
+					'accepted',
+				),
+			).rejects.toThrow('このマッチングは既に締め切られています')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('参加者サマリーが正しく返される', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 3,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// acceptedで回答
+			const result = await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'accepted',
+			)
+
+			// 参加者サマリーの検証
+			expect(result.participantSummary).toBeDefined()
+			expect(result.participantSummary.requestedCount).toBe(3)
+			expect(result.participantSummary.acceptedCount).toBe(1) // 今回答したキャスト
+			expect(result.participantSummary.joinedCount).toBe(0)
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+	})
 })
