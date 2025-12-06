@@ -68,6 +68,9 @@ cd frontend && npm run test:node
 - コミットメッセージは日本語で作成
 - Issue番号を含める（例: `feat: 機能追加 (ISSUE #XX)`）
 
+## 8. 完了
+- 作業が完了したら作業内容をコメントに残し、Closeする
+
 ## DB変更時
 ```bash
 cd frontend && npm run db:generate
