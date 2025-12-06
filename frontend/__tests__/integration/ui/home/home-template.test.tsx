@@ -13,7 +13,10 @@ import { SessionProvider } from 'next-auth/react'
 import type { Session } from 'next-auth'
 
 // Hono クライアントのモック
-const mockGet = vi.fn()
+const mockSoloMatchingsGet = vi.fn()
+const mockCompletedGet = vi.fn()
+const mockGroupMatchingsGet = vi.fn()
+
 vi.mock('@/libs/hono/client', () => ({
 	usersClient: { api: { users: {} } },
 	castsClient: { api: { casts: {} } },
@@ -38,13 +41,33 @@ vi.mock('@/libs/hono/client', () => ({
 		api: {
 			'solo-matchings': {
 				guest: {
-					$get: mockGet,
+					$get: mockSoloMatchingsGet,
 					$post: vi.fn(),
-					completed: { $get: vi.fn() },
+					completed: { $get: mockCompletedGet },
 					pending: { ':castId': { $get: vi.fn() } },
 					':id': {
 						extend: { $patch: vi.fn() },
 					},
+				},
+			},
+		},
+	},
+	guestGroupMatchingsClient: {
+		api: {
+			'group-matchings': {
+				guest: {
+					$get: mockGroupMatchingsGet,
+					$post: vi.fn(),
+				},
+			},
+		},
+	},
+	castGroupMatchingsClient: {
+		api: {
+			'group-matchings': {
+				cast: {
+					$get: vi.fn(),
+					':id': { $patch: vi.fn() },
 				},
 			},
 		},
@@ -118,8 +141,23 @@ describe('HomeTemplate', () => {
 	})
 
 	describe('マッチング状況の表示', () => {
+		// 各テストで共通のモックセットアップ
+		const setupMocks = (soloResponse: unknown, groupResponse?: unknown) => {
+			mockSoloMatchingsGet.mockResolvedValue(soloResponse)
+			mockCompletedGet.mockResolvedValue({
+				ok: true,
+				json: async () => ({ success: true, soloMatchings: [] }),
+			})
+			mockGroupMatchingsGet.mockResolvedValue(
+				groupResponse ?? {
+					ok: true,
+					json: async () => ({ success: true, groupMatchings: [] }),
+				},
+			)
+		}
+
 		it('マッチングがある場合、マッチング一覧が表示される', async () => {
-			mockGet.mockResolvedValue({
+			setupMocks({
 				ok: true,
 				json: async () => ({
 					success: true,
@@ -136,21 +174,21 @@ describe('HomeTemplate', () => {
 		})
 
 		it('マッチングが0件の場合、メッセージが表示される', async () => {
-			mockGet.mockResolvedValue({
+			setupMocks({
 				ok: true,
 				json: async () => ({ success: true, soloMatchings: [] }),
 			})
 
 			render(<HomeTemplate />, { wrapper: TestWrapper })
 
-			// 「マッチングはありません」メッセージが表示されることを確認
+			// 「マッチングはありません」メッセージが表示されることを確認（完全一致）
 			await expect
-				.element(page.getByText('マッチングはありません'))
+				.element(page.getByText('マッチングはありません', { exact: true }))
 				.toBeInTheDocument()
 		})
 
 		it('APIエラーの場合、エラーメッセージが表示される', async () => {
-			mockGet.mockResolvedValue({
+			setupMocks({
 				ok: false,
 				json: async () => ({ success: false, error: 'サーバーエラー' }),
 			})
