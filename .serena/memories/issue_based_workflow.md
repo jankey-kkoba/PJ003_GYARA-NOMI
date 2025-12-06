@@ -78,6 +78,9 @@ cd frontend && npm run test:node
 ## 8. 完了
 - 作業が完了したら作業内容をコメントに残し、Closeする
 
+## 作業を途中から始める場合
+- Issueのコメントに進捗が書かれている場合もあるので新しいものから確認する
+
 ## DB変更時
 ```bash
 cd frontend && npm run db:generate
