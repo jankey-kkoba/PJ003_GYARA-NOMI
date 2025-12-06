@@ -14,10 +14,10 @@ export const castProfilePhotos = pgTable('cast_profile_photos', {
 		.references(() => castProfiles.id, { onDelete: 'cascade' }),
 	photoUrl: text('photo_url').notNull(), // Supabase Storageのパス
 	displayOrder: integer('display_order').notNull().default(0), // 表示順序
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })

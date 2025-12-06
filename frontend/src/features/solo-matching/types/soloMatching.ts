@@ -20,18 +20,18 @@ export type SoloMatching = {
 	castId: string
 	chatRoomId: string | null
 	status: MatchingStatus
-	proposedDate: Date
+	proposedDate: string
 	proposedDuration: number
 	proposedLocation: string
 	totalPoints: number
-	startedAt: Date | null
-	scheduledEndAt: Date | null
-	actualEndAt: Date | null
+	startedAt: string | null
+	scheduledEndAt: string | null
+	actualEndAt: string | null
 	extensionMinutes: number
 	extensionPoints: number
-	castRespondedAt: Date | null
-	createdAt: Date
-	updatedAt: Date
+	castRespondedAt: string | null
+	createdAt: string
+	updatedAt: string
 }
 
 /**

@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { guestSoloMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-import { parseSoloMatching } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * マッチング延長のパラメータ
@@ -40,7 +39,7 @@ export function useExtendSoloMatching() {
 				throw new Error('マッチングの延長に失敗しました')
 			}
 
-			return parseSoloMatching(result.soloMatching)
+			return result.soloMatching
 		},
 		onSuccess: () => {
 			// マッチング一覧のキャッシュを無効化して再取得

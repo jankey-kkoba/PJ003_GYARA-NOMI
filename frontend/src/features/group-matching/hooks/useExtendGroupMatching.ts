@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { guestGroupMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { GuestGroupMatching } from '@/features/group-matching/types/groupMatching'
-import { parseGuestGroupMatching } from '@/features/group-matching/utils/parseGroupMatching'
 
 /**
  * グループマッチング延長のパラメータ
@@ -40,7 +39,7 @@ export function useExtendGroupMatching() {
 				throw new Error('マッチングの延長に失敗しました')
 			}
 
-			return parseGuestGroupMatching(result.groupMatching)
+			return result.groupMatching
 		},
 		onSuccess: () => {
 			// マッチング一覧のキャッシュを無効化して再取得

@@ -6,7 +6,6 @@ import { handleApiError } from '@/libs/react-query'
 import { useToast } from '@/hooks/useToast'
 import type { CreateGroupMatchingInput } from '@/features/group-matching/schemas/createGroupMatching'
 import type { GroupMatching } from '@/features/group-matching/types/groupMatching'
-import { parseGroupMatching } from '@/features/group-matching/utils/parseGroupMatching'
 
 /**
  * グループマッチング作成の結果
@@ -53,8 +52,7 @@ export function useCreateGroupMatching() {
 			}
 
 			return {
-				// eslint-disable-next-line @typescript-eslint/no-explicit-any
-				groupMatching: parseGroupMatching(result.groupMatching as any),
+				groupMatching: result.groupMatching,
 				participantCount: result.participantCount,
 			}
 		},

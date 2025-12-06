@@ -174,8 +174,8 @@ describe('POST /api/users/profile/create', () => {
 				id: 'test-user-id',
 				name: 'テストユーザー',
 				birthDate: '1990-01-01',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/users/profile/create', {
@@ -214,8 +214,8 @@ describe('POST /api/users/profile/create', () => {
 				id: 'test-user-id',
 				name: 'キャストユーザー',
 				birthDate: '1995-05-05',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/users/profile/create', {
@@ -306,8 +306,8 @@ describe('POST /api/users/profile/create', () => {
 				id: 'test-user-id',
 				name: 'あ',
 				birthDate: '1990-01-01',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/users/profile/create', {
@@ -331,8 +331,8 @@ describe('POST /api/users/profile/create', () => {
 				id: 'test-user-id',
 				name: '山田太郎',
 				birthDate: '1990-01-01',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/users/profile/create', {

@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { castGroupMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { CastGroupMatching } from '@/features/group-matching/types/groupMatching'
-import { parseCastGroupMatchings } from '@/features/group-matching/utils/parseGroupMatching'
 
 /**
  * キャストのグループマッチング一覧を取得するhook
@@ -22,7 +21,7 @@ export function useCastGroupMatchings() {
 				throw new Error('グループマッチング一覧の取得に失敗しました')
 			}
 
-			return parseCastGroupMatchings(result.groupMatchings)
+			return result.groupMatchings
 		},
 	})
 }

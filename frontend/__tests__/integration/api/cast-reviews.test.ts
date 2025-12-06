@@ -152,8 +152,8 @@ describe('POST /api/cast-reviews', () => {
 				castId: 'cast-123',
 				rating: 5,
 				comment: 'とても良かったです',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 			mockCastReviewService.createReview.mockResolvedValue(mockReview)
 
@@ -189,8 +189,8 @@ describe('POST /api/cast-reviews', () => {
 				castId: 'cast-123',
 				rating: 4,
 				comment: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 			mockCastReviewService.createReview.mockResolvedValue(mockReview)
 
@@ -274,8 +274,8 @@ describe('GET /api/cast-reviews/:matchingId', () => {
 				castId: 'cast-123',
 				rating: 5,
 				comment: 'とても良かったです',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 			mockCastReviewService.getReviewByMatchingId.mockResolvedValue(mockReview)
 

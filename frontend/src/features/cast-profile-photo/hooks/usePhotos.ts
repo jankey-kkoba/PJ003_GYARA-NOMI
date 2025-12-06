@@ -31,11 +31,11 @@ export function usePhotos(castId: string) {
 				throw new Error('写真一覧の取得に失敗しました')
 			}
 
-			// Date型に変換
+			// スキーマから返却されるのはstring型なのでそのまま返す
 			return result.data.photos.map((photo) => ({
 				...photo,
-				createdAt: new Date(photo.createdAt),
-				updatedAt: new Date(photo.updatedAt),
+				createdAt: photo.createdAt,
+				updatedAt: photo.updatedAt,
 			}))
 		},
 		enabled: !!castId,

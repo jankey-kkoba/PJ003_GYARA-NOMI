@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { guestGroupMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { GuestGroupMatching } from '@/features/group-matching/types/groupMatching'
-import { parseGuestGroupMatchings } from '@/features/group-matching/utils/parseGroupMatching'
 
 /**
  * ゲストのグループマッチング一覧取得のカスタムフック
@@ -22,7 +21,7 @@ export function useGuestGroupMatchings() {
 				throw new Error('グループマッチング一覧の取得に失敗しました')
 			}
 
-			return parseGuestGroupMatchings(result.groupMatchings)
+			return result.groupMatchings
 		},
 	})
 }

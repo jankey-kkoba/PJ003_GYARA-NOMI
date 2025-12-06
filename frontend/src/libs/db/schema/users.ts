@@ -21,10 +21,10 @@ export const users = pgTable('users', {
 	emailVerified: timestamp('email_verified', { mode: 'date' }),
 	password: text('password'), // Credentialsログイン用のハッシュ化されたパスワード（管理者・テストユーザー用）
 	role: userRoleEnum('role'),
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })
@@ -39,10 +39,10 @@ export const userProfiles = pgTable('user_profiles', {
 		.references(() => users.id),
 	name: text('name').notNull(),
 	birthDate: date('birth_date', { mode: 'string' }).notNull(),
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })

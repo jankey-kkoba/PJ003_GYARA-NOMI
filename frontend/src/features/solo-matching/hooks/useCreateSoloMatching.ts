@@ -4,7 +4,6 @@ import { handleApiError } from '@/libs/react-query'
 import { useToast } from '@/hooks/useToast'
 import type { CreateSoloMatchingInput } from '@/features/solo-matching/schemas/createSoloMatching'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-import { parseSoloMatching } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * ソロマッチングオファー作成のカスタムフック
@@ -30,7 +29,7 @@ export function useCreateSoloMatching() {
 				throw new Error('マッチングオファーの送信に失敗しました')
 			}
 
-			return parseSoloMatching(result.soloMatching)
+			return result.soloMatching
 		},
 		onError: (error: Error) => {
 			showToast(error.message, 'error')

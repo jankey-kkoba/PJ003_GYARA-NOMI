@@ -115,7 +115,7 @@ export const userService = {
 			// ユーザーのロールを更新
 			await tx
 				.update(users)
-				.set({ role: input.userType, updatedAt: new Date() })
+				.set({ role: input.userType, updatedAt: new Date().toISOString() })
 				.where(eq(users.id, userId))
 
 			// キャストの場合、cast_profilesも自動生成
@@ -161,7 +161,7 @@ export const userService = {
 			.set({
 				name: input.name,
 				birthDate: input.birthDate,
-				updatedAt: new Date(),
+				updatedAt: new Date().toISOString(),
 			})
 			.where(eq(userProfiles.id, userId))
 			.returning()

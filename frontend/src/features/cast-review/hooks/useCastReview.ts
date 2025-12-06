@@ -3,7 +3,6 @@ import { castReviewsClient } from '@/libs/hono/client'
 import { handleApiError, handleApiResponse } from '@/libs/react-query'
 import type { CastReview } from '@/features/cast-review/types/castReview'
 import type { CreateCastReviewInput } from '@/features/cast-review/schemas/createCastReview'
-import { parseDate } from '@/utils/date'
 
 /**
  * マッチングの評価を取得するフック
@@ -26,12 +25,7 @@ export function useCastReview(matchingId: string) {
 				return null
 			}
 
-			// 日付文字列をDateオブジェクトに変換
-			return {
-				...result.data,
-				createdAt: parseDate(result.data.createdAt as unknown as string),
-				updatedAt: parseDate(result.data.updatedAt as unknown as string),
-			}
+			return result.data
 		},
 		enabled: !!matchingId,
 	})

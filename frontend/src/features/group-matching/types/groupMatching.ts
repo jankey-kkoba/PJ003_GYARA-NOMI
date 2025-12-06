@@ -13,19 +13,19 @@ export type GroupMatching = {
 		| 'meeting'
 		| 'in_progress'
 		| 'completed'
-	proposedDate: Date
+	proposedDate: string
 	proposedDuration: number
 	proposedLocation: string
 	requestedCastCount: number
 	totalPoints: number
-	startedAt: Date | null
-	scheduledEndAt: Date | null
-	actualEndAt: Date | null
+	startedAt: string | null
+	scheduledEndAt: string | null
+	actualEndAt: string | null
 	extensionMinutes: number
 	extensionPoints: number
-	recruitingEndedAt: Date | null
-	createdAt: Date
-	updatedAt: Date
+	recruitingEndedAt: string | null
+	createdAt: string
+	updatedAt: string
 }
 
 /**
@@ -37,10 +37,10 @@ export type GroupMatchingParticipant = {
 	castId: string
 	castName: string
 	status: 'pending' | 'accepted' | 'rejected' | 'joined' | 'completed'
-	respondedAt: Date | null
-	joinedAt: Date | null
-	createdAt: Date
-	updatedAt: Date
+	respondedAt: string | null
+	joinedAt: string | null
+	createdAt: string
+	updatedAt: string
 }
 
 /**

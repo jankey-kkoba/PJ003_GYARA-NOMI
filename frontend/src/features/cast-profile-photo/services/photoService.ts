@@ -29,8 +29,8 @@ export const photoService = {
 			castProfileId: photo.castProfileId,
 			photoUrl: photo.photoUrl,
 			displayOrder: photo.displayOrder,
-			createdAt: new Date(photo.createdAt),
-			updatedAt: new Date(photo.updatedAt),
+			createdAt: photo.createdAt,
+			updatedAt: photo.updatedAt,
 		}))
 	},
 
@@ -42,6 +42,7 @@ export const photoService = {
 	async createPhoto(
 		data: CreateCastProfilePhotoData,
 	): Promise<CastProfilePhoto> {
+		const now = new Date().toISOString()
 		const [photo] = await db
 			.insert(castProfilePhotos)
 			.values({
@@ -49,8 +50,8 @@ export const photoService = {
 				castProfileId: data.castProfileId,
 				photoUrl: data.photoUrl,
 				displayOrder: data.displayOrder,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: now,
+				updatedAt: now,
 			})
 			.returning()
 
@@ -59,8 +60,8 @@ export const photoService = {
 			castProfileId: photo.castProfileId,
 			photoUrl: photo.photoUrl,
 			displayOrder: photo.displayOrder,
-			createdAt: new Date(photo.createdAt),
-			updatedAt: new Date(photo.updatedAt),
+			createdAt: photo.createdAt,
+			updatedAt: photo.updatedAt,
 		}
 	},
 
@@ -78,7 +79,7 @@ export const photoService = {
 			.update(castProfilePhotos)
 			.set({
 				...data,
-				updatedAt: new Date(),
+				updatedAt: new Date().toISOString(),
 			})
 			.where(eq(castProfilePhotos.id, photoId))
 			.returning()
@@ -92,8 +93,8 @@ export const photoService = {
 			castProfileId: photo.castProfileId,
 			photoUrl: photo.photoUrl,
 			displayOrder: photo.displayOrder,
-			createdAt: new Date(photo.createdAt),
-			updatedAt: new Date(photo.updatedAt),
+			createdAt: photo.createdAt,
+			updatedAt: photo.updatedAt,
 		}
 	},
 

@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { castGroupMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { CastGroupMatching } from '@/features/group-matching/types/groupMatching'
-import { parseCastGroupMatching } from '@/features/group-matching/utils/parseGroupMatching'
 
 /**
  * グループマッチング終了のパラメータ
@@ -38,7 +37,7 @@ export function useCompleteGroupMatching() {
 				throw new Error('グループマッチングの終了に失敗しました')
 			}
 
-			return parseCastGroupMatching(result.groupMatching)
+			return result.groupMatching
 		},
 		onSuccess: () => {
 			// グループマッチング一覧のキャッシュを無効化して再取得

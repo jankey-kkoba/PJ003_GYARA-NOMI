@@ -373,8 +373,8 @@ describe('/api/casts/photos', () => {
 				castProfileId: testCastId,
 				photoUrl: `${testCastId}/photo.jpg`,
 				displayOrder: 0,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockStorageService.deletePhoto.mockResolvedValue()
@@ -421,8 +421,8 @@ describe('/api/casts/photos', () => {
 					castProfileId: testCastId,
 					photoUrl,
 					displayOrder: 0,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 				})
 
 				// DB削除でエラーを発生させる

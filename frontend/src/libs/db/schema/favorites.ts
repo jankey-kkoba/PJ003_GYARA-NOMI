@@ -14,7 +14,7 @@ export const favorites = pgTable(
 		castId: text('cast_id')
 			.notNull()
 			.references(() => users.id),
-		createdAt: timestamp('created_at', { withTimezone: true })
+		createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 			.notNull()
 			.defaultNow(),
 	},

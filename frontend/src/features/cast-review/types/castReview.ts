@@ -8,8 +8,8 @@ export type CastReview = {
 	castId: string
 	rating: number // 1-5
 	comment: string | null
-	createdAt: Date
-	updatedAt: Date
+	createdAt: string
+	updatedAt: string
 }
 
 /**

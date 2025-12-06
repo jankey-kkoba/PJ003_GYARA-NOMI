@@ -65,8 +65,8 @@ export const groupMatchingService = {
 		// proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
 		// 注: proposedDateとproposedTimeOffsetMinutesの必須チェックはスキーマで行われる
 		const finalProposedDate = proposedTimeOffsetMinutes
-			? addMinutesToDate(new Date(), proposedTimeOffsetMinutes)
-			: proposedDate!
+			? addMinutesToDate(new Date(), proposedTimeOffsetMinutes).toISOString()
+			: proposedDate!.toISOString()
 
 		// ブロンズランク（ランク1）の時給を基準に合計ポイントを計算
 		const baseHourlyRate = RANK_HOURLY_RATES[1]
@@ -273,7 +273,7 @@ export const groupMatchingService = {
 			throw new Error('このマッチングは既に締め切られています')
 		}
 
-		const now = new Date()
+		const now = new Date().toISOString()
 
 		// 参加者のステータスを更新
 		await db
@@ -461,36 +461,40 @@ export const groupMatchingService = {
 		}
 
 		const now = new Date()
+		const nowIso = now.toISOString()
 
 		// 参加者のステータスを更新
 		await db
 			.update(matchingParticipants)
 			.set({
 				status: 'joined',
-				joinedAt: now,
-				updatedAt: now,
+				joinedAt: nowIso,
+				updatedAt: nowIso,
 			})
 			.where(eq(matchingParticipants.id, result.participant.id))
 
 		// マッチングがまだ 'accepted' の場合、最初の合流なので 'in_progress' に変更
 		let updatedMatchingStatus = result.matching.status
-		let startedAt = result.matching.startedAt
-		let scheduledEndAt = result.matching.scheduledEndAt
+		let startedAt: string | null = result.matching.startedAt
+		let scheduledEndAt: string | null = result.matching.scheduledEndAt
 
 		if (result.matching.status === 'accepted') {
-			scheduledEndAt = addMinutesToDate(now, result.matching.proposedDuration)
+			scheduledEndAt = addMinutesToDate(
+				now,
+				result.matching.proposedDuration,
+			).toISOString()
 			await db
 				.update(matchings)
 				.set({
 					status: 'in_progress',
-					startedAt: now,
+					startedAt: nowIso,
 					scheduledEndAt,
-					updatedAt: now,
+					updatedAt: nowIso,
 				})
 				.where(eq(matchings.id, matchingId))
 
 			updatedMatchingStatus = 'in_progress'
-			startedAt = now
+			startedAt = nowIso
 		}
 
 		// 参加者サマリーを取得
@@ -522,7 +526,7 @@ export const groupMatchingService = {
 			extensionPoints: result.matching.extensionPoints ?? 0,
 			recruitingEndedAt: result.matching.recruitingEndedAt,
 			createdAt: result.matching.createdAt,
-			updatedAt: now,
+			updatedAt: nowIso,
 			type: 'group' as const,
 			participantStatus: 'joined',
 			guest: {
@@ -583,7 +587,7 @@ export const groupMatchingService = {
 			)
 		}
 
-		const now = new Date()
+		const now = new Date().toISOString()
 
 		// 参加者のステータスを更新
 		await db
@@ -678,11 +682,11 @@ export const groupMatchingService = {
 			throw new Error('予定終了時刻が設定されていません')
 		}
 
-		// 新しい予定終了時刻を計算
+		// 新しい予定終了時刻を計算（ISO文字列をパースして計算し、再度ISO文字列に変換）
 		const newScheduledEndAt = addMinutesToDate(
-			matchingResult.matching.scheduledEndAt,
+			new Date(matchingResult.matching.scheduledEndAt),
 			extensionMinutes,
-		)
+		).toISOString()
 
 		// 参加中（joined）のキャストを取得してポイントを計算
 		const joinedParticipants = await db
@@ -718,7 +722,7 @@ export const groupMatchingService = {
 		const newTotalPoints =
 			matchingResult.matching.totalPoints + additionalPoints
 
-		const now = new Date()
+		const now = new Date().toISOString()
 
 		// マッチングを更新
 		await db

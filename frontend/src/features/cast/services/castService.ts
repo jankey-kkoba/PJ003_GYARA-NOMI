@@ -196,7 +196,7 @@ export const castService = {
 			.set({
 				...(input.bio !== undefined && { bio: input.bio }),
 				...(input.areaId !== undefined && { areaId: input.areaId }),
-				updatedAt: new Date(),
+				updatedAt: new Date().toISOString(),
 			})
 			.where(eq(castProfiles.id, castId))
 			.returning()

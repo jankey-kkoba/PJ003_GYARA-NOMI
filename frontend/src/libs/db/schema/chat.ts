@@ -34,7 +34,7 @@ export const chatRooms = pgTable('chat_rooms', {
 	createdBy: text('created_by')
 		.notNull()
 		.references(() => users.id),
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })
@@ -52,10 +52,13 @@ export const chatRoomMembers = pgTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => users.id),
-		joinedAt: timestamp('joined_at', { withTimezone: true })
+		joinedAt: timestamp('joined_at', { withTimezone: true, mode: 'string' })
 			.notNull()
 			.defaultNow(),
-		lastReadAt: timestamp('last_read_at', { withTimezone: true }),
+		lastReadAt: timestamp('last_read_at', {
+			withTimezone: true,
+			mode: 'string',
+		}),
 		muted: boolean('muted').notNull().default(false),
 	},
 	(table) => ({
@@ -76,10 +79,10 @@ export const chatMessages = pgTable('chat_messages', {
 		.notNull()
 		.references(() => users.id),
 	msgType: messageTypeEnum('msg_type').notNull(),
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	editedAt: timestamp('edited_at', { withTimezone: true }),
+	editedAt: timestamp('edited_at', { withTimezone: true, mode: 'string' }),
 	deleted: boolean('deleted').notNull().default(false),
 })
 
@@ -107,7 +110,9 @@ export const chatMessageReadStatuses = pgTable(
 		userId: text('user_id')
 			.notNull()
 			.references(() => users.id),
-		readAt: timestamp('read_at', { withTimezone: true }).notNull().defaultNow(),
+		readAt: timestamp('read_at', { withTimezone: true, mode: 'string' })
+			.notNull()
+			.defaultNow(),
 	},
 	(table) => ({
 		pk: primaryKey({ columns: [table.messageId, table.userId] }),

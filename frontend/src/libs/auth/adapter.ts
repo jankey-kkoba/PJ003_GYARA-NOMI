@@ -110,7 +110,7 @@ export function CustomAdapter(): Adapter {
 				.set({
 					email: data.email,
 					emailVerified: data.emailVerified,
-					updatedAt: new Date(),
+					updatedAt: new Date().toISOString(),
 				})
 				.where(eq(users.id, data.id))
 				.returning()

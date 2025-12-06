@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { guestSoloMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-import { parseSoloMatchingOrNull } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * 指定キャストへのpendingオファー取得のカスタムフック
@@ -31,7 +30,7 @@ export function usePendingOffer(castId: string) {
 
 			return {
 				hasPendingOffer: result.hasPendingOffer,
-				pendingOffer: parseSoloMatchingOrNull(result.pendingOffer),
+				pendingOffer: result.pendingOffer ?? null,
 			}
 		},
 	})

@@ -36,25 +36,37 @@ export const matchings = pgTable('matchings', {
 	status: matchingStatusEnum('status').notNull().default('pending'),
 
 	// オファー情報
-	proposedDate: timestamp('proposed_date', { withTimezone: true }).notNull(), // 希望日時
+	proposedDate: timestamp('proposed_date', {
+		withTimezone: true,
+		mode: 'string',
+	}).notNull(), // 希望日時
 	proposedDuration: integer('proposed_duration').notNull(), // 希望時間（分）
 	proposedLocation: text('proposed_location').notNull(), // 希望場所（文字列）
 	requestedCastCount: integer('requested_cast_count').notNull().default(1), // 希望キャスト数（ソロは1）
 	totalPoints: integer('total_points').notNull(), // 合計ポイント（時給×時間で算出）
 
 	// ギャラ飲み実施情報
-	startedAt: timestamp('started_at', { withTimezone: true }), // 開始時刻（合流ボタン押下時）
-	scheduledEndAt: timestamp('scheduled_end_at', { withTimezone: true }), // 予定終了時刻
-	actualEndAt: timestamp('actual_end_at', { withTimezone: true }), // 実際の終了時刻
+	startedAt: timestamp('started_at', { withTimezone: true, mode: 'string' }), // 開始時刻（合流ボタン押下時）
+	scheduledEndAt: timestamp('scheduled_end_at', {
+		withTimezone: true,
+		mode: 'string',
+	}), // 予定終了時刻
+	actualEndAt: timestamp('actual_end_at', {
+		withTimezone: true,
+		mode: 'string',
+	}), // 実際の終了時刻
 	extensionMinutes: integer('extension_minutes').default(0), // 延長時間（分）
 	extensionPoints: integer('extension_points').default(0), // 延長ポイント
 
 	// メタ情報
-	recruitingEndedAt: timestamp('recruiting_ended_at', { withTimezone: true }), // 募集終了日時
-	createdAt: timestamp('created_at', { withTimezone: true })
+	recruitingEndedAt: timestamp('recruiting_ended_at', {
+		withTimezone: true,
+		mode: 'string',
+	}), // 募集終了日時
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })

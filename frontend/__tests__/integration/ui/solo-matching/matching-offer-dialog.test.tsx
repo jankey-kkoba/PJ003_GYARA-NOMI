@@ -207,8 +207,8 @@ describe('MatchingOfferDialog', () => {
 				extensionMinutes: 0,
 				extensionPoints: 0,
 				castRespondedAt: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
 			mockFetch.mockImplementation((url: string) => {
@@ -302,8 +302,8 @@ describe('MatchingOfferDialog', () => {
 				extensionMinutes: 0,
 				extensionPoints: 0,
 				castRespondedAt: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
 			mockFetch.mockImplementation((url: string) => {
@@ -382,8 +382,8 @@ describe('MatchingOfferDialog', () => {
 				extensionMinutes: 0,
 				extensionPoints: 0,
 				castRespondedAt: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
 			mockFetch.mockImplementation((url: string) => {

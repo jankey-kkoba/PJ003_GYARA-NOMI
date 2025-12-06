@@ -21,10 +21,10 @@ export const castReviews = pgTable('cast_reviews', {
 		.references(() => users.id),
 	rating: integer('rating').notNull(), // 評価（1-5）
 	comment: text('comment'), // コメント（任意）
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })

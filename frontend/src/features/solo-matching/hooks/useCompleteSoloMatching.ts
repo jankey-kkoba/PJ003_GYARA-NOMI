@@ -2,7 +2,6 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { castSoloMatchingsClient } from '@/libs/hono/client'
 import { handleApiError } from '@/libs/react-query'
 import type { SoloMatching } from '@/features/solo-matching/types/soloMatching'
-import { parseSoloMatching } from '@/features/solo-matching/utils/parseSoloMatching'
 
 /**
  * マッチング終了のパラメータ
@@ -38,7 +37,7 @@ export function useCompleteSoloMatching() {
 				throw new Error('マッチングの終了に失敗しました')
 			}
 
-			return parseSoloMatching(result.matching)
+			return result.matching
 		},
 		onSuccess: () => {
 			// マッチング一覧のキャッシュを無効化して再取得

@@ -126,8 +126,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -158,8 +158,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -192,8 +192,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -219,8 +219,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -246,8 +246,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -273,8 +273,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -300,8 +300,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -327,8 +327,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -355,8 +355,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -383,8 +383,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -411,8 +411,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -440,8 +440,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -470,8 +470,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			// 0人の場合は matching: null を返す
@@ -509,8 +509,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const mockResult: CreateGroupMatchingResult = {
@@ -519,7 +519,7 @@ describe('POST /api/group-matchings/guest', () => {
 					guestId: 'guest-123',
 					chatRoomId: null,
 					status: 'pending',
-					proposedDate: new Date(Date.now() + 3600000),
+					proposedDate: new Date(Date.now() + 3600000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
 					totalPoints: 18000, // 3人 × 2時間 × 3000ポイント/時間
@@ -530,8 +530,8 @@ describe('POST /api/group-matchings/guest', () => {
 					extensionPoints: 0,
 					recruitingEndedAt: null,
 					requestedCastCount: 3,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 				},
 				participantCount: 5,
 			}
@@ -568,11 +568,11 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
-			const proposedDate = new Date(Date.now() + 86400000) // 明日
+			const proposedDate = new Date(Date.now() + 86400000).toISOString() // 明日
 
 			const mockResult: CreateGroupMatchingResult = {
 				matching: {
@@ -591,8 +591,8 @@ describe('POST /api/group-matchings/guest', () => {
 					extensionPoints: 0,
 					recruitingEndedAt: null,
 					requestedCastCount: 5,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 				},
 				participantCount: 3,
 			}
@@ -604,7 +604,7 @@ describe('POST /api/group-matchings/guest', () => {
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({
 					requestedCastCount: 5,
-					proposedDate: proposedDate.toISOString(),
+					proposedDate: proposedDate,
 					proposedDuration: 180,
 					proposedLocation: '新宿',
 				}),
@@ -628,8 +628,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const mockResult: CreateGroupMatchingResult = {
@@ -638,7 +638,7 @@ describe('POST /api/group-matchings/guest', () => {
 					guestId: 'guest-123',
 					chatRoomId: null,
 					status: 'pending',
-					proposedDate: new Date(Date.now() + 3600000),
+					proposedDate: new Date(Date.now() + 3600000).toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
 					totalPoints: 18000,
@@ -649,8 +649,8 @@ describe('POST /api/group-matchings/guest', () => {
 					extensionPoints: 0,
 					recruitingEndedAt: null,
 					requestedCastCount: 3,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 				},
 				participantCount: 2, // 年齢フィルタで絞られた結果
 			}
@@ -717,8 +717,8 @@ describe('POST /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.createGroupMatching.mockRejectedValue(
@@ -787,8 +787,8 @@ describe('GET /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -810,8 +810,8 @@ describe('GET /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/group-matchings/guest', {
@@ -835,8 +835,8 @@ describe('GET /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const mockMatchings: GuestGroupMatching[] = [
@@ -845,7 +845,7 @@ describe('GET /api/group-matchings/guest', () => {
 					guestId: 'guest-123',
 					chatRoomId: null,
 					status: 'pending',
-					proposedDate: new Date(),
+					proposedDate: new Date().toISOString(),
 					proposedDuration: 120,
 					proposedLocation: '渋谷',
 					totalPoints: 18000,
@@ -856,8 +856,8 @@ describe('GET /api/group-matchings/guest', () => {
 					extensionPoints: 0,
 					recruitingEndedAt: null,
 					requestedCastCount: 3,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 					type: 'group',
 					participantSummary: {
 						pendingCount: 2,
@@ -871,7 +871,7 @@ describe('GET /api/group-matchings/guest', () => {
 					guestId: 'guest-123',
 					chatRoomId: null,
 					status: 'accepted',
-					proposedDate: new Date(),
+					proposedDate: new Date().toISOString(),
 					proposedDuration: 180,
 					proposedLocation: '新宿',
 					totalPoints: 27000,
@@ -882,8 +882,8 @@ describe('GET /api/group-matchings/guest', () => {
 					extensionPoints: 0,
 					recruitingEndedAt: null,
 					requestedCastCount: 3,
-					createdAt: new Date(),
-					updatedAt: new Date(),
+					createdAt: new Date().toISOString(),
+					updatedAt: new Date().toISOString(),
 					type: 'group',
 					participantSummary: {
 						pendingCount: 0,
@@ -921,8 +921,8 @@ describe('GET /api/group-matchings/guest', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.getGuestGroupMatchings.mockResolvedValue([])

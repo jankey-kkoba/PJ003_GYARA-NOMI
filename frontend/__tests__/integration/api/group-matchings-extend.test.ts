@@ -74,19 +74,19 @@ function createMockGroupMatching(overrides = {}) {
 		guestId: 'guest-123',
 		chatRoomId: 'chat-123',
 		status: 'in_progress' as const,
-		proposedDate: new Date('2025-11-28T18:00:00Z'),
+		proposedDate: '2025-11-28T18:00:00.000Z',
 		proposedDuration: 120,
 		proposedLocation: '渋谷',
 		totalPoints: 18000,
-		startedAt: new Date('2025-11-28T18:00:00Z'),
-		scheduledEndAt: new Date('2025-11-28T20:00:00Z'),
+		startedAt: '2025-11-28T18:00:00.000Z',
+		scheduledEndAt: '2025-11-28T20:00:00.000Z',
 		actualEndAt: null,
 		extensionMinutes: 0,
 		extensionPoints: 0,
-		recruitingEndedAt: new Date('2025-11-28T17:30:00Z'),
+		recruitingEndedAt: '2025-11-28T17:30:00.000Z',
 		requestedCastCount: 3,
-		createdAt: new Date('2025-11-28T10:00:00Z'),
-		updatedAt: new Date('2025-11-28T18:00:00Z'),
+		createdAt: '2025-11-28T10:00:00.000Z',
+		updatedAt: '2025-11-28T18:00:00.000Z',
 		type: 'group' as const,
 		participantSummary: {
 			pendingCount: 0,
@@ -155,8 +155,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -185,8 +185,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -217,8 +217,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -244,8 +244,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -271,8 +271,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -298,8 +298,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -325,8 +325,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request(
@@ -352,14 +352,14 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const extendedMatching = createMockGroupMatching({
 				extensionMinutes: 30,
 				extensionPoints: 4500,
-				scheduledEndAt: new Date('2025-11-28T20:30:00Z'),
+				scheduledEndAt: '2025-11-28T20:30:00.000Z',
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockResolvedValue(
@@ -401,14 +401,14 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const extendedMatching = createMockGroupMatching({
 				extensionMinutes: 60,
 				extensionPoints: 9000,
-				scheduledEndAt: new Date('2025-11-28T21:00:00Z'),
+				scheduledEndAt: '2025-11-28T21:00:00.000Z',
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockResolvedValue(
@@ -442,14 +442,14 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const extendedMatching = createMockGroupMatching({
 				extensionMinutes: 120,
 				extensionPoints: 18000,
-				scheduledEndAt: new Date('2025-11-28T22:00:00Z'),
+				scheduledEndAt: '2025-11-28T22:00:00.000Z',
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockResolvedValue(
@@ -506,8 +506,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockRejectedValue(
@@ -540,8 +540,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockRejectedValue(
@@ -574,8 +574,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockRejectedValue(
@@ -608,8 +608,8 @@ describe('PATCH /api/group-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			mockGroupMatchingService.extendGroupMatching.mockRejectedValue(

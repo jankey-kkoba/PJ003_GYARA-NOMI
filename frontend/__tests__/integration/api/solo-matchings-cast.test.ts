@@ -74,7 +74,7 @@ const mockMatching: CastSoloMatching = {
 	castId: 'cast-1',
 	chatRoomId: null,
 	status: 'pending',
-	proposedDate: new Date('2024-12-01T18:00:00Z'),
+	proposedDate: '2024-12-01T18:00:00.000Z',
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
 	totalPoints: 10000,
@@ -84,8 +84,8 @@ const mockMatching: CastSoloMatching = {
 	extensionMinutes: 0,
 	extensionPoints: 0,
 	castRespondedAt: null,
-	createdAt: new Date(),
-	updatedAt: new Date(),
+	createdAt: new Date().toISOString(),
+	updatedAt: new Date().toISOString(),
 	guest: {
 		id: 'guest-1',
 		nickname: 'テストゲスト',
@@ -158,8 +158,8 @@ describe('GET /api/solo-matchings/cast', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request('/api/solo-matchings/cast', {
@@ -183,8 +183,8 @@ describe('GET /api/solo-matchings/cast', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request('/api/solo-matchings/cast', {
@@ -207,8 +207,8 @@ describe('GET /api/solo-matchings/cast', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getCastSoloMatchings.mockResolvedValue([
 				mockMatching,
@@ -243,8 +243,8 @@ describe('GET /api/solo-matchings/cast', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getCastSoloMatchings.mockResolvedValue([])
 
@@ -268,8 +268,8 @@ describe('GET /api/solo-matchings/cast', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getCastSoloMatchings.mockRejectedValue(
 				new Error('Database error'),
@@ -367,8 +367,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -397,8 +397,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -426,8 +426,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -450,8 +450,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -476,14 +476,14 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const acceptedMatching = {
 				...mockMatching,
 				status: 'accepted' as const,
-				castRespondedAt: new Date(),
+				castRespondedAt: new Date().toISOString(),
 			}
 			mockSoloMatchingService.respondToSoloMatching.mockResolvedValue(
 				acceptedMatching,
@@ -520,14 +520,14 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const rejectedMatching = {
 				...mockMatching,
 				status: 'rejected' as const,
-				castRespondedAt: new Date(),
+				castRespondedAt: new Date().toISOString(),
 			}
 			mockSoloMatchingService.respondToSoloMatching.mockResolvedValue(
 				rejectedMatching,
@@ -565,8 +565,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
 				new Error('マッチングが見つかりません'),
@@ -595,8 +595,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
 				new Error('このマッチングに回答する権限がありません'),
@@ -625,8 +625,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.respondToSoloMatching.mockRejectedValue(
 				new Error('このマッチングは既に回答済みです'),
@@ -689,8 +689,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -714,8 +714,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -739,12 +739,14 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
-			const startedAt = new Date()
-			const scheduledEndAt = new Date(startedAt.getTime() + 120 * 60 * 1000) // 2時間後
+			const startedAt = new Date().toISOString()
+			const scheduledEndAt = new Date(
+				new Date(startedAt).getTime() + 120 * 60 * 1000,
+			).toISOString() // 2時間後
 
 			mockSoloMatchingService.startSoloMatching.mockResolvedValue({
 				id: 'matching-1',
@@ -752,7 +754,7 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				castId: 'cast-1',
 				chatRoomId: null,
 				status: 'in_progress',
-				proposedDate: new Date(),
+				proposedDate: new Date().toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				totalPoints: 6000,
@@ -761,9 +763,9 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				actualEndAt: null,
 				extensionMinutes: 0,
 				extensionPoints: 0,
-				castRespondedAt: new Date(),
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				castRespondedAt: new Date().toISOString(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -795,8 +797,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.startSoloMatching.mockRejectedValue(
 				new Error('マッチングが見つかりません'),
@@ -823,8 +825,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.startSoloMatching.mockRejectedValue(
 				new Error('このマッチングを開始する権限がありません'),
@@ -851,8 +853,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.startSoloMatching.mockRejectedValue(
 				new Error(
@@ -915,8 +917,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -940,8 +942,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -965,11 +967,11 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
-			const actualEndAt = new Date()
+			const actualEndAt = new Date().toISOString()
 
 			mockSoloMatchingService.completeSoloMatching.mockResolvedValue({
 				id: 'matching-1',
@@ -977,18 +979,20 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				castId: 'cast-1',
 				chatRoomId: null,
 				status: 'completed',
-				proposedDate: new Date(),
+				proposedDate: new Date().toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				totalPoints: 6000,
-				startedAt: new Date(actualEndAt.getTime() - 120 * 60 * 1000),
+				startedAt: new Date(
+					new Date(actualEndAt).getTime() - 120 * 60 * 1000,
+				).toISOString(),
 				scheduledEndAt: actualEndAt,
 				actualEndAt,
 				extensionMinutes: 0,
 				extensionPoints: 0,
-				castRespondedAt: new Date(),
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				castRespondedAt: new Date().toISOString(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -1019,8 +1023,8 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.completeSoloMatching.mockRejectedValue(
 				new Error('サービス層エラー'),

@@ -125,8 +125,8 @@ describe('POST /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/solo-matchings/guest', {
@@ -157,8 +157,8 @@ describe('POST /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/solo-matchings/guest', {
@@ -188,8 +188,8 @@ describe('POST /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const res = await app.request('/api/solo-matchings/guest', {
@@ -217,8 +217,8 @@ describe('POST /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const mockSoloMatching = {
@@ -237,8 +237,8 @@ describe('POST /api/solo-matchings', () => {
 				extensionMinutes: 0,
 				extensionPoints: 0,
 				castRespondedAt: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 
 			mockSoloMatchingService.createSoloMatching.mockResolvedValue(
@@ -356,8 +356,8 @@ describe('GET /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request('/api/solo-matchings/guest', {
@@ -381,8 +381,8 @@ describe('GET /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request('/api/solo-matchings/guest', {
@@ -405,8 +405,8 @@ describe('GET /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getGuestSoloMatchings.mockResolvedValue([
 				mockMatching,
@@ -441,8 +441,8 @@ describe('GET /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getGuestSoloMatchings.mockResolvedValue([])
 
@@ -466,8 +466,8 @@ describe('GET /api/solo-matchings', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.getGuestSoloMatchings.mockRejectedValue(
 				new Error('Database error'),
@@ -582,8 +582,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'cast',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -609,8 +609,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'admin',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -638,8 +638,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -662,8 +662,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -686,8 +686,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -710,8 +710,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const response = await app.request(
@@ -736,8 +736,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 			mockSoloMatchingService.extendSoloMatching.mockRejectedValue(
 				new Error('マッチングが見つかりません'),
@@ -768,8 +768,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const extendedMatching: SoloMatching = {
@@ -814,8 +814,8 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				emailVerified: null,
 				password: null,
 				role: 'guest',
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			})
 
 			const extendedMatching: SoloMatching = {
@@ -954,8 +954,8 @@ describe('GET /api/solo-matchings/guest/pending/:castId', () => {
 				extensionMinutes: 0,
 				extensionPoints: 0,
 				castRespondedAt: null,
-				createdAt: new Date(),
-				updatedAt: new Date(),
+				createdAt: new Date().toISOString(),
+				updatedAt: new Date().toISOString(),
 			}
 			mockSoloMatchingService.getPendingOfferForCast.mockResolvedValue(
 				mockPendingOffer,

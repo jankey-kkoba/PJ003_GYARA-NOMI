@@ -78,8 +78,8 @@ export const soloMatchingService = {
 
 		// proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
 		const finalProposedDate = proposedTimeOffsetMinutes
-			? addMinutesToDate(new Date(), proposedTimeOffsetMinutes)
-			: proposedDate
+			? addMinutesToDate(new Date(), proposedTimeOffsetMinutes).toISOString()
+			: proposedDate?.toISOString()
 
 		if (!finalProposedDate) {
 			throw new Error(
@@ -248,7 +248,7 @@ export const soloMatchingService = {
 			throw new Error('このマッチングは既に回答済みです')
 		}
 
-		const now = new Date()
+		const now = new Date().toISOString()
 
 		// マッチングのステータスを更新
 		const [updatedMatching] = await db
@@ -317,15 +317,17 @@ export const soloMatchingService = {
 		// 開始時刻と予定終了時刻を計算
 		const now = new Date()
 		const scheduledEnd = addMinutesToDate(now, result.matching.proposedDuration)
+		const nowIso = now.toISOString()
+		const scheduledEndIso = scheduledEnd.toISOString()
 
 		// マッチングのステータスを更新
 		const [updatedMatching] = await db
 			.update(matchings)
 			.set({
 				status: 'in_progress',
-				startedAt: now,
-				scheduledEndAt: scheduledEnd,
-				updatedAt: now,
+				startedAt: nowIso,
+				scheduledEndAt: scheduledEndIso,
+				updatedAt: nowIso,
 			})
 			.where(eq(matchings.id, matchingId))
 			.returning()
@@ -335,8 +337,8 @@ export const soloMatchingService = {
 			.update(matchingParticipants)
 			.set({
 				status: 'joined',
-				joinedAt: now,
-				updatedAt: now,
+				joinedAt: nowIso,
+				updatedAt: nowIso,
 			})
 			.where(eq(matchingParticipants.id, result.participant.id))
 			.returning()
@@ -383,7 +385,7 @@ export const soloMatchingService = {
 			)
 		}
 
-		const now = new Date()
+		const now = new Date().toISOString()
 
 		// マッチングのステータスを更新
 		const [updatedMatching] = await db
@@ -455,11 +457,11 @@ export const soloMatchingService = {
 			throw new Error('予定終了時刻が設定されていません')
 		}
 
-		// 新しい予定終了時刻を計算
+		// 新しい予定終了時刻を計算（ISO文字列をパースして計算し、再度ISO文字列に変換）
 		const newScheduledEndAt = addMinutesToDate(
-			result.matching.scheduledEndAt,
+			new Date(result.matching.scheduledEndAt),
 			extensionMinutes,
-		)
+		).toISOString()
 
 		// キャストのランクを取得して時給を計算
 		const [castProfile] = await db
@@ -492,7 +494,7 @@ export const soloMatchingService = {
 				extensionMinutes: newExtensionMinutes,
 				extensionPoints: newExtensionPoints,
 				totalPoints: newTotalPoints,
-				updatedAt: new Date(),
+				updatedAt: new Date().toISOString(),
 			})
 			.where(eq(matchings.id, matchingId))
 			.returning()

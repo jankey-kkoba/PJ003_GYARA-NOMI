@@ -10,8 +10,8 @@ export type CastProfilePhoto = {
 	castProfileId: string
 	photoUrl: string
 	displayOrder: number
-	createdAt: Date
-	updatedAt: Date
+	createdAt: string
+	updatedAt: string
 }
 
 /**

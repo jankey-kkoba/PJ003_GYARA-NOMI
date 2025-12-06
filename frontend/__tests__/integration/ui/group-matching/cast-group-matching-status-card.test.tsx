@@ -46,8 +46,8 @@ function createMockMatching(
 		extensionPoints: 0,
 		recruitingEndedAt: null,
 		requestedCastCount: 3,
-		createdAt: new Date(),
-		updatedAt: new Date(),
+		createdAt: new Date().toISOString(),
+		updatedAt: new Date().toISOString(),
 		type: 'group',
 		participantStatus: 'pending',
 		guest: {

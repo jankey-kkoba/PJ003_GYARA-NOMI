@@ -14,10 +14,10 @@ export const castProfiles = pgTable('cast_profiles', {
 	rank: integer('rank').notNull().default(1), // キャストのランク
 	areaId: text('area_id').references(() => areas.id), // 活動エリア
 	isActive: boolean('is_active').notNull().default(true), // アクティブ状態（一覧に表示されるか）
-	createdAt: timestamp('created_at', { withTimezone: true })
+	createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
-	updatedAt: timestamp('updated_at', { withTimezone: true })
+	updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 		.notNull()
 		.defaultNow(),
 })

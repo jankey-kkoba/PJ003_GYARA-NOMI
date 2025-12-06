@@ -31,12 +31,15 @@ export const matchingParticipants = pgTable(
 			.references(() => users.id),
 		status: participantStatusEnum('status').notNull().default('pending'),
 
-		respondedAt: timestamp('responded_at', { withTimezone: true }), // キャストが回答した日時
-		joinedAt: timestamp('joined_at', { withTimezone: true }), // キャストが合流した日時
-		createdAt: timestamp('created_at', { withTimezone: true })
+		respondedAt: timestamp('responded_at', {
+			withTimezone: true,
+			mode: 'string',
+		}), // キャストが回答した日時
+		joinedAt: timestamp('joined_at', { withTimezone: true, mode: 'string' }), // キャストが合流した日時
+		createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' })
 			.notNull()
 			.defaultNow(),
-		updatedAt: timestamp('updated_at', { withTimezone: true })
+		updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' })
 			.notNull()
 			.defaultNow(),
 	},
