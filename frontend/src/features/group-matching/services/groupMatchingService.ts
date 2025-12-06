@@ -3,6 +3,7 @@ import { matchings, matchingParticipants } from '@/libs/db/schema'
 import { castProfiles } from '@/libs/db/schema/cast-profiles'
 import { userProfiles } from '@/libs/db/schema/users'
 import type {
+	CastGroupMatching,
 	CreateGroupMatchingResult,
 	GuestGroupMatching,
 } from '@/features/group-matching/types/groupMatching'
@@ -209,6 +210,88 @@ export const groupMatchingService = {
 					createdAt: result.matching.createdAt,
 					updatedAt: result.matching.updatedAt,
 					type: 'group' as const,
+					participantSummary,
+				}
+			}),
+		)
+
+		return groupMatchings
+	},
+
+	/**
+	 * キャストのグループマッチング一覧を取得
+	 * @param castId - キャストID
+	 * @returns キャストが参加しているグループマッチング一覧（pending, accepted, in_progress）
+	 */
+	async getCastGroupMatchings(castId: string): Promise<CastGroupMatching[]> {
+		// このキャストが参加者として含まれているグループマッチングを取得
+		const results = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+				guestName: userProfiles.name,
+			})
+			.from(matchingParticipants)
+			.innerJoin(matchings, eq(matchingParticipants.matchingId, matchings.id))
+			.innerJoin(userProfiles, eq(matchings.guestId, userProfiles.id))
+			.where(
+				and(
+					eq(matchingParticipants.castId, castId),
+					eq(matchings.type, 'group'),
+				),
+			)
+			.orderBy(desc(matchings.createdAt))
+
+		// フィルタリング: キャストのステータスがpending, accepted, joined のマッチングのみ
+		// またはマッチング自体がin_progressの場合
+		const filteredResults = results.filter(
+			(result) =>
+				result.participant.status === 'pending' ||
+				result.participant.status === 'accepted' ||
+				result.participant.status === 'joined' ||
+				result.matching.status === 'in_progress',
+		)
+
+		// 各マッチングの参加者サマリーを取得
+		const groupMatchings: CastGroupMatching[] = await Promise.all(
+			filteredResults.map(async (result) => {
+				// 参加者を取得してサマリーを計算
+				const participants = await db
+					.select({ status: matchingParticipants.status })
+					.from(matchingParticipants)
+					.where(eq(matchingParticipants.matchingId, result.matching.id))
+
+				const participantSummary = {
+					requestedCount: result.matching.requestedCastCount ?? 1,
+					acceptedCount: participants.filter((p) => p.status === 'accepted')
+						.length,
+					joinedCount: participants.filter((p) => p.status === 'joined').length,
+				}
+
+				return {
+					id: result.matching.id,
+					guestId: result.matching.guestId,
+					chatRoomId: result.matching.chatRoomId,
+					status: result.matching.status,
+					proposedDate: result.matching.proposedDate,
+					proposedDuration: result.matching.proposedDuration,
+					proposedLocation: result.matching.proposedLocation,
+					requestedCastCount: result.matching.requestedCastCount ?? 1,
+					totalPoints: result.matching.totalPoints,
+					startedAt: result.matching.startedAt,
+					scheduledEndAt: result.matching.scheduledEndAt,
+					actualEndAt: result.matching.actualEndAt,
+					extensionMinutes: result.matching.extensionMinutes ?? 0,
+					extensionPoints: result.matching.extensionPoints ?? 0,
+					recruitingEndedAt: result.matching.recruitingEndedAt,
+					createdAt: result.matching.createdAt,
+					updatedAt: result.matching.updatedAt,
+					type: 'group' as const,
+					participantStatus: result.participant.status,
+					guest: {
+						id: result.matching.guestId,
+						nickname: result.guestName,
+					},
 					participantSummary,
 				}
 			}),

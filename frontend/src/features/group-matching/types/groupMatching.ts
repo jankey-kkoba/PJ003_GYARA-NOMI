@@ -70,3 +70,33 @@ export type GuestGroupMatching = GroupMatching & {
 		joinedCount: number
 	}
 }
+
+/**
+ * キャスト向けグループマッチング一覧用の型定義
+ * ゲスト情報とマッチングステータスを含む
+ */
+export type CastGroupMatching = GroupMatching & {
+	/** マッチングのタイプ（UI表示用） */
+	type: 'group'
+	/** このキャストの参加ステータス */
+	participantStatus:
+		| 'pending'
+		| 'accepted'
+		| 'rejected'
+		| 'joined'
+		| 'completed'
+	/** ゲスト情報 */
+	guest: {
+		id: string
+		nickname: string
+	}
+	/** 参加者のサマリー情報 */
+	participantSummary: {
+		/** 希望人数 */
+		requestedCount: number
+		/** 承認済み人数 */
+		acceptedCount: number
+		/** 合流済み人数 */
+		joinedCount: number
+	}
+}

@@ -7,6 +7,7 @@ import type { CastReviewsAppType } from '@/app/api/cast-reviews/[[...route]]/rou
 import type { CastSoloMatchingsAppType } from '@/app/api/solo-matchings/cast/[[...route]]/route'
 import type { GuestSoloMatchingsAppType } from '@/app/api/solo-matchings/guest/[[...route]]/route'
 import type { GuestGroupMatchingsAppType } from '@/app/api/group-matchings/guest/[[...route]]/route'
+import type { CastGroupMatchingsAppType } from '@/app/api/group-matchings/cast/[[...route]]/route'
 
 /**
  * Honoクライアントのベースオプション
@@ -70,6 +71,15 @@ export const guestSoloMatchingsClient = hc<GuestSoloMatchingsAppType>(
  * 型安全なRPCクライアント
  */
 export const guestGroupMatchingsClient = hc<GuestGroupMatchingsAppType>(
+	'/',
+	clientOptions,
+)
+
+/**
+ * キャストグループマッチングAPIクライアント
+ * 型安全なRPCクライアント
+ */
+export const castGroupMatchingsClient = hc<CastGroupMatchingsAppType>(
 	'/',
 	clientOptions,
 )
