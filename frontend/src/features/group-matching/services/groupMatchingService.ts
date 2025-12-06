@@ -98,8 +98,12 @@ export const groupMatchingService = {
 			.innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
 			.where(whereClause)
 
+		// 条件に合うキャストが0人の場合
 		if (activeCasts.length === 0) {
-			throw new Error('アクティブなキャストが見つかりません')
+			return {
+				matching: null,
+				participantCount: 0,
+			}
 		}
 
 		// matchingsにinsert

@@ -86,16 +86,16 @@ describe('groupMatchingService Integration', () => {
 			})
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
-			expect(result.matching.guestId).toBe('seed-user-guest-001')
-			expect(result.matching.proposedDuration).toBe(120)
-			expect(result.matching.proposedLocation).toBe('渋谷')
-			expect(result.matching.requestedCastCount).toBe(3)
+			expect(result.matching).not.toBeNull()
+			expect(result.matching!.guestId).toBe('seed-user-guest-001')
+			expect(result.matching!.proposedDuration).toBe(120)
+			expect(result.matching!.proposedLocation).toBe('渋谷')
+			expect(result.matching!.requestedCastCount).toBe(3)
 			// 合計ポイントはブロンズランクの時給×人数×時間で計算される
 			const expectedPoints = calculatePoints(120, RANK_HOURLY_RATES[1]) * 3 // 2時間 × 3000円/時 × 3人 = 18000ポイント
-			expect(result.matching.totalPoints).toBe(expectedPoints)
-			expect(result.matching.status).toBe('pending')
-			expect(result.matching.chatRoomId).toBeNull()
+			expect(result.matching!.totalPoints).toBe(expectedPoints)
+			expect(result.matching!.status).toBe('pending')
+			expect(result.matching!.chatRoomId).toBeNull()
 			// 全アクティブキャストにオファーが送信されていることを確認
 			expect(result.participantCount).toBeGreaterThan(0)
 
@@ -103,7 +103,7 @@ describe('groupMatchingService Integration', () => {
 			const [dbMatching] = await db
 				.select()
 				.from(matchings)
-				.where(eq(matchings.id, result.matching.id))
+				.where(eq(matchings.id, result.matching!.id))
 				.limit(1)
 
 			expect(dbMatching).toBeDefined()
@@ -116,7 +116,7 @@ describe('groupMatchingService Integration', () => {
 			const dbParticipants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, result.matching.id))
+				.where(eq(matchingParticipants.matchingId, result.matching!.id))
 
 			// 全アクティブキャストにオファーが送信されていることを確認
 			expect(dbParticipants.length).toBe(result.participantCount)
@@ -126,7 +126,7 @@ describe('groupMatchingService Integration', () => {
 			})
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		it('合計ポイントが正しく計算される（30分の場合）', async () => {
@@ -142,10 +142,10 @@ describe('groupMatchingService Integration', () => {
 
 			// 30分 = 0.5時間 → 0.5 × 3000（ブロンズランクの時給） × 2人 = 3000ポイント
 			const expectedPoints = calculatePoints(30, RANK_HOURLY_RATES[1]) * 2
-			expect(result.matching.totalPoints).toBe(expectedPoints)
+			expect(result.matching!.totalPoints).toBe(expectedPoints)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		it('合計ポイントが正しく計算される（3時間30分、5人の場合）', async () => {
@@ -161,10 +161,10 @@ describe('groupMatchingService Integration', () => {
 
 			// 3.5時間 × 3000（ブロンズランクの時給） × 5人 = 52500ポイント
 			const expectedPoints = calculatePoints(210, RANK_HOURLY_RATES[1]) * 5
-			expect(result.matching.totalPoints).toBe(expectedPoints)
+			expect(result.matching!.totalPoints).toBe(expectedPoints)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		it('相対時間指定でグループマッチングを作成できる', async () => {
@@ -177,18 +177,18 @@ describe('groupMatchingService Integration', () => {
 			})
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
-			expect(result.matching.guestId).toBe('seed-user-guest-001')
-			expect(result.matching.proposedDuration).toBe(120)
-			expect(result.matching.proposedLocation).toBe('六本木')
-			expect(result.matching.requestedCastCount).toBe(2)
+			expect(result.matching).not.toBeNull()
+			expect(result.matching!.guestId).toBe('seed-user-guest-001')
+			expect(result.matching!.proposedDuration).toBe(120)
+			expect(result.matching!.proposedLocation).toBe('六本木')
+			expect(result.matching!.requestedCastCount).toBe(2)
 
 			// proposedDateが設定されていることを確認
-			expect(result.matching.proposedDate).toBeDefined()
-			expect(result.matching.proposedDate instanceof Date).toBe(true)
+			expect(result.matching!.proposedDate).toBeDefined()
+			expect(result.matching!.proposedDate instanceof Date).toBe(true)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		// 注: proposedDateとproposedTimeOffsetMinutesの必須バリデーションはスキーマ（API層）で行われる
@@ -216,7 +216,7 @@ describe('groupMatchingService Integration', () => {
 			// 作成したマッチングが一覧に含まれていることを確認
 			expect(matchingList.length).toBeGreaterThanOrEqual(1)
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeDefined()
 			expect(foundMatching!.guestId).toBe('seed-user-guest-001')
@@ -225,7 +225,7 @@ describe('groupMatchingService Integration', () => {
 			expect(foundMatching!.participantSummary.pendingCount).toBeGreaterThan(0)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('他のゲストのグループマッチングは取得されない', async () => {
@@ -247,7 +247,7 @@ describe('groupMatchingService Integration', () => {
 			expect(matchingList.length).toBe(0)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('completedステータスのマッチングは一覧に含まれない', async () => {
@@ -266,7 +266,7 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'completed' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 一覧を取得
 			const matchingList = await groupMatchingService.getGuestGroupMatchings(
@@ -275,12 +275,12 @@ describe('groupMatchingService Integration', () => {
 
 			// completedのマッチングは含まれない
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeUndefined()
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく計算される', async () => {
@@ -299,7 +299,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			if (participants.length > 0) {
 				await db
@@ -314,7 +314,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeDefined()
 			expect(foundMatching!.participantSummary.acceptedCount).toBe(1)
@@ -323,7 +323,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 
@@ -344,7 +344,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -356,7 +356,7 @@ describe('groupMatchingService Integration', () => {
 			// 作成したマッチングが一覧に含まれていることを確認
 			expect(matchingList.length).toBeGreaterThanOrEqual(1)
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeDefined()
 			expect(foundMatching!.type).toBe('group')
@@ -367,7 +367,7 @@ describe('groupMatchingService Integration', () => {
 			expect(foundMatching!.participantSummary.requestedCount).toBe(2)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('他のキャストのグループマッチングは取得されない', async () => {
@@ -394,7 +394,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -411,12 +411,12 @@ describe('groupMatchingService Integration', () => {
 
 			// rejectedのマッチングは含まれない
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeUndefined()
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加ステータスがacceptedのマッチングは一覧に含まれる', async () => {
@@ -435,7 +435,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -452,13 +452,13 @@ describe('groupMatchingService Integration', () => {
 
 			// acceptedのマッチングは含まれる
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeDefined()
 			expect(foundMatching!.participantStatus).toBe('accepted')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく計算される', async () => {
@@ -477,7 +477,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId = participants[0].castId
@@ -499,7 +499,7 @@ describe('groupMatchingService Integration', () => {
 				await groupMatchingService.getCastGroupMatchings(castId)
 
 			const foundMatching = matchingList.find(
-				(m) => m.id === createResult.matching.id,
+				(m) => m.id === createResult.matching!.id,
 			)
 			expect(foundMatching).toBeDefined()
 			expect(foundMatching!.participantSummary.requestedCount).toBe(3)
@@ -507,7 +507,7 @@ describe('groupMatchingService Integration', () => {
 			expect(foundMatching!.participantSummary.joinedCount).toBe(0)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 
@@ -528,7 +528,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantCount).toBeGreaterThan(0)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		it('maxAgeを指定すると、その年齢以下のキャストのみにオファーが送信される', async () => {
@@ -547,7 +547,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantCount).toBeGreaterThan(0)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
 		it('minAgeとmaxAgeを両方指定すると、その範囲内のキャストのみにオファーが送信される', async () => {
@@ -567,24 +567,26 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantCount).toBeGreaterThan(0)
 
 			// クリーンアップ
-			await markForCleanup(result.matching.id)
+			await markForCleanup(result.matching!.id)
 		})
 
-		it('条件に合うキャストがいない場合はエラー', async () => {
+		it('条件に合うキャストがいない場合はnullを返す', async () => {
 			const proposedDate = new Date(Date.now() + 86400000)
 
 			// 99歳以上というありえない条件
-			await expect(
-				groupMatchingService.createGroupMatching({
-					guestId: 'seed-user-guest-001',
-					requestedCastCount: 2,
-					proposedDate,
-					proposedDuration: 120,
-					proposedLocation: '渋谷',
-					minAge: 99,
-					maxAge: 99,
-				}),
-			).rejects.toThrow('アクティブなキャストが見つかりません')
+			const result = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				minAge: 99,
+				maxAge: 99,
+			})
+
+			// matchingがnull、participantCountが0であることを確認
+			expect(result.matching).toBeNull()
+			expect(result.participantCount).toBe(0)
 		})
 	})
 
@@ -605,22 +607,21 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			const result = await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
 			expect(result.participantStatus).toBe('accepted')
-			expect(result.id).toBe(createResult.matching.id)
+			expect(result.id).toBe(createResult.matching!.id)
 			expect(result.guest.id).toBe('seed-user-guest-001')
 
 			// DBの参加者ステータスが更新されていることを確認
@@ -633,7 +634,7 @@ describe('groupMatchingService Integration', () => {
 			expect(updatedParticipant.respondedAt).not.toBeNull()
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('キャストがグループマッチングにrejectedで回答できる', async () => {
@@ -652,20 +653,19 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// rejectedで回答
 			const result = await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'rejected',
 			)
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
 			expect(result.participantStatus).toBe('rejected')
 
 			// DBの参加者ステータスが更新されていることを確認
@@ -678,7 +678,7 @@ describe('groupMatchingService Integration', () => {
 			expect(updatedParticipant.respondedAt).not.toBeNull()
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('存在しないマッチングに回答するとエラー', async () => {
@@ -706,14 +706,14 @@ describe('groupMatchingService Integration', () => {
 			// 存在しないキャストIDで回答
 			await expect(
 				groupMatchingService.respondToGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'non-existent-cast-id',
 					'accepted',
 				),
 			).rejects.toThrow('マッチングが見つかりません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('既に回答済みのオファーに再度回答するとエラー', async () => {
@@ -732,14 +732,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// 1回目の回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -747,14 +747,14 @@ describe('groupMatchingService Integration', () => {
 			// 2回目の回答はエラー
 			await expect(
 				groupMatchingService.respondToGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 					'rejected',
 				),
 			).rejects.toThrow('このオファーは既に回答済みです')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('締め切られたマッチングに回答するとエラー', async () => {
@@ -773,7 +773,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -782,19 +782,19 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 回答するとエラー
 			await expect(
 				groupMatchingService.respondToGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 					'accepted',
 				),
 			).rejects.toThrow('このマッチングは既に締め切られています')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく返される', async () => {
@@ -813,14 +813,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			const result = await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -832,7 +832,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantSummary.joinedCount).toBe(0)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 
@@ -853,14 +853,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// まずacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -869,16 +869,15 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// マッチングを開始（合流）
 			const result = await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
 			expect(result.participantStatus).toBe('joined')
 			expect(result.status).toBe('in_progress')
 			expect(result.startedAt).not.toBeNull()
@@ -897,14 +896,14 @@ describe('groupMatchingService Integration', () => {
 			const [updatedMatching] = await db
 				.select()
 				.from(matchings)
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			expect(updatedMatching.status).toBe('in_progress')
 			expect(updatedMatching.startedAt).not.toBeNull()
 			expect(updatedMatching.scheduledEndAt).not.toBeNull()
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('2人目のキャストが合流してもマッチングのステータスは変わらない', async () => {
@@ -923,7 +922,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -931,12 +930,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 両方ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -945,11 +944,11 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 1人目が合流
 			const result1 = await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 
@@ -959,7 +958,7 @@ describe('groupMatchingService Integration', () => {
 
 			// 2人目が合流
 			const result2 = await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 			)
 
@@ -974,7 +973,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result2.participantSummary.joinedCount).toBe(2)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('存在しないマッチングを開始するとエラー', async () => {
@@ -1002,18 +1001,18 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 存在しないキャストIDで開始
 			await expect(
 				groupMatchingService.startGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'non-existent-cast-id',
 				),
 			).rejects.toThrow('マッチングが見つかりません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('pendingステータスのキャストが開始しようとするとエラー', async () => {
@@ -1032,7 +1031,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -1041,18 +1040,18 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// pendingのキャストが開始しようとするとエラー
 			await expect(
 				groupMatchingService.startGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 				),
 			).rejects.toThrow('このマッチングに合流する権限がありません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('pendingステータスのマッチングを開始しようとするとエラー', async () => {
@@ -1071,14 +1070,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答（キャストはaccepted）
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1086,7 +1085,7 @@ describe('groupMatchingService Integration', () => {
 			// マッチング全体がまだpendingのまま開始しようとするとエラー
 			await expect(
 				groupMatchingService.startGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 				),
 			).rejects.toThrow(
@@ -1094,7 +1093,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく返される', async () => {
@@ -1113,7 +1112,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -1121,12 +1120,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 2人ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -1135,11 +1134,11 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 1人目が合流
 			const result = await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 
@@ -1150,7 +1149,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantSummary.joinedCount).toBe(1) // 1人目がjoined
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 
@@ -1171,14 +1170,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1187,22 +1186,21 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// マッチングを開始（合流）
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
 			// マッチングを終了
 			const result = await groupMatchingService.completeGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
 			expect(result.participantStatus).toBe('completed')
 			// マッチング全体のステータスは変わらない（他のキャストが継続の可能性）
 			expect(result.status).toBe('in_progress')
@@ -1216,7 +1214,7 @@ describe('groupMatchingService Integration', () => {
 			expect(updatedParticipant.status).toBe('completed')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('存在しないマッチングを終了するとエラー', async () => {
@@ -1244,18 +1242,18 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'in_progress' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 存在しないキャストIDで終了
 			await expect(
 				groupMatchingService.completeGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'non-existent-cast-id',
 				),
 			).rejects.toThrow('マッチングが見つかりません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('joinedステータスでないキャストが終了しようとするとエラー', async () => {
@@ -1274,14 +1272,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答（joinedにはなっていない）
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1290,18 +1288,18 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'in_progress' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// joinedでないキャストが終了しようとするとエラー
 			await expect(
 				groupMatchingService.completeGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 				),
 			).rejects.toThrow('このマッチングを終了する権限がありません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('in_progressステータスでないマッチングを終了しようとするとエラー', async () => {
@@ -1320,7 +1318,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
@@ -1335,12 +1333,12 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// in_progressでないマッチングを終了しようとするとエラー
 			await expect(
 				groupMatchingService.completeGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					castId,
 				),
 			).rejects.toThrow(
@@ -1348,7 +1346,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('1キャストが終了しても他のキャストは継続できる', async () => {
@@ -1367,7 +1365,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -1375,12 +1373,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 両方ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -1389,21 +1387,21 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 両方とも合流
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 			)
 
 			// 1人目が終了
 			const result1 = await groupMatchingService.completeGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 
@@ -1423,7 +1421,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result1.participantSummary.joinedCount).toBe(1) // 1人だけjoined（もう1人はcompleted）
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく返される', async () => {
@@ -1442,7 +1440,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -1450,12 +1448,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 2人ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -1464,21 +1462,21 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 2人とも合流
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 			)
 
 			// 1人目が終了
 			const result = await groupMatchingService.completeGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 
@@ -1489,7 +1487,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantSummary.joinedCount).toBe(1) // 2人目のみjoined（1人目はcompleted）
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 
@@ -1510,14 +1508,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1526,11 +1524,11 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// マッチングを開始（合流）
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
@@ -1538,20 +1536,19 @@ describe('groupMatchingService Integration', () => {
 			const [beforeExtend] = await db
 				.select()
 				.from(matchings)
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			const originalScheduledEndAt = beforeExtend.scheduledEndAt
 			const originalTotalPoints = beforeExtend.totalPoints
 
 			// マッチングを延長（30分）
 			const result = await groupMatchingService.extendGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				'seed-user-guest-001',
 				30,
 			)
 
 			// 戻り値の検証
-			expect(result).toBeDefined()
 			expect(result.extensionMinutes).toBe(30)
 			expect(result.extensionPoints).toBeGreaterThan(0)
 			expect(result.totalPoints).toBeGreaterThan(originalTotalPoints)
@@ -1566,7 +1563,7 @@ describe('groupMatchingService Integration', () => {
 			const [afterExtend] = await db
 				.select()
 				.from(matchings)
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			expect(afterExtend.extensionMinutes).toBe(30)
 			expect(afterExtend.extensionPoints).toBeGreaterThan(0)
@@ -1575,7 +1572,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('複数回延長できる（累積される）', async () => {
@@ -1594,14 +1591,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1610,17 +1607,17 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// マッチングを開始（合流）
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
 			// 1回目の延長（30分）
 			const result1 = await groupMatchingService.extendGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				'seed-user-guest-001',
 				30,
 			)
@@ -1630,7 +1627,7 @@ describe('groupMatchingService Integration', () => {
 
 			// 2回目の延長（60分）
 			const result2 = await groupMatchingService.extendGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				'seed-user-guest-001',
 				60,
 			)
@@ -1640,7 +1637,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result2.extensionPoints).toBeGreaterThan(firstExtensionPoints)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('複数のキャストが参加している場合、延長ポイントが合算される', async () => {
@@ -1659,7 +1656,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -1667,12 +1664,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 2人ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -1681,15 +1678,15 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 2人とも合流
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 			)
 
@@ -1697,12 +1694,12 @@ describe('groupMatchingService Integration', () => {
 			const [beforeExtend] = await db
 				.select()
 				.from(matchings)
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 			const originalTotalPoints = beforeExtend.totalPoints
 
 			// 延長（30分）
 			const result = await groupMatchingService.extendGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				'seed-user-guest-001',
 				30,
 			)
@@ -1716,7 +1713,7 @@ describe('groupMatchingService Integration', () => {
 			)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('存在しないマッチングを延長するとエラー', async () => {
@@ -1745,14 +1742,14 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(0)
 			const castId = participants[0].castId
 
 			// acceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 				'accepted',
 			)
@@ -1761,25 +1758,25 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// マッチングを開始（合流）
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId,
 			)
 
 			// 別のゲストが延長しようとする
 			await expect(
 				groupMatchingService.extendGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'other-guest-id',
 					30,
 				),
 			).rejects.toThrow('このマッチングを延長する権限がありません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('in_progress以外のステータスで延長しようとするとエラー', async () => {
@@ -1797,14 +1794,14 @@ describe('groupMatchingService Integration', () => {
 			// pendingステータスのまま延長しようとする
 			await expect(
 				groupMatchingService.extendGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'seed-user-guest-001',
 					30,
 				),
 			).rejects.toThrow('このマッチングは延長できません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加中のキャストがいない場合はエラー', async () => {
@@ -1826,19 +1823,19 @@ describe('groupMatchingService Integration', () => {
 					status: 'in_progress',
 					scheduledEndAt: new Date(Date.now() + 7200000), // 2時間後
 				})
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// joinedのキャストがいない状態で延長しようとする
 			await expect(
 				groupMatchingService.extendGroupMatching(
-					createResult.matching.id,
+					createResult.matching!.id,
 					'seed-user-guest-001',
 					30,
 				),
 			).rejects.toThrow('参加中のキャストがいません')
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 
 		it('参加者サマリーが正しく返される', async () => {
@@ -1857,7 +1854,7 @@ describe('groupMatchingService Integration', () => {
 			const participants = await db
 				.select()
 				.from(matchingParticipants)
-				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+				.where(eq(matchingParticipants.matchingId, createResult.matching!.id))
 
 			expect(participants.length).toBeGreaterThan(1)
 			const castId1 = participants[0].castId
@@ -1865,12 +1862,12 @@ describe('groupMatchingService Integration', () => {
 
 			// 2人ともacceptedで回答
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 				'accepted',
 			)
 			await groupMatchingService.respondToGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 				'accepted',
 			)
@@ -1879,21 +1876,21 @@ describe('groupMatchingService Integration', () => {
 			await db
 				.update(matchings)
 				.set({ status: 'accepted' })
-				.where(eq(matchings.id, createResult.matching.id))
+				.where(eq(matchings.id, createResult.matching!.id))
 
 			// 2人とも合流
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId1,
 			)
 			await groupMatchingService.startGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				castId2,
 			)
 
 			// 延長
 			const result = await groupMatchingService.extendGroupMatching(
-				createResult.matching.id,
+				createResult.matching!.id,
 				'seed-user-guest-001',
 				30,
 			)
@@ -1904,7 +1901,7 @@ describe('groupMatchingService Integration', () => {
 			expect(result.participantSummary.acceptedCount).toBe(0)
 
 			// クリーンアップ
-			await markForCleanup(createResult.matching.id)
+			await markForCleanup(createResult.matching!.id)
 		})
 	})
 })

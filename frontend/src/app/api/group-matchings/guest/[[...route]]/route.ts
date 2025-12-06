@@ -117,34 +117,29 @@ export function createGuestGroupMatchingsApp(
 					proposedDate = new Date(data.proposedDate)
 				}
 
-				try {
-					// グループマッチングを作成
-					const result = await groupMatchingService.createGroupMatching({
-						guestId: userId,
-						requestedCastCount: data.requestedCastCount,
-						proposedDate,
-						proposedTimeOffsetMinutes,
-						proposedDuration: data.proposedDuration,
-						proposedLocation: data.proposedLocation,
-						minAge: data.minAge,
-						maxAge: data.maxAge,
-					})
-					return c.json(
-						{
-							success: true,
-							groupMatching: result.matching,
-							participantCount: result.participantCount,
-						},
-						201,
-					)
-				} catch (error) {
-					console.error('Service error:', error)
-					const message =
-						error instanceof Error
-							? error.message
-							: '予期しないエラーが発生しました'
-					throw new HTTPException(500, { message })
-				}
+				// グループマッチングを作成
+				const result = await groupMatchingService.createGroupMatching({
+					guestId: userId,
+					requestedCastCount: data.requestedCastCount,
+					proposedDate,
+					proposedTimeOffsetMinutes,
+					proposedDuration: data.proposedDuration,
+					proposedLocation: data.proposedLocation,
+					minAge: data.minAge,
+					maxAge: data.maxAge,
+				})
+
+				// 条件に合うキャストが0人の場合は200、成功の場合は201を返す
+				const statusCode = result.participantCount === 0 ? 200 : 201
+
+				return c.json(
+					{
+						success: true,
+						groupMatching: result.matching,
+						participantCount: result.participantCount,
+					},
+					statusCode,
+				)
 			},
 		)
 		// グループマッチング延長エンドポイント

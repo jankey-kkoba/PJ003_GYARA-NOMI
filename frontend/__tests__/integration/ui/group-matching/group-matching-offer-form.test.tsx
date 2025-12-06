@@ -507,6 +507,202 @@ describe('GroupMatchingOfferForm', () => {
 		})
 	})
 
+	describe('該当キャストが0人の場合', () => {
+		it('条件に合うキャストが0人の場合にダイアログが表示される', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						groupMatching: null,
+						participantCount: 0,
+					}),
+				} as Response)
+			})
+
+			render(
+				<TestWrapper>
+					<GroupMatchingOfferForm />
+				</TestWrapper>,
+			)
+
+			// 場所を入力
+			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
+			await locationInput.fill('渋谷駅周辺')
+
+			// 送信ボタンをクリック
+			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
+			await submitButton.click()
+
+			// ダイアログが表示される
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText('該当するキャストがいません'))
+						.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+
+			// ダイアログの説明文も表示される
+			await expect
+				.element(
+					page.getByText(
+						'指定された条件に合うキャストが見つかりませんでした。 条件を変更して再度お試しください。',
+					),
+				)
+				.toBeInTheDocument()
+		})
+
+		it('ダイアログのOKボタンをクリックするとダイアログが閉じる', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						groupMatching: null,
+						participantCount: 0,
+					}),
+				} as Response)
+			})
+
+			render(
+				<TestWrapper>
+					<GroupMatchingOfferForm />
+				</TestWrapper>,
+			)
+
+			// 場所を入力
+			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
+			await locationInput.fill('渋谷駅周辺')
+
+			// 送信ボタンをクリック
+			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
+			await submitButton.click()
+
+			// ダイアログが表示される
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText('該当するキャストがいません'))
+						.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+
+			// OKボタンをクリック
+			const okButton = page.getByRole('button', { name: 'OK' })
+			await okButton.click()
+
+			// ダイアログが閉じる
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText('該当するキャストがいません'))
+						.not.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+		})
+
+		it('0人の場合はonSuccessコールバックは呼ばれない', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						groupMatching: null,
+						participantCount: 0,
+					}),
+				} as Response)
+			})
+
+			const onSuccess = vi.fn()
+
+			render(
+				<TestWrapper>
+					<GroupMatchingOfferForm onSuccess={onSuccess} />
+				</TestWrapper>,
+			)
+
+			// 場所を入力
+			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
+			await locationInput.fill('渋谷駅周辺')
+
+			// 送信ボタンをクリック
+			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
+			await submitButton.click()
+
+			// ダイアログが表示される
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText('該当するキャストがいません'))
+						.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+
+			// onSuccessは呼ばれていない
+			expect(onSuccess).not.toHaveBeenCalled()
+		})
+
+		it('0人の場合はフォームがリセットされない', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						groupMatching: null,
+						participantCount: 0,
+					}),
+				} as Response)
+			})
+
+			render(
+				<TestWrapper>
+					<GroupMatchingOfferForm />
+				</TestWrapper>,
+			)
+
+			// 人数を5人に変更
+			const castCountSelect = page.getByRole('combobox').first()
+			await castCountSelect.click()
+			await page.getByRole('option', { name: '5人' }).click()
+
+			// 場所を入力
+			const locationInput = page.getByPlaceholder('例：渋谷駅周辺')
+			await locationInput.fill('渋谷駅周辺')
+
+			// 5人 × 2時間 × 3000 = 30,000ポイント
+			await expect.element(page.getByText('30,000ポイント')).toBeInTheDocument()
+
+			// 送信ボタンをクリック
+			const submitButton = page.getByRole('button', { name: 'オファーを送信' })
+			await submitButton.click()
+
+			// ダイアログが表示される
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText('該当するキャストがいません'))
+						.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+
+			// OKボタンをクリックしてダイアログを閉じる
+			const okButton = page.getByRole('button', { name: 'OK' })
+			await okButton.click()
+
+			// フォームの値はリセットされていない（30,000ポイントのまま）
+			await expect.element(page.getByText('30,000ポイント')).toBeInTheDocument()
+
+			// 場所も入力されたまま
+			await expect.element(locationInput).toHaveValue('渋谷駅周辺')
+		})
+	})
+
 	describe('フォームリセット', () => {
 		it('送信成功後にフォームがリセットされる', async () => {
 			const mockGroupMatching = {

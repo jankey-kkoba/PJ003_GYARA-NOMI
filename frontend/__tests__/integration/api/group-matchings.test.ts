@@ -461,6 +461,45 @@ describe('POST /api/group-matchings/guest', () => {
 	})
 
 	describe('正常系', () => {
+		it('条件に合うキャストが0人の場合は200を返す', async () => {
+			const app = createTestApp({ id: 'guest-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'guest-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			// 0人の場合は matching: null を返す
+			const mockResult: CreateGroupMatchingResult = {
+				matching: null,
+				participantCount: 0,
+			}
+
+			mockGroupMatchingService.createGroupMatching.mockResolvedValue(mockResult)
+
+			const res = await app.request('/api/group-matchings/guest', {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					requestedCastCount: 3,
+					proposedTimeOffsetMinutes: 60,
+					proposedDuration: 120,
+					proposedLocation: '渋谷',
+				}),
+			})
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.groupMatching).toBeNull()
+			expect(body.participantCount).toBe(0)
+		})
+
 		it('ゲストがグループマッチングオファーを送信できる（相対時間指定）', async () => {
 			const app = createTestApp({ id: 'guest-123', role: 'guest' })
 

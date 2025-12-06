@@ -21,6 +21,15 @@ import {
 	SelectTrigger,
 	SelectValue,
 } from '@/components/ui/select'
+import {
+	AlertDialog,
+	AlertDialogAction,
+	AlertDialogContent,
+	AlertDialogDescription,
+	AlertDialogFooter,
+	AlertDialogHeader,
+	AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
 import { useCreateGroupMatching } from '@/features/group-matching/hooks/useCreateGroupMatching'
 import {
 	createGroupMatchingSchema,
@@ -89,6 +98,7 @@ export function GroupMatchingOfferForm({
 }: GroupMatchingOfferFormProps) {
 	const { mutate, isPending } = useCreateGroupMatching()
 	const [timeSelectMode, setTimeSelectMode] = useState<string>('1hour')
+	const [showNoCastsDialog, setShowNoCastsDialog] = useState(false)
 
 	// ブロンズランク（ランク1）の時給を基準に表示
 	const baseHourlyRate = RANK_HOURLY_RATES[1]
@@ -148,6 +158,12 @@ export function GroupMatchingOfferForm({
 	const onSubmit = (data: CreateGroupMatchingInput) => {
 		mutate(data, {
 			onSuccess: (result) => {
+				// 条件に合うキャストが0人の場合
+				if (result.participantCount === 0) {
+					setShowNoCastsDialog(true)
+					return
+				}
+
 				form.reset()
 				setTimeSelectMode('1hour')
 				onSuccess?.(result.participantCount)
@@ -156,176 +172,202 @@ export function GroupMatchingOfferForm({
 	}
 
 	return (
-		<Form {...form}>
-			<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-				{/* 希望人数 */}
-				<FormField
-					control={form.control}
-					name="requestedCastCount"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>希望人数</FormLabel>
-							<Select
-								onValueChange={(value) => field.onChange(Number(value))}
-								defaultValue={String(field.value)}
-							>
-								<FormControl>
-									<SelectTrigger>
-										<SelectValue placeholder="人数を選択" />
-									</SelectTrigger>
-								</FormControl>
-								<SelectContent>
-									{castCountOptions.map((option) => (
-										<SelectItem key={option.value} value={String(option.value)}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FormDescription>
-								呼びたいキャストの人数を選択してください
-							</FormDescription>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				{/* 年齢フィルター */}
-				<div className="space-y-2">
-					<FormLabel>年齢（任意）</FormLabel>
-					<AgeRangeInput
-						minAge={minAge}
-						maxAge={maxAge}
-						onMinAgeChange={(value) => form.setValue('minAge', value)}
-						onMaxAgeChange={(value) => form.setValue('maxAge', value)}
-					/>
+		<>
+			<Form {...form}>
+				<form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+					{/* 希望人数 */}
 					<FormField
 						control={form.control}
-						name="minAge"
-						render={() => <FormMessage />}
-					/>
-					<p className="text-xs text-muted-foreground">
-						オファーを送るキャストの年齢を絞り込めます
-					</p>
-				</div>
-
-				{/* 開始時刻選択モード */}
-				<div className="space-y-2">
-					<FormLabel>希望開始時刻</FormLabel>
-					<Select
-						value={timeSelectMode}
-						onValueChange={handleTimeSelectModeChange}
-					>
-						<SelectTrigger>
-							<SelectValue placeholder="開始時刻を選択" />
-						</SelectTrigger>
-						<SelectContent>
-							{timeOptions.map((option) => (
-								<SelectItem key={option.value} value={option.value}>
-									{option.label}
-								</SelectItem>
-							))}
-						</SelectContent>
-					</Select>
-				</div>
-
-				{/* カスタム日時入力（「その他」選択時のみ表示） */}
-				{timeSelectMode === 'custom' && (
-					<FormField
-						control={form.control}
-						name="proposedDate"
+						name="requestedCastCount"
 						render={({ field }) => (
 							<FormItem>
-								<FormLabel>カスタム日時</FormLabel>
-								<FormControl>
-									<Input type="datetime-local" {...field} />
-								</FormControl>
+								<FormLabel>希望人数</FormLabel>
+								<Select
+									onValueChange={(value) => field.onChange(Number(value))}
+									defaultValue={String(field.value)}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="人数を選択" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{castCountOptions.map((option) => (
+											<SelectItem
+												key={option.value}
+												value={String(option.value)}
+											>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
 								<FormDescription>
-									希望の日時を直接指定してください
+									呼びたいキャストの人数を選択してください
 								</FormDescription>
 								<FormMessage />
 							</FormItem>
 						)}
 					/>
-				)}
 
-				{/* 時間 */}
-				<FormField
-					control={form.control}
-					name="proposedDuration"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>希望時間</FormLabel>
-							<Select
-								onValueChange={(value) => field.onChange(Number(value))}
-								defaultValue={String(field.value)}
-							>
+					{/* 年齢フィルター */}
+					<div className="space-y-2">
+						<FormLabel>年齢（任意）</FormLabel>
+						<AgeRangeInput
+							minAge={minAge}
+							maxAge={maxAge}
+							onMinAgeChange={(value) => form.setValue('minAge', value)}
+							onMaxAgeChange={(value) => form.setValue('maxAge', value)}
+						/>
+						<FormField
+							control={form.control}
+							name="minAge"
+							render={() => <FormMessage />}
+						/>
+						<p className="text-xs text-muted-foreground">
+							オファーを送るキャストの年齢を絞り込めます
+						</p>
+					</div>
+
+					{/* 開始時刻選択モード */}
+					<div className="space-y-2">
+						<FormLabel>希望開始時刻</FormLabel>
+						<Select
+							value={timeSelectMode}
+							onValueChange={handleTimeSelectModeChange}
+						>
+							<SelectTrigger>
+								<SelectValue placeholder="開始時刻を選択" />
+							</SelectTrigger>
+							<SelectContent>
+								{timeOptions.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+					</div>
+
+					{/* カスタム日時入力（「その他」選択時のみ表示） */}
+					{timeSelectMode === 'custom' && (
+						<FormField
+							control={form.control}
+							name="proposedDate"
+							render={({ field }) => (
+								<FormItem>
+									<FormLabel>カスタム日時</FormLabel>
+									<FormControl>
+										<Input type="datetime-local" {...field} />
+									</FormControl>
+									<FormDescription>
+										希望の日時を直接指定してください
+									</FormDescription>
+									<FormMessage />
+								</FormItem>
+							)}
+						/>
+					)}
+
+					{/* 時間 */}
+					<FormField
+						control={form.control}
+						name="proposedDuration"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>希望時間</FormLabel>
+								<Select
+									onValueChange={(value) => field.onChange(Number(value))}
+									defaultValue={String(field.value)}
+								>
+									<FormControl>
+										<SelectTrigger>
+											<SelectValue placeholder="時間を選択" />
+										</SelectTrigger>
+									</FormControl>
+									<SelectContent>
+										{durationOptions.map((option) => (
+											<SelectItem
+												key={option.value}
+												value={String(option.value)}
+											>
+												{option.label}
+											</SelectItem>
+										))}
+									</SelectContent>
+								</Select>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
+
+					{/* 場所 */}
+					<FormField
+						control={form.control}
+						name="proposedLocation"
+						render={({ field }) => (
+							<FormItem>
+								<FormLabel>希望場所</FormLabel>
 								<FormControl>
-									<SelectTrigger>
-										<SelectValue placeholder="時間を選択" />
-									</SelectTrigger>
+									<Input placeholder="例：渋谷駅周辺" {...field} />
 								</FormControl>
-								<SelectContent>
-									{durationOptions.map((option) => (
-										<SelectItem key={option.value} value={String(option.value)}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
+								<FormMessage />
+							</FormItem>
+						)}
+					/>
 
-				{/* 場所 */}
-				<FormField
-					control={form.control}
-					name="proposedLocation"
-					render={({ field }) => (
-						<FormItem>
-							<FormLabel>希望場所</FormLabel>
-							<FormControl>
-								<Input placeholder="例：渋谷駅周辺" {...field} />
-							</FormControl>
-							<FormMessage />
-						</FormItem>
-					)}
-				/>
-
-				{/* 料金説明 */}
-				<div className="rounded-lg border bg-muted/50 p-4">
-					<div className="flex items-center justify-between">
-						<div>
-							<p className="text-sm text-muted-foreground">基準時給</p>
-							<p className="font-medium">
-								{baseHourlyRate.toLocaleString()}ポイント/時間/人
-							</p>
-						</div>
-						<div className="text-right">
-							<p className="text-sm text-muted-foreground">
-								※ブロンズランク基準
-							</p>
+					{/* 料金説明 */}
+					<div className="rounded-lg border bg-muted/50 p-4">
+						<div className="flex items-center justify-between">
+							<div>
+								<p className="text-sm text-muted-foreground">基準時給</p>
+								<p className="font-medium">
+									{baseHourlyRate.toLocaleString()}ポイント/時間/人
+								</p>
+							</div>
+							<div className="text-right">
+								<p className="text-sm text-muted-foreground">
+									※ブロンズランク基準
+								</p>
+							</div>
 						</div>
 					</div>
-				</div>
 
-				{/* 合計ポイント表示 */}
-				<div className="rounded-lg bg-muted p-4">
-					<p className="text-sm font-medium">合計ポイント（目安）</p>
-					<p className="text-2xl font-bold">
-						{totalPoints.toLocaleString()}ポイント
-					</p>
-					<p className="text-xs text-muted-foreground">
-						※実際の料金はマッチングしたキャストのランクにより変動します
-					</p>
-				</div>
+					{/* 合計ポイント表示 */}
+					<div className="rounded-lg bg-muted p-4">
+						<p className="text-sm font-medium">合計ポイント（目安）</p>
+						<p className="text-2xl font-bold">
+							{totalPoints.toLocaleString()}ポイント
+						</p>
+						<p className="text-xs text-muted-foreground">
+							※実際の料金はマッチングしたキャストのランクにより変動します
+						</p>
+					</div>
 
-				{/* 送信ボタン */}
-				<Button type="submit" className="w-full" disabled={isPending}>
-					{isPending ? '送信中...' : 'オファーを送信'}
-				</Button>
-			</form>
-		</Form>
+					{/* 送信ボタン */}
+					<Button type="submit" className="w-full" disabled={isPending}>
+						{isPending ? '送信中...' : 'オファーを送信'}
+					</Button>
+				</form>
+			</Form>
+
+			{/* 該当キャストがいない場合のダイアログ */}
+			<AlertDialog open={showNoCastsDialog} onOpenChange={setShowNoCastsDialog}>
+				<AlertDialogContent>
+					<AlertDialogHeader>
+						<AlertDialogTitle>該当するキャストがいません</AlertDialogTitle>
+						<AlertDialogDescription>
+							指定された条件に合うキャストが見つかりませんでした。
+							条件を変更して再度お試しください。
+						</AlertDialogDescription>
+					</AlertDialogHeader>
+					<AlertDialogFooter>
+						<AlertDialogAction onClick={() => setShowNoCastsDialog(false)}>
+							OK
+						</AlertDialogAction>
+					</AlertDialogFooter>
+				</AlertDialogContent>
+			</AlertDialog>
+		</>
 	)
 }

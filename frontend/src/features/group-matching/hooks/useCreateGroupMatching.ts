@@ -10,9 +10,10 @@ import { parseGroupMatching } from '@/features/group-matching/utils/parseGroupMa
 
 /**
  * グループマッチング作成の結果
+ * 条件に合うキャストが0人の場合はgroupMatchingがnull、participantCountが0になる
  */
 type CreateGroupMatchingResult = {
-	groupMatching: GroupMatching
+	groupMatching: GroupMatching | null
 	participantCount: number
 }
 
@@ -41,6 +42,14 @@ export function useCreateGroupMatching() {
 
 			if (!result.success) {
 				throw new Error('グループマッチングオファーの送信に失敗しました')
+			}
+
+			// 条件に合うキャストが0人の場合
+			if (result.groupMatching === null) {
+				return {
+					groupMatching: null,
+					participantCount: 0,
+				}
 			}
 
 			return {

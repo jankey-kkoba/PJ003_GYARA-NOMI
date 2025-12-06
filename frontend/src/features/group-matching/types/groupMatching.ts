@@ -45,9 +45,10 @@ export type GroupMatchingParticipant = {
 
 /**
  * グループマッチング作成結果の型定義
+ * 条件に合うキャストが0人の場合は matching: null, participantCount: 0 を返す
  */
 export type CreateGroupMatchingResult = {
-	matching: GroupMatching
+	matching: GroupMatching | null
 	participantCount: number
 }
 
