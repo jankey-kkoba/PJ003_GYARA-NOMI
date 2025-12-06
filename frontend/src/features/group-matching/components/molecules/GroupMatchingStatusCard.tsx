@@ -1,11 +1,6 @@
 'use client'
 
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-} from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import type { GuestGroupMatching } from '@/features/group-matching/types/groupMatching'
 import { format } from 'date-fns'
@@ -57,9 +52,7 @@ export function GroupMatchingStatusCard({
 			<CardHeader>
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2">
-						<CardTitle className="text-base">
-							グループ募集
-						</CardTitle>
+						<CardTitle className="text-base">グループ募集</CardTitle>
 						<Badge variant="outline" className="text-xs">
 							{matching.requestedCastCount}人募集
 						</Badge>

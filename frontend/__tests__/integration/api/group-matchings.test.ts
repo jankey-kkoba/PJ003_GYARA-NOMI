@@ -759,9 +759,7 @@ describe('GET /api/group-matchings/guest', () => {
 			expect(res.status).toBe(403)
 			const body = await res.json()
 			expect(body.success).toBe(false)
-			expect(body.error).toBe(
-				'ゲストのみグループマッチング一覧を取得できます',
-			)
+			expect(body.error).toBe('ゲストのみグループマッチング一覧を取得できます')
 		})
 
 		it('管理者がグループマッチング一覧を取得しようとした場合は 403 エラーを返す', async () => {
@@ -784,9 +782,7 @@ describe('GET /api/group-matchings/guest', () => {
 			expect(res.status).toBe(403)
 			const body = await res.json()
 			expect(body.success).toBe(false)
-			expect(body.error).toBe(
-				'ゲストのみグループマッチング一覧を取得できます',
-			)
+			expect(body.error).toBe('ゲストのみグループマッチング一覧を取得できます')
 		})
 	})
 

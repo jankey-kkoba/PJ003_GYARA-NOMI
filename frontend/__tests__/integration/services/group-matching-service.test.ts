@@ -193,7 +193,6 @@ describe('groupMatchingService Integration', () => {
 
 		// 注: proposedDateとproposedTimeOffsetMinutesの必須バリデーションはスキーマ（API層）で行われる
 		// そのため、サービス層の直接呼び出しではチェックされない
-
 	})
 
 	describe('getGuestGroupMatchings', () => {
@@ -210,8 +209,9 @@ describe('groupMatchingService Integration', () => {
 			})
 
 			// 一覧を取得
-			const matchingList =
-				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+			const matchingList = await groupMatchingService.getGuestGroupMatchings(
+				'seed-user-guest-001',
+			)
 
 			// 作成したマッチングが一覧に含まれていることを確認
 			expect(matchingList.length).toBeGreaterThanOrEqual(1)
@@ -269,8 +269,9 @@ describe('groupMatchingService Integration', () => {
 				.where(eq(matchings.id, createResult.matching.id))
 
 			// 一覧を取得
-			const matchingList =
-				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+			const matchingList = await groupMatchingService.getGuestGroupMatchings(
+				'seed-user-guest-001',
+			)
 
 			// completedのマッチングは含まれない
 			const foundMatching = matchingList.find(
@@ -308,8 +309,9 @@ describe('groupMatchingService Integration', () => {
 			}
 
 			// 一覧を取得
-			const matchingList =
-				await groupMatchingService.getGuestGroupMatchings('seed-user-guest-001')
+			const matchingList = await groupMatchingService.getGuestGroupMatchings(
+				'seed-user-guest-001',
+			)
 
 			const foundMatching = matchingList.find(
 				(m) => m.id === createResult.matching.id,

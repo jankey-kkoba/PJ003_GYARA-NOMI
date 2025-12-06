@@ -192,8 +192,14 @@ describe('MatchingStatusList', () => {
 		it('ソロマッチングとグループマッチングの両方を表示する', async () => {
 			mockFetch.mockImplementation(
 				createMockFetch(
-					{ ok: true, data: { success: true, soloMatchings: mockSoloMatchings } },
-					{ ok: true, data: { success: true, groupMatchings: mockGroupMatchings } },
+					{
+						ok: true,
+						data: { success: true, soloMatchings: mockSoloMatchings },
+					},
+					{
+						ok: true,
+						data: { success: true, groupMatchings: mockGroupMatchings },
+					},
 				),
 			)
 
@@ -216,7 +222,10 @@ describe('MatchingStatusList', () => {
 		it('ソロマッチングのみ存在する場合は表示する', async () => {
 			mockFetch.mockImplementation(
 				createMockFetch(
-					{ ok: true, data: { success: true, soloMatchings: mockSoloMatchings } },
+					{
+						ok: true,
+						data: { success: true, soloMatchings: mockSoloMatchings },
+					},
 					{ ok: true, data: { success: true, groupMatchings: [] } },
 				),
 			)
@@ -237,7 +246,10 @@ describe('MatchingStatusList', () => {
 			mockFetch.mockImplementation(
 				createMockFetch(
 					{ ok: true, data: { success: true, soloMatchings: [] } },
-					{ ok: true, data: { success: true, groupMatchings: mockGroupMatchings } },
+					{
+						ok: true,
+						data: { success: true, groupMatchings: mockGroupMatchings },
+					},
 				),
 			)
 
@@ -274,7 +286,10 @@ describe('MatchingStatusList', () => {
 		it('ソロマッチングAPIエラーの場合はエラーメッセージを表示する', async () => {
 			mockFetch.mockImplementation(
 				createMockFetch(
-					{ ok: false, data: { success: false, error: 'ソロマッチング取得エラー' } },
+					{
+						ok: false,
+						data: { success: false, error: 'ソロマッチング取得エラー' },
+					},
 					{ ok: true, data: { success: true, groupMatchings: [] } },
 				),
 			)
@@ -291,7 +306,10 @@ describe('MatchingStatusList', () => {
 			mockFetch.mockImplementation(
 				createMockFetch(
 					{ ok: true, data: { success: true, soloMatchings: [] } },
-					{ ok: false, data: { success: false, error: 'グループマッチング取得エラー' } },
+					{
+						ok: false,
+						data: { success: false, error: 'グループマッチング取得エラー' },
+					},
 				),
 			)
 
