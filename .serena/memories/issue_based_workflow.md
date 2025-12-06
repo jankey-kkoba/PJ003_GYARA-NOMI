@@ -38,7 +38,7 @@ gh project item-list 2 --owner @me --format json | jq '[.items[] | select(.statu
 ```
 
 ### 4. 作業実行
-- 作業しながらIssueのチェックリストを随時更新する
+- チェックリストの項目が完了したらIssueのチェックリストにチェックを入れる(Issueを更新する)
 - Context Auto Compactが起きても再開できるようにする
 
 ### 5. チェックリスト更新時の確認（必須）
