@@ -399,4 +399,130 @@ export const groupMatchingService = {
 
 		return groupMatchings
 	},
+
+	/**
+	 * キャストがグループマッチングを開始する（合流ボタン押下時）
+	 * - 参加者のステータスを 'accepted' → 'joined' に変更
+	 * - 最初のキャストが合流した場合、マッチング全体を 'in_progress' に変更
+	 * @param matchingId - マッチングID
+	 * @param castId - キャストID
+	 * @returns 更新されたキャスト向けグループマッチング情報
+	 */
+	async startGroupMatching(
+		matchingId: string,
+		castId: string,
+	): Promise<CastGroupMatching> {
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+				guestName: userProfiles.name,
+			})
+			.from(matchingParticipants)
+			.innerJoin(matchings, eq(matchingParticipants.matchingId, matchings.id))
+			.innerJoin(userProfiles, eq(matchings.guestId, userProfiles.id))
+			.where(
+				and(
+					eq(matchingParticipants.matchingId, matchingId),
+					eq(matchingParticipants.castId, castId),
+				),
+			)
+
+		if (!result) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// マッチングタイプチェック
+		if (result.matching.type !== 'group') {
+			throw new Error('グループマッチングではありません')
+		}
+
+		// 権限チェック: 参加者のステータスが 'accepted' のみ合流可能
+		if (result.participant.status !== 'accepted') {
+			throw new Error('このマッチングに合流する権限がありません')
+		}
+
+		// マッチング全体のステータスチェック: 'accepted' または 'in_progress' のみ合流可能
+		if (
+			result.matching.status !== 'accepted' &&
+			result.matching.status !== 'in_progress'
+		) {
+			throw new Error(
+				'このマッチングは開始できません（成立済みマッチングのみ開始可能です）',
+			)
+		}
+
+		const now = new Date()
+
+		// 参加者のステータスを更新
+		await db
+			.update(matchingParticipants)
+			.set({
+				status: 'joined',
+				joinedAt: now,
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+
+		// マッチングがまだ 'accepted' の場合、最初の合流なので 'in_progress' に変更
+		let updatedMatchingStatus = result.matching.status
+		let startedAt = result.matching.startedAt
+		let scheduledEndAt = result.matching.scheduledEndAt
+
+		if (result.matching.status === 'accepted') {
+			scheduledEndAt = addMinutesToDate(now, result.matching.proposedDuration)
+			await db
+				.update(matchings)
+				.set({
+					status: 'in_progress',
+					startedAt: now,
+					scheduledEndAt,
+					updatedAt: now,
+				})
+				.where(eq(matchings.id, matchingId))
+
+			updatedMatchingStatus = 'in_progress'
+			startedAt = now
+		}
+
+		// 参加者サマリーを取得
+		const participants = await db
+			.select({ status: matchingParticipants.status })
+			.from(matchingParticipants)
+			.where(eq(matchingParticipants.matchingId, matchingId))
+
+		const participantSummary = {
+			requestedCount: result.matching.requestedCastCount ?? 1,
+			acceptedCount: participants.filter((p) => p.status === 'accepted').length,
+			joinedCount: participants.filter((p) => p.status === 'joined').length,
+		}
+
+		return {
+			id: result.matching.id,
+			guestId: result.matching.guestId,
+			chatRoomId: result.matching.chatRoomId,
+			status: updatedMatchingStatus,
+			proposedDate: result.matching.proposedDate,
+			proposedDuration: result.matching.proposedDuration,
+			proposedLocation: result.matching.proposedLocation,
+			requestedCastCount: result.matching.requestedCastCount ?? 1,
+			totalPoints: result.matching.totalPoints,
+			startedAt,
+			scheduledEndAt,
+			actualEndAt: result.matching.actualEndAt,
+			extensionMinutes: result.matching.extensionMinutes ?? 0,
+			extensionPoints: result.matching.extensionPoints ?? 0,
+			recruitingEndedAt: result.matching.recruitingEndedAt,
+			createdAt: result.matching.createdAt,
+			updatedAt: now,
+			type: 'group' as const,
+			participantStatus: 'joined',
+			guest: {
+				id: result.matching.guestId,
+				nickname: result.guestName,
+			},
+			participantSummary,
+		}
+	},
 }

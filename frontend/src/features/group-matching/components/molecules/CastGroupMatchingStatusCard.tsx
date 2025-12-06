@@ -14,6 +14,7 @@ import type { CastGroupMatching } from '@/features/group-matching/types/groupMat
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useRespondToGroupMatching } from '@/features/group-matching/hooks/useRespondToGroupMatching'
+import { useStartGroupMatching } from '@/features/group-matching/hooks/useStartGroupMatching'
 
 /**
  * キャストの参加ステータスのラベルと色を取得
@@ -53,7 +54,10 @@ export function CastGroupMatchingStatusCard({
 }: CastGroupMatchingStatusCardProps) {
 	const statusInfo = getParticipantStatusInfo(matching.participantStatus)
 	const { participantSummary } = matching
-	const { mutate: respondToMatching, isPending } = useRespondToGroupMatching()
+	const { mutate: respondToMatching, isPending: isRespondPending } =
+		useRespondToGroupMatching()
+	const { mutate: startMatching, isPending: isStartPending } =
+		useStartGroupMatching()
 	const [error, setError] = useState<string | null>(null)
 
 	const handleRespond = (response: 'accepted' | 'rejected') => {
@@ -68,9 +72,29 @@ export function CastGroupMatchingStatusCard({
 		)
 	}
 
+	const handleStart = () => {
+		setError(null)
+		startMatching(
+			{ matchingId: matching.id },
+			{
+				onError: (err) => {
+					setError(
+						err instanceof Error
+							? err.message
+							: 'マッチングの開始に失敗しました',
+					)
+				},
+			},
+		)
+	}
+
 	// 回答ボタンを表示するかどうか（pending状態かつマッチング全体も募集中の場合）
 	const showResponseButtons =
 		matching.participantStatus === 'pending' && matching.status === 'pending'
+
+	// 合流ボタンを表示するかどうか（参加者がaccepted状態かつマッチングがacceptedの場合）
+	const showStartButton =
+		matching.participantStatus === 'accepted' && matching.status === 'accepted'
 
 	return (
 		<Card>
@@ -134,7 +158,7 @@ export function CastGroupMatchingStatusCard({
 						variant="default"
 						className="flex-1"
 						onClick={() => handleRespond('accepted')}
-						disabled={isPending}
+						disabled={isRespondPending}
 					>
 						参加する
 					</Button>
@@ -142,9 +166,21 @@ export function CastGroupMatchingStatusCard({
 						variant="outline"
 						className="flex-1"
 						onClick={() => handleRespond('rejected')}
-						disabled={isPending}
+						disabled={isRespondPending}
 					>
 						辞退する
+					</Button>
+				</CardFooter>
+			)}
+			{showStartButton && (
+				<CardFooter>
+					<Button
+						variant="default"
+						className="w-full"
+						onClick={handleStart}
+						disabled={isStartPending}
+					>
+						合流
 					</Button>
 				</CardFooter>
 			)}
