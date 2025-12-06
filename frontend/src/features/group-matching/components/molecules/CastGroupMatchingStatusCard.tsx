@@ -15,6 +15,7 @@ import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
 import { useRespondToGroupMatching } from '@/features/group-matching/hooks/useRespondToGroupMatching'
 import { useStartGroupMatching } from '@/features/group-matching/hooks/useStartGroupMatching'
+import { useCompleteGroupMatching } from '@/features/group-matching/hooks/useCompleteGroupMatching'
 
 /**
  * キャストの参加ステータスのラベルと色を取得
@@ -58,6 +59,8 @@ export function CastGroupMatchingStatusCard({
 		useRespondToGroupMatching()
 	const { mutate: startMatching, isPending: isStartPending } =
 		useStartGroupMatching()
+	const { mutate: completeMatching, isPending: isCompletePending } =
+		useCompleteGroupMatching()
 	const [error, setError] = useState<string | null>(null)
 
 	const handleRespond = (response: 'accepted' | 'rejected') => {
@@ -88,6 +91,22 @@ export function CastGroupMatchingStatusCard({
 		)
 	}
 
+	const handleComplete = () => {
+		setError(null)
+		completeMatching(
+			{ matchingId: matching.id },
+			{
+				onError: (err) => {
+					setError(
+						err instanceof Error
+							? err.message
+							: 'マッチングの終了に失敗しました',
+					)
+				},
+			},
+		)
+	}
+
 	// 回答ボタンを表示するかどうか（pending状態かつマッチング全体も募集中の場合）
 	const showResponseButtons =
 		matching.participantStatus === 'pending' && matching.status === 'pending'
@@ -95,6 +114,10 @@ export function CastGroupMatchingStatusCard({
 	// 合流ボタンを表示するかどうか（参加者がaccepted状態かつマッチングがacceptedの場合）
 	const showStartButton =
 		matching.participantStatus === 'accepted' && matching.status === 'accepted'
+
+	// 終了ボタンを表示するかどうか（参加者がjoined状態かつマッチングがin_progressの場合）
+	const showCompleteButton =
+		matching.participantStatus === 'joined' && matching.status === 'in_progress'
 
 	return (
 		<Card>
@@ -181,6 +204,18 @@ export function CastGroupMatchingStatusCard({
 						disabled={isStartPending}
 					>
 						合流
+					</Button>
+				</CardFooter>
+			)}
+			{showCompleteButton && (
+				<CardFooter>
+					<Button
+						variant="destructive"
+						className="w-full"
+						onClick={handleComplete}
+						disabled={isCompletePending}
+					>
+						終了
 					</Button>
 				</CardFooter>
 			)}

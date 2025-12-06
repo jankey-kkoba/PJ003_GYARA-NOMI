@@ -1153,4 +1153,343 @@ describe('groupMatchingService Integration', () => {
 			await markForCleanup(createResult.matching.id)
 		})
 	})
+
+	describe('completeGroupMatching', () => {
+		it('キャストがグループマッチングを終了できる', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// acceptedで回答
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'accepted',
+			)
+
+			// マッチング全体をacceptedに変更（募集完了）
+			await db
+				.update(matchings)
+				.set({ status: 'accepted' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// マッチングを開始（合流）
+			await groupMatchingService.startGroupMatching(
+				createResult.matching.id,
+				castId,
+			)
+
+			// マッチングを終了
+			const result = await groupMatchingService.completeGroupMatching(
+				createResult.matching.id,
+				castId,
+			)
+
+			// 戻り値の検証
+			expect(result).toBeDefined()
+			expect(result.participantStatus).toBe('completed')
+			// マッチング全体のステータスは変わらない（他のキャストが継続の可能性）
+			expect(result.status).toBe('in_progress')
+
+			// DBの参加者ステータスが更新されていることを確認
+			const [updatedParticipant] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.id, participants[0].id))
+
+			expect(updatedParticipant.status).toBe('completed')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('存在しないマッチングを終了するとエラー', async () => {
+			await expect(
+				groupMatchingService.completeGroupMatching(
+					'non-existent-matching-id',
+					'seed-user-cast-001',
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+		})
+
+		it('参加者でないキャストが終了しようとするとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// マッチング全体をin_progressに変更
+			await db
+				.update(matchings)
+				.set({ status: 'in_progress' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// 存在しないキャストIDで終了
+			await expect(
+				groupMatchingService.completeGroupMatching(
+					createResult.matching.id,
+					'non-existent-cast-id',
+				),
+			).rejects.toThrow('マッチングが見つかりません')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('joinedステータスでないキャストが終了しようとするとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// acceptedで回答（joinedにはなっていない）
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId,
+				'accepted',
+			)
+
+			// マッチング全体をin_progressに変更
+			await db
+				.update(matchings)
+				.set({ status: 'in_progress' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// joinedでないキャストが終了しようとするとエラー
+			await expect(
+				groupMatchingService.completeGroupMatching(
+					createResult.matching.id,
+					castId,
+				),
+			).rejects.toThrow('このマッチングを終了する権限がありません')
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('in_progressステータスでないマッチングを終了しようとするとエラー', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 2,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(0)
+			const castId = participants[0].castId
+
+			// 参加者のステータスをjoinedに変更
+			await db
+				.update(matchingParticipants)
+				.set({ status: 'joined' })
+				.where(eq(matchingParticipants.id, participants[0].id))
+
+			// マッチング全体はacceptedのまま（in_progressではない）
+			await db
+				.update(matchings)
+				.set({ status: 'accepted' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// in_progressでないマッチングを終了しようとするとエラー
+			await expect(
+				groupMatchingService.completeGroupMatching(
+					createResult.matching.id,
+					castId,
+				),
+			).rejects.toThrow(
+				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
+			)
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('1キャストが終了しても他のキャストは継続できる', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 3,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(1)
+			const castId1 = participants[0].castId
+			const castId2 = participants[1].castId
+
+			// 両方ともacceptedで回答
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId1,
+				'accepted',
+			)
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId2,
+				'accepted',
+			)
+
+			// マッチング全体をacceptedに変更（募集完了）
+			await db
+				.update(matchings)
+				.set({ status: 'accepted' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// 両方とも合流
+			await groupMatchingService.startGroupMatching(
+				createResult.matching.id,
+				castId1,
+			)
+			await groupMatchingService.startGroupMatching(
+				createResult.matching.id,
+				castId2,
+			)
+
+			// 1人目が終了
+			const result1 = await groupMatchingService.completeGroupMatching(
+				createResult.matching.id,
+				castId1,
+			)
+
+			expect(result1.participantStatus).toBe('completed')
+			// マッチング全体のステータスはin_progressのまま
+			expect(result1.status).toBe('in_progress')
+
+			// 2人目はまだjoined
+			const [participant2] = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.id, participants[1].id))
+
+			expect(participant2.status).toBe('joined')
+
+			// 参加者サマリーを確認
+			expect(result1.participantSummary.joinedCount).toBe(1) // 1人だけjoined（もう1人はcompleted）
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+
+		it('参加者サマリーが正しく返される', async () => {
+			// テスト用のグループマッチングを作成
+			const proposedDate = new Date(Date.now() + 86400000)
+
+			const createResult = await groupMatchingService.createGroupMatching({
+				guestId: 'seed-user-guest-001',
+				requestedCastCount: 3,
+				proposedDate,
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+			})
+
+			// 参加者を取得
+			const participants = await db
+				.select()
+				.from(matchingParticipants)
+				.where(eq(matchingParticipants.matchingId, createResult.matching.id))
+
+			expect(participants.length).toBeGreaterThan(1)
+			const castId1 = participants[0].castId
+			const castId2 = participants[1].castId
+
+			// 2人ともacceptedで回答
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId1,
+				'accepted',
+			)
+			await groupMatchingService.respondToGroupMatching(
+				createResult.matching.id,
+				castId2,
+				'accepted',
+			)
+
+			// マッチング全体をacceptedに変更
+			await db
+				.update(matchings)
+				.set({ status: 'accepted' })
+				.where(eq(matchings.id, createResult.matching.id))
+
+			// 2人とも合流
+			await groupMatchingService.startGroupMatching(
+				createResult.matching.id,
+				castId1,
+			)
+			await groupMatchingService.startGroupMatching(
+				createResult.matching.id,
+				castId2,
+			)
+
+			// 1人目が終了
+			const result = await groupMatchingService.completeGroupMatching(
+				createResult.matching.id,
+				castId1,
+			)
+
+			// 参加者サマリーの検証
+			expect(result.participantSummary).toBeDefined()
+			expect(result.participantSummary.requestedCount).toBe(3)
+			expect(result.participantSummary.acceptedCount).toBe(0)
+			expect(result.participantSummary.joinedCount).toBe(1) // 2人目のみjoined（1人目はcompleted）
+
+			// クリーンアップ
+			await markForCleanup(createResult.matching.id)
+		})
+	})
 })

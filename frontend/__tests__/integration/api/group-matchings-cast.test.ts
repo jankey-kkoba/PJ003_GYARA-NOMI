@@ -33,6 +33,7 @@ vi.mock('@/features/group-matching/services/groupMatchingService', () => ({
 		getCastGroupMatchings: vi.fn(),
 		respondToGroupMatching: vi.fn(),
 		startGroupMatching: vi.fn(),
+		completeGroupMatching: vi.fn(),
 	},
 }))
 
@@ -787,6 +788,250 @@ describe('PATCH /api/group-matchings/cast/:id/start', () => {
 
 			const res = await app.request(
 				'/api/group-matchings/cast/matching-123/start',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(500)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('予期しないエラーが発生しました')
+		})
+	})
+})
+
+describe('PATCH /api/group-matchings/cast/:id/end', () => {
+	beforeEach(() => {
+		vi.clearAllMocks()
+	})
+
+	describe('認証チェック', () => {
+		it('未認証の場合は401エラーを返す', async () => {
+			const app = createTestApp() // token なし
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+
+		it('トークンにユーザーIDがない場合は401エラーを返す', async () => {
+			const app = createTestApp({ role: 'cast' }) // id なし
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(401)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('認証が必要です')
+		})
+	})
+
+	describe('ロールチェック', () => {
+		it('ゲストがグループマッチングを終了しようとした場合は403エラーを返す', async () => {
+			const app = createTestApp({ id: 'user-123', role: 'guest' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'user-123',
+				email: 'guest@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'guest',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(403)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('キャストのみマッチングを終了できます')
+		})
+
+		it('管理者がグループマッチングを終了しようとした場合は403エラーを返す', async () => {
+			const app = createTestApp({ id: 'admin-123', role: 'admin' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'admin-123',
+				email: 'admin@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'admin',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(403)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('キャストのみマッチングを終了できます')
+		})
+	})
+
+	describe('正常系', () => {
+		it('キャストがグループマッチングを終了できる', async () => {
+			const app = createTestApp({ id: 'cast-123', role: 'cast' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'cast-123',
+				email: 'cast@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'cast',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			const mockUpdatedMatching: CastGroupMatching = {
+				id: 'matching-123',
+				guestId: 'guest-001',
+				chatRoomId: null,
+				status: 'in_progress',
+				proposedDate: new Date(),
+				proposedDuration: 120,
+				proposedLocation: '渋谷',
+				totalPoints: 18000,
+				startedAt: new Date(),
+				scheduledEndAt: new Date(),
+				actualEndAt: null,
+				extensionMinutes: 0,
+				extensionPoints: 0,
+				recruitingEndedAt: null,
+				requestedCastCount: 3,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+				type: 'group',
+				participantStatus: 'completed',
+				guest: {
+					id: 'guest-001',
+					nickname: 'テストゲスト',
+				},
+				participantSummary: {
+					requestedCount: 3,
+					acceptedCount: 0,
+					joinedCount: 1,
+				},
+			}
+
+			mockGroupMatchingService.completeGroupMatching.mockResolvedValue(
+				mockUpdatedMatching,
+			)
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(200)
+			const body = await res.json()
+			expect(body.success).toBe(true)
+			expect(body.groupMatching.id).toBe('matching-123')
+			expect(body.groupMatching.status).toBe('in_progress')
+			expect(body.groupMatching.participantStatus).toBe('completed')
+
+			// サービスが正しいパラメータで呼ばれたことを確認
+			expect(
+				mockGroupMatchingService.completeGroupMatching,
+			).toHaveBeenCalledWith('matching-123', 'cast-123')
+		})
+	})
+
+	describe('エラーハンドリング', () => {
+		it('ユーザーが見つからない場合は404エラーを返す', async () => {
+			const app = createTestApp({ id: 'nonexistent-user', role: 'cast' })
+
+			mockUserService.findUserById.mockResolvedValue(null as unknown as User)
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(404)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('ユーザーが見つかりません')
+		})
+
+		it('サービスがエラーをスローした場合は500エラーを返す', async () => {
+			const app = createTestApp({ id: 'cast-123', role: 'cast' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'cast-123',
+				email: 'cast@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'cast',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			mockGroupMatchingService.completeGroupMatching.mockRejectedValue(
+				new Error('マッチングが見つかりません'),
+			)
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
+				{
+					method: 'PATCH',
+				},
+			)
+
+			expect(res.status).toBe(500)
+			const body = await res.json()
+			expect(body.success).toBe(false)
+			expect(body.error).toBe('予期しないエラーが発生しました')
+		})
+
+		it('権限がない場合はエラーを返す', async () => {
+			const app = createTestApp({ id: 'cast-123', role: 'cast' })
+
+			mockUserService.findUserById.mockResolvedValue({
+				id: 'cast-123',
+				email: 'cast@example.com',
+				emailVerified: null,
+				password: null,
+				role: 'cast',
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			})
+
+			mockGroupMatchingService.completeGroupMatching.mockRejectedValue(
+				new Error('このマッチングを終了する権限がありません'),
+			)
+
+			const res = await app.request(
+				'/api/group-matchings/cast/matching-123/end',
 				{
 					method: 'PATCH',
 				},

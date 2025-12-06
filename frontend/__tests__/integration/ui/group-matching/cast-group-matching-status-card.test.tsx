@@ -634,4 +634,198 @@ describe('CastGroupMatchingStatusCard', () => {
 			)
 		})
 	})
+
+	describe('終了ボタン表示条件', () => {
+		it('participantStatus=joined かつ status=in_progress で終了ボタンが表示される', async () => {
+			const matching = createMockMatching({
+				participantStatus: 'joined',
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			await expect
+				.element(page.getByRole('button', { name: '終了' }))
+				.toBeInTheDocument()
+		})
+
+		it('participantStatus=joined かつ status=accepted で終了ボタンが表示されない', async () => {
+			const matching = createMockMatching({
+				participantStatus: 'joined',
+				status: 'accepted', // in_progressではない
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンが存在しないことを確認
+			const endButton = page.getByRole('button', { name: '終了' })
+			await expect.element(endButton).not.toBeInTheDocument()
+		})
+
+		it('participantStatus=accepted かつ status=in_progress で終了ボタンが表示されない', async () => {
+			const matching = createMockMatching({
+				participantStatus: 'accepted', // joinedではない
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンが存在しないことを確認
+			const endButton = page.getByRole('button', { name: '終了' })
+			await expect.element(endButton).not.toBeInTheDocument()
+		})
+
+		it('participantStatus=completed で終了ボタンが表示されない', async () => {
+			const matching = createMockMatching({
+				participantStatus: 'completed', // 既に完了済み
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンが存在しないことを確認
+			const endButton = page.getByRole('button', { name: '終了' })
+			await expect.element(endButton).not.toBeInTheDocument()
+		})
+	})
+
+	describe('終了操作', () => {
+		it('終了ボタンをクリックするとAPIが呼ばれる', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: true,
+					json: async () => ({
+						success: true,
+						groupMatching: createMockMatching({
+							participantStatus: 'completed',
+							status: 'in_progress',
+						}),
+					}),
+				} as Response)
+			})
+
+			const matching = createMockMatching({
+				participantStatus: 'joined',
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンをクリック
+			const endButton = page.getByRole('button', { name: '終了' })
+			await endButton.click()
+
+			// API呼び出しを待つ
+			await vi.waitFor(
+				() => {
+					expect(mockFetch).toHaveBeenCalled()
+					// リクエストURLを検証
+					const [url, options] = mockFetch.mock.calls[0]
+					expect(url).toContain('/api/group-matchings/cast/matching-123/end')
+					expect(options.method).toBe('PATCH')
+				},
+				{ timeout: 3000 },
+			)
+		})
+
+		it('API処理中は終了ボタンがdisabledになる', async () => {
+			let resolvePromise: (value: Response) => void = () => {}
+			const pendingPromise = new Promise<Response>((resolve) => {
+				resolvePromise = resolve
+			})
+
+			mockFetch.mockReturnValue(pendingPromise)
+
+			const matching = createMockMatching({
+				participantStatus: 'joined',
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンをクリック
+			const endButton = page.getByRole('button', { name: '終了' })
+			await endButton.click()
+
+			// ボタンがdisabledになる
+			await vi.waitFor(async () => {
+				await expect
+					.element(page.getByRole('button', { name: '終了' }))
+					.toBeDisabled()
+			})
+
+			// 後処理: Promiseを解決
+			resolvePromise({
+				ok: true,
+				json: async () => ({
+					success: true,
+					groupMatching: createMockMatching({
+						participantStatus: 'completed',
+						status: 'in_progress',
+					}),
+				}),
+			} as Response)
+		})
+
+		it('APIエラー時にエラーメッセージが表示される', async () => {
+			mockFetch.mockImplementation(() => {
+				return Promise.resolve({
+					ok: false,
+					json: async () => ({
+						success: false,
+						error: 'マッチングの終了に失敗しました',
+					}),
+				} as Response)
+			})
+
+			const matching = createMockMatching({
+				participantStatus: 'joined',
+				status: 'in_progress',
+			})
+
+			render(
+				<TestWrapper>
+					<CastGroupMatchingStatusCard matching={matching} />
+				</TestWrapper>,
+			)
+
+			// 終了ボタンをクリック
+			const endButton = page.getByRole('button', { name: '終了' })
+			await endButton.click()
+
+			// エラーメッセージが表示される
+			await vi.waitFor(
+				async () => {
+					await expect
+						.element(page.getByText(/マッチングの終了に失敗しました/))
+						.toBeInTheDocument()
+				},
+				{ timeout: 3000 },
+			)
+		})
+	})
 })

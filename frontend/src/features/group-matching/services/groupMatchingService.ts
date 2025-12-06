@@ -525,4 +525,105 @@ export const groupMatchingService = {
 			participantSummary,
 		}
 	},
+
+	/**
+	 * キャストがグループマッチングを終了する（終了ボタン押下時）
+	 * - 参加者のステータスを 'joined' → 'completed' に変更
+	 * - 他のキャストには影響しない（そのキャストのみ終了）
+	 * @param matchingId - マッチングID
+	 * @param castId - キャストID
+	 * @returns 更新されたキャスト向けグループマッチング情報
+	 */
+	async completeGroupMatching(
+		matchingId: string,
+		castId: string,
+	): Promise<CastGroupMatching> {
+		// マッチングと参加者を取得
+		const [result] = await db
+			.select({
+				matching: matchings,
+				participant: matchingParticipants,
+				guestName: userProfiles.name,
+			})
+			.from(matchingParticipants)
+			.innerJoin(matchings, eq(matchingParticipants.matchingId, matchings.id))
+			.innerJoin(userProfiles, eq(matchings.guestId, userProfiles.id))
+			.where(
+				and(
+					eq(matchingParticipants.matchingId, matchingId),
+					eq(matchingParticipants.castId, castId),
+				),
+			)
+
+		if (!result) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// マッチングタイプチェック
+		if (result.matching.type !== 'group') {
+			throw new Error('グループマッチングではありません')
+		}
+
+		// 権限チェック: 参加者のステータスが 'joined' のみ終了可能
+		if (result.participant.status !== 'joined') {
+			throw new Error('このマッチングを終了する権限がありません')
+		}
+
+		// マッチング全体のステータスチェック: 'in_progress' のみ終了可能
+		if (result.matching.status !== 'in_progress') {
+			throw new Error(
+				'このマッチングは終了できません（進行中のマッチングのみ終了可能です）',
+			)
+		}
+
+		const now = new Date()
+
+		// 参加者のステータスを更新
+		await db
+			.update(matchingParticipants)
+			.set({
+				status: 'completed',
+				updatedAt: now,
+			})
+			.where(eq(matchingParticipants.id, result.participant.id))
+
+		// 参加者サマリーを取得
+		const participants = await db
+			.select({ status: matchingParticipants.status })
+			.from(matchingParticipants)
+			.where(eq(matchingParticipants.matchingId, matchingId))
+
+		const participantSummary = {
+			requestedCount: result.matching.requestedCastCount ?? 1,
+			acceptedCount: participants.filter((p) => p.status === 'accepted').length,
+			joinedCount: participants.filter((p) => p.status === 'joined').length,
+		}
+
+		return {
+			id: result.matching.id,
+			guestId: result.matching.guestId,
+			chatRoomId: result.matching.chatRoomId,
+			status: result.matching.status,
+			proposedDate: result.matching.proposedDate,
+			proposedDuration: result.matching.proposedDuration,
+			proposedLocation: result.matching.proposedLocation,
+			requestedCastCount: result.matching.requestedCastCount ?? 1,
+			totalPoints: result.matching.totalPoints,
+			startedAt: result.matching.startedAt,
+			scheduledEndAt: result.matching.scheduledEndAt,
+			actualEndAt: result.matching.actualEndAt,
+			extensionMinutes: result.matching.extensionMinutes ?? 0,
+			extensionPoints: result.matching.extensionPoints ?? 0,
+			recruitingEndedAt: result.matching.recruitingEndedAt,
+			createdAt: result.matching.createdAt,
+			updatedAt: now,
+			type: 'group' as const,
+			participantStatus: 'completed',
+			guest: {
+				id: result.matching.guestId,
+				nickname: result.guestName,
+			},
+			participantSummary,
+		}
+	},
 }
