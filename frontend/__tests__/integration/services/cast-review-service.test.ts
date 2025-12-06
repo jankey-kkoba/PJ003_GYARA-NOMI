@@ -21,7 +21,6 @@ import { castReviewService } from '@/features/cast-review/services/castReviewSer
 // テストで使用するシードデータのID
 const GUEST_ID = 'seed-user-guest-001'
 const CAST_ID_1 = 'seed-user-cast-001'
-const CAST_ID_2 = 'seed-user-cast-002'
 const COMPLETED_MATCHING_ID_1 = 'seed-matching-completed-001'
 const COMPLETED_MATCHING_ID_2 = 'seed-matching-completed-002'
 const PENDING_MATCHING_ID = 'seed-matching-pending-001'
