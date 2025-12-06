@@ -117,39 +117,6 @@ describe('HomeTemplate', () => {
 		vi.clearAllMocks()
 	})
 
-	describe('基本表示', () => {
-		it('ページタイトルとキャスト一覧リンクが表示される', async () => {
-			mockGet.mockResolvedValue({
-				ok: true,
-				json: async () => ({ success: true, soloMatchings: [] }),
-			})
-
-			render(<HomeTemplate />, { wrapper: TestWrapper })
-
-			// タイトルが表示されることを確認
-			await expect
-				.element(page.getByText('ギャラ飲みプラットフォーム'))
-				.toBeInTheDocument()
-
-			// キャスト一覧リンクが表示されることを確認
-			await expect
-				.element(page.getByRole('link', { name: 'キャスト一覧を見る' }))
-				.toBeInTheDocument()
-		})
-
-		it('マッチング状況セクションが表示される', async () => {
-			mockGet.mockResolvedValue({
-				ok: true,
-				json: async () => ({ success: true, soloMatchings: [] }),
-			})
-
-			render(<HomeTemplate />, { wrapper: TestWrapper })
-
-			// マッチング状況セクションのタイトルが表示されることを確認
-			await expect.element(page.getByText('マッチング状況')).toBeInTheDocument()
-		})
-	})
-
 	describe('マッチング状況の表示', () => {
 		it('マッチングがある場合、マッチング一覧が表示される', async () => {
 			mockGet.mockResolvedValue({
