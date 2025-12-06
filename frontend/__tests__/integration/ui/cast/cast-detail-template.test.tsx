@@ -283,7 +283,9 @@ describe('CastDetailTemplate', () => {
 				</TestWrapper>,
 			)
 
-			await expect.element(page.getByText('← 一覧に戻る')).toBeInTheDocument()
+			await expect
+				.element(page.getByRole('button', { name: '戻る' }))
+				.toBeInTheDocument()
 		})
 	})
 

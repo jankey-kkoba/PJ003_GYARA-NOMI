@@ -2,6 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import {
 	Card,
@@ -37,8 +38,13 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
 				<p className="text-destructive">
 					{error?.message || 'キャストが見つかりません'}
 				</p>
-				<Button variant="outline" onClick={() => router.back()}>
-					戻る
+				<Button
+					variant="outline"
+					size="icon"
+					onClick={() => router.back()}
+					aria-label="戻る"
+				>
+					<ArrowLeft className="size-4" />
 				</Button>
 			</div>
 		)
@@ -47,8 +53,14 @@ export function CastDetailTemplate({ castId }: CastDetailTemplateProps) {
 	return (
 		<div className="container max-w-2xl mx-auto py-6 px-4">
 			{/* 戻るボタン */}
-			<Button variant="ghost" onClick={() => router.back()} className="mb-4">
-				← 一覧に戻る
+			<Button
+				variant="ghost"
+				size="icon"
+				onClick={() => router.back()}
+				className="mb-4"
+				aria-label="戻る"
+			>
+				<ArrowLeft className="size-4" />
 			</Button>
 
 			<Card>
