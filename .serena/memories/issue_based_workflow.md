@@ -1,5 +1,12 @@
 # Issue ベース作業ワークフロー
 
+## GitHub Project情報
+- **プロジェクト名**: ギャラ飲みアプリ開発
+- **プロジェクト番号**: 2
+- **プロジェクトID**: PVT_kwHODTGhKs4BB5sL
+- **オーナー**: jankey-kkoba
+- **リポジトリ**: jankey-kkoba/PJ003_GYARA-NOMI
+
 ## 基本原則
 - **すべてのタスクはIssueベースで進める**
 - `/task`コマンドをスタートとして作業を開始する
@@ -10,7 +17,7 @@
 ### 1. タスク取得（/taskコマンド）
 ```bash
 # プロジェクトからタスク取得（プロジェクト番号: 2）
-gh project item-list 2 --owner @me --format json | jq '[.items[] | select(.status == "Todo" or .status == "In Progress")]'
+gh project item-list 2 --owner jankey-kkoba --format json | jq '[.items[] | select(.status == "Todo" or .status == "In Progress")]'
 ```
 
 #### Statusフィールドの注意点
