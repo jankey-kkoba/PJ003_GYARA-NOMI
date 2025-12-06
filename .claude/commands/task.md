@@ -23,4 +23,4 @@ gh project item-list 2 --owner @me --format json --limit 100 --jq '.items[] | se
 ```sh
 gh project item-edit --project-id PVT_kwHODTGhKs4BB5sL --format json --id <item-id> --field-id PVTSSF_lAHODTGhKs4BB5sLzg0RQoA --single-select-option-id 47fc9ee4
 ```
-6. タスクに着手する
+6. タスクに着手し、@.serena/memories/issue_based_workflow.mdの内容を元に作業を進めていく
