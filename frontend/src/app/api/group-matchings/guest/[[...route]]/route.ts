@@ -5,6 +5,7 @@ import { verifyAuth } from '@hono/auth-js'
 import { zValidator } from '@hono/zod-validator'
 import { groupMatchingService } from '@/features/group-matching/services/groupMatchingService'
 import { createGroupMatchingSchema } from '@/features/group-matching/schemas/createGroupMatching'
+import { extendGroupMatchingSchema } from '@/features/group-matching/schemas/extendGroupMatching'
 import { honoAuthMiddleware } from '@/libs/hono/middleware/auth'
 import { userService } from '@/features/user/services/userService'
 
@@ -146,6 +147,54 @@ export function createGuestGroupMatchingsApp(
 				}
 			},
 		)
+		// グループマッチング延長エンドポイント
+		.patch(
+			'/:id/extend',
+			verifyAuthMiddleware,
+			zValidator('json', extendGroupMatchingSchema),
+			async (c) => {
+				// 認証済みユーザー情報を取得
+				const authUser = c.get('authUser')
+				const userId = authUser.token?.id as string | undefined
+
+				if (!userId) {
+					throw new HTTPException(401, { message: '認証が必要です' })
+				}
+
+				// ユーザー情報を取得してロールを確認
+				const user = await userService.findUserById(userId)
+				if (!user) {
+					throw new HTTPException(404, { message: 'ユーザーが見つかりません' })
+				}
+
+				// ゲストのみ延長可能
+				if (user.role !== 'guest') {
+					throw new HTTPException(403, {
+						message: 'ゲストのみマッチングを延長できます',
+					})
+				}
+
+				const matchingId = c.req.param('id')
+				const data = c.req.valid('json')
+
+				try {
+					const groupMatching = await groupMatchingService.extendGroupMatching(
+						matchingId,
+						userId,
+						data.extensionMinutes,
+					)
+					return c.json({ success: true, groupMatching })
+				} catch (error) {
+					// サービス層のエラーは全て500として返す
+					console.error('Service error:', error)
+					const message =
+						error instanceof Error
+							? error.message
+							: '予期しないエラーが発生しました'
+					throw new HTTPException(500, { message })
+				}
+			},
+		)
 
 	return { app, route }
 }
@@ -159,3 +208,4 @@ export type GuestGroupMatchingsAppType = typeof route
 
 export const GET = handle(app)
 export const POST = handle(app)
+export const PATCH = handle(app)

@@ -1,10 +1,26 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState } from 'react'
+import {
+	Card,
+	CardContent,
+	CardHeader,
+	CardTitle,
+	CardFooter,
+} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import {
+	Select,
+	SelectContent,
+	SelectItem,
+	SelectTrigger,
+	SelectValue,
+} from '@/components/ui/select'
 import type { GuestGroupMatching } from '@/features/group-matching/types/groupMatching'
 import { format } from 'date-fns'
 import { ja } from 'date-fns/locale'
+import { useExtendGroupMatching } from '@/features/group-matching/hooks/useExtendGroupMatching'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -33,6 +49,16 @@ function getStatusInfo(status: GuestGroupMatching['status']): {
 	}
 }
 
+/**
+ * 延長時間の選択肢（30分単位）
+ */
+const EXTENSION_OPTIONS = [
+	{ value: '30', label: '30分' },
+	{ value: '60', label: '1時間' },
+	{ value: '90', label: '1時間30分' },
+	{ value: '120', label: '2時間' },
+]
+
 type GroupMatchingStatusCardProps = {
 	matching: GuestGroupMatching
 }
@@ -46,6 +72,48 @@ export function GroupMatchingStatusCard({
 }: GroupMatchingStatusCardProps) {
 	const statusInfo = getStatusInfo(matching.status)
 	const { participantSummary } = matching
+	const { mutate: extendMatching, isPending: isExtendPending } =
+		useExtendGroupMatching()
+	const [error, setError] = useState<string | null>(null)
+	const [selectedExtension, setSelectedExtension] = useState<string>('30')
+
+	const handleExtend = () => {
+		setError(null)
+		extendMatching(
+			{
+				matchingId: matching.id,
+				extensionMinutes: parseInt(selectedExtension, 10),
+			},
+			{
+				onError: (err) => {
+					setError(
+						err instanceof Error
+							? err.message
+							: 'マッチングの延長に失敗しました',
+					)
+				},
+			},
+		)
+	}
+
+	// 延長ボタンを表示するかどうかを判定
+	// in_progress状態かつ終了予定時刻を過ぎている場合に表示
+	const showExtendButton = matching.status === 'in_progress'
+	const isScheduledEndPassed =
+		matching.scheduledEndAt && new Date() >= new Date(matching.scheduledEndAt)
+
+	// 延長ポイントの計算（参加中のキャスト数 × 時給 × 延長時間）
+	// 時給は合計ポイントから逆算（合計ポイント / 時間 / 参加キャスト数）
+	const calculateExtensionPoints = () => {
+		const joinedCount = participantSummary.joinedCount || 1
+		// 時給を逆算: 合計ポイント / (時間/60) / キャスト数
+		const hourlyRatePerCast =
+			(matching.totalPoints * 60) /
+			matching.proposedDuration /
+			matching.requestedCastCount
+		const extensionMinutes = parseInt(selectedExtension, 10)
+		return Math.round((extensionMinutes / 60) * hourlyRatePerCast * joinedCount)
+	}
 
 	return (
 		<Card>
@@ -115,7 +183,40 @@ export function GroupMatchingStatusCard({
 						)}
 					</div>
 				</div>
+				{error && <div className="mt-2 text-sm text-destructive">{error}</div>}
 			</CardContent>
+			{showExtendButton && isScheduledEndPassed && (
+				<CardFooter className="flex flex-col gap-2">
+					<div className="flex w-full gap-2">
+						<Select
+							value={selectedExtension}
+							onValueChange={setSelectedExtension}
+						>
+							<SelectTrigger className="w-[140px]">
+								<SelectValue placeholder="延長時間" />
+							</SelectTrigger>
+							<SelectContent>
+								{EXTENSION_OPTIONS.map((option) => (
+									<SelectItem key={option.value} value={option.value}>
+										{option.label}
+									</SelectItem>
+								))}
+							</SelectContent>
+						</Select>
+						<Button
+							variant="default"
+							className="flex-1"
+							onClick={handleExtend}
+							disabled={isExtendPending}
+						>
+							延長する
+						</Button>
+					</div>
+					<p className="text-xs text-muted-foreground">
+						延長ポイント: {calculateExtensionPoints().toLocaleString()}ポイント
+					</p>
+				</CardFooter>
+			)}
 		</Card>
 	)
 }

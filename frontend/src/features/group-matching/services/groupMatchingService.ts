@@ -14,7 +14,10 @@ import {
 	formatDateOnly,
 } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
-import { RANK_HOURLY_RATES } from '@/features/cast/constants'
+import {
+	RANK_HOURLY_RATES,
+	getHourlyRateByRank,
+} from '@/features/cast/constants'
 import { eq, and, gte, lte, desc, type SQL } from 'drizzle-orm'
 
 /**
@@ -623,6 +626,140 @@ export const groupMatchingService = {
 				id: result.matching.guestId,
 				nickname: result.guestName,
 			},
+			participantSummary,
+		}
+	},
+
+	/**
+	 * ゲストがグループマッチングを延長する
+	 * @param matchingId - マッチングID
+	 * @param guestId - ゲストID
+	 * @param extensionMinutes - 延長時間（分）30分単位
+	 * @returns 更新されたゲスト向けグループマッチング情報
+	 */
+	async extendGroupMatching(
+		matchingId: string,
+		guestId: string,
+		extensionMinutes: number,
+	): Promise<GuestGroupMatching> {
+		// マッチングを取得
+		const [matchingResult] = await db
+			.select({ matching: matchings })
+			.from(matchings)
+			.where(eq(matchings.id, matchingId))
+
+		if (!matchingResult) {
+			throw new Error('マッチングが見つかりません')
+		}
+
+		// マッチングタイプチェック
+		if (matchingResult.matching.type !== 'group') {
+			throw new Error('グループマッチングではありません')
+		}
+
+		// 権限チェック: 指定されたゲストIDがマッチングのguest_idと一致するか
+		if (matchingResult.matching.guestId !== guestId) {
+			throw new Error('このマッチングを延長する権限がありません')
+		}
+
+		// ステータスチェック: in_progress のみ延長可能
+		if (matchingResult.matching.status !== 'in_progress') {
+			throw new Error(
+				'このマッチングは延長できません（進行中のマッチングのみ延長可能です）',
+			)
+		}
+
+		// 終了予定時刻が存在することを確認
+		if (!matchingResult.matching.scheduledEndAt) {
+			throw new Error('予定終了時刻が設定されていません')
+		}
+
+		// 新しい予定終了時刻を計算
+		const newScheduledEndAt = addMinutesToDate(
+			matchingResult.matching.scheduledEndAt,
+			extensionMinutes,
+		)
+
+		// 参加中（joined）のキャストを取得してポイントを計算
+		const joinedParticipants = await db
+			.select({
+				castId: matchingParticipants.castId,
+				rank: castProfiles.rank,
+			})
+			.from(matchingParticipants)
+			.innerJoin(castProfiles, eq(matchingParticipants.castId, castProfiles.id))
+			.where(
+				and(
+					eq(matchingParticipants.matchingId, matchingId),
+					eq(matchingParticipants.status, 'joined'),
+				),
+			)
+
+		if (joinedParticipants.length === 0) {
+			throw new Error('参加中のキャストがいません')
+		}
+
+		// 各キャストの延長ポイントを計算して合計
+		let additionalPoints = 0
+		for (const participant of joinedParticipants) {
+			const hourlyRate = getHourlyRateByRank(participant.rank)
+			additionalPoints += calculatePoints(extensionMinutes, hourlyRate)
+		}
+
+		// 累積値を計算
+		const newExtensionMinutes =
+			(matchingResult.matching.extensionMinutes ?? 0) + extensionMinutes
+		const newExtensionPoints =
+			(matchingResult.matching.extensionPoints ?? 0) + additionalPoints
+		const newTotalPoints =
+			matchingResult.matching.totalPoints + additionalPoints
+
+		const now = new Date()
+
+		// マッチングを更新
+		await db
+			.update(matchings)
+			.set({
+				scheduledEndAt: newScheduledEndAt,
+				extensionMinutes: newExtensionMinutes,
+				extensionPoints: newExtensionPoints,
+				totalPoints: newTotalPoints,
+				updatedAt: now,
+			})
+			.where(eq(matchings.id, matchingId))
+
+		// 参加者サマリーを取得
+		const participants = await db
+			.select({ status: matchingParticipants.status })
+			.from(matchingParticipants)
+			.where(eq(matchingParticipants.matchingId, matchingId))
+
+		const participantSummary = {
+			pendingCount: participants.filter((p) => p.status === 'pending').length,
+			acceptedCount: participants.filter((p) => p.status === 'accepted').length,
+			rejectedCount: participants.filter((p) => p.status === 'rejected').length,
+			joinedCount: participants.filter((p) => p.status === 'joined').length,
+		}
+
+		return {
+			id: matchingResult.matching.id,
+			guestId: matchingResult.matching.guestId,
+			chatRoomId: matchingResult.matching.chatRoomId,
+			status: matchingResult.matching.status,
+			proposedDate: matchingResult.matching.proposedDate,
+			proposedDuration: matchingResult.matching.proposedDuration,
+			proposedLocation: matchingResult.matching.proposedLocation,
+			requestedCastCount: matchingResult.matching.requestedCastCount ?? 1,
+			totalPoints: newTotalPoints,
+			startedAt: matchingResult.matching.startedAt,
+			scheduledEndAt: newScheduledEndAt,
+			actualEndAt: matchingResult.matching.actualEndAt,
+			extensionMinutes: newExtensionMinutes,
+			extensionPoints: newExtensionPoints,
+			recruitingEndedAt: matchingResult.matching.recruitingEndedAt,
+			createdAt: matchingResult.matching.createdAt,
+			updatedAt: now,
+			type: 'group' as const,
 			participantSummary,
 		}
 	},
