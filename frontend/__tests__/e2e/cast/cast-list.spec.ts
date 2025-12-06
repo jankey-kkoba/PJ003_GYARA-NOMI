@@ -126,26 +126,6 @@ test.describe('Cast List', () => {
 			await expect(page).toHaveURL(/\/casts\/seed-user-cast-/)
 		})
 
-		test('ローディング中はローディングインジケーターが表示される', async ({
-			page,
-		}) => {
-			// ネットワークを遅延させてローディング状態を確認
-			await page.route('**/api/casts*', async (route) => {
-				await page.waitForTimeout(1000) // 1秒遅延
-				await route.continue()
-			})
-
-			await page.goto('/casts')
-
-			// ローディングインジケーターが表示されることを確認
-			await expect(page.getByText('読み込み中...')).toBeVisible()
-
-			// ローディングが終わったらキャストが表示される
-			await expect(
-				page.getByRole('link', { name: /のプロフィール$/ }).first(),
-			).toBeVisible()
-		})
-
 		test('エラーが発生した場合はエラーメッセージが表示される', async ({
 			page,
 		}) => {

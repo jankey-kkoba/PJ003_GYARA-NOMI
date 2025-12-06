@@ -436,10 +436,6 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 			)
 
 			expect(response.status).toBe(400)
-			const body = await response.json()
-			expect(body.success).toBe(false)
-			expect(body.error).toContain('accepted')
-			expect(body.error).toContain('rejected')
 		})
 
 		it('responseが存在しない場合は400エラーを返す', async () => {
@@ -464,10 +460,6 @@ describe('PATCH /api/solo-matchings/cast/:id', () => {
 			)
 
 			expect(response.status).toBe(400)
-			const body = await response.json()
-			expect(body.success).toBe(false)
-			expect(body.error).toContain('accepted')
-			expect(body.error).toContain('rejected')
 		})
 	})
 

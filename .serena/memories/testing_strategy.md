@@ -165,3 +165,64 @@ npm run test -- --run __tests__/integration/features/cast/
 - `input type="number"`の`toHaveValue`は数値を期待する
 - ダイアログコンポーネントは`@radix-ui/react-dialog`の警告が出るが無視可能
 - 複雑なページ遷移を含むテストはフレーク（不安定）になりやすいので避ける
+
+## API層テストのバリデーションエラー検証について
+
+### バリデーションテストの方針
+- **400ステータスコードの確認のみで十分**
+- エラーメッセージの詳細内容まで検証する必要はない（詳細はZodスキーマのUnitテストで検証済み）
+- 例：
+
+```typescript
+// 推奨: シンプルにステータスのみ確認
+it('無効なresponseの場合は400エラーを返す', async () => {
+  const response = await app.request('/api/endpoint', {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ response: 'invalid' }),
+  })
+  expect(response.status).toBe(400)
+})
+
+// 非推奨: エラーメッセージの詳細まで検証（保守性が低下）
+it('無効なresponseの場合は400エラーを返す', async () => {
+  // ...
+  expect(body.error.message).toContain('accepted')  // ❌ 避ける
+})
+```
+
+## E2Eテストで避けるべきパターン
+
+### ローディング状態のテスト
+- **E2Eでローディング状態をテストするのは避ける**
+- ネットワーク速度やサーバーレスポンス時間に依存し、フレーキー（不安定）になりやすい
+- ローディング状態のテストは**UI層のIntegrationテスト**で実施する
+
+```typescript
+// E2Eで避けるべき例
+test('ローディング中はローディングインジケーターが表示される', async ({ page }) => {
+  await page.route('**/api/casts*', async (route) => {
+    await page.waitForTimeout(1000)  // ❌ 人工的な遅延は不安定
+    await route.continue()
+  })
+  await page.goto('/casts')
+  await expect(page.getByText('読み込み中...')).toBeVisible()  // ❌ フレーキー
+})
+
+// 代わりにUI層Integrationテストで実施
+// __tests__/integration/ui/cast/cast-list-template.test.tsx
+it('ローディング中はローディングインジケーターが表示される', async () => {
+  // モックを使って確実にローディング状態を作り出せる
+})
+```
+
+### E2Eで書くべきテスト
+- ユーザーの重要なジャーニー（認証フロー、マッチングフロー等）
+- 複数ページにまたがる操作フロー
+- 実際のブラウザ環境でしか検証できないこと
+
+### E2Eで書くべきでないテスト
+- ローディング状態の表示確認
+- 一時的なUI状態（トースト、ツールチップ等）
+- ネットワーク遅延に依存するテスト
+- 単一コンポーネントの振る舞い（UI層Integrationテストで実施）
