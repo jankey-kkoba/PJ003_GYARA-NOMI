@@ -24,4 +24,10 @@
 
 ## 関連
 - `/task` コマンド: タスク一覧取得・作業開始
+- `/task-restart` コマンド: In Progressのタスクから作業を再開
 - issue_based_workflow.md: Issue駆動開発のワークフロー
+
+## 推奨フロー
+1. 作業中断時: `/save-progress` で進捗をIssueに保存
+2. 作業再開時: `/task-restart` でIn Progressのタスクから再開
+   - `/task` は新規タスク選択時に使用
