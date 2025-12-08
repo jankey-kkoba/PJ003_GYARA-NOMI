@@ -216,8 +216,19 @@ describe('GroupMatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
-			// 延長ボタンをクリック
-			await page.getByText('延長する').click()
+			// 延長ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '延長する' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('グループギャラ飲みを延長しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '延長する' })
+				.click()
 
 			// APIが呼ばれることを確認
 			await vi.waitFor(() => {
@@ -233,6 +244,7 @@ describe('GroupMatchingStatusCard 延長機能', () => {
 
 			mockExtendPatch.mockResolvedValue({
 				ok: false,
+				status: 404,
 				json: async () => ({
 					error: 'マッチングが見つかりません',
 				}),
@@ -242,10 +254,21 @@ describe('GroupMatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
-			// 延長ボタンをクリック
-			await page.getByText('延長する').click()
+			// 延長ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '延長する' }).click()
 
-			// エラーメッセージが表示されることを確認
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('グループギャラ飲みを延長しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '延長する' })
+				.click()
+
+			// APIから返されたエラーメッセージが表示されることを確認
 			await expect
 				.element(page.getByText('マッチングが見つかりません'))
 				.toBeInTheDocument()
