@@ -243,9 +243,10 @@ describe('soloMatchingService Integration', () => {
 				expect(result.guestId).toBe('seed-user-guest-002')
 			})
 
-			// seed-user-guest-001には最低6件（通常4件 + 完了済み2件）、seed-user-guest-002には最低1件のマッチングがある
+			// seed-user-guest-001には最低4件（pending, accepted, rejected, cancelled）のマッチングがある
+			// ※ completedステータスはgetGuestSoloMatchingsで除外されるため含まれない
 			// テスト実行中に作成されたマッチングも含まれる可能性があるため、最低値で検証
-			expect(results1.length).toBeGreaterThanOrEqual(6)
+			expect(results1.length).toBeGreaterThanOrEqual(4)
 			expect(results2.length).toBe(1)
 		})
 	})

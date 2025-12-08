@@ -739,7 +739,7 @@ describe('POST /api/group-matchings/guest', () => {
 			expect(res.status).toBe(500)
 			const body = await res.json()
 			expect(body.success).toBe(false)
-			expect(body.error).toBe('Database error')
+			expect(body.error).toBe('予期しないエラーが発生しました')
 		})
 	})
 })
