@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation'
 import { auth } from '@/libs/auth'
 import { ROUTES } from '@/libs/constants/routes'
 import { userService } from '@/features/user/services/userService'
+import { BottomNavigation } from '@/components/organisms/BottomNavigation'
 
 /**
  * プライベートルートのレイアウト
@@ -28,5 +29,10 @@ export default async function PrivateLayout({
 		redirect(`${ROUTES.PROFILE.CREATE}?type=${userType}`)
 	}
 
-	return <>{children}</>
+	return (
+		<>
+			<main className="pb-16">{children}</main>
+			<BottomNavigation />
+		</>
+	)
 }

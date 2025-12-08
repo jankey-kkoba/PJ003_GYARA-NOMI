@@ -28,20 +28,10 @@ export function HomeTemplate() {
 					<p className="mb-4 text-muted-foreground">ようこそ</p>
 
 					<div className="space-y-3">
+						{/* グループマッチングへのショートカット（ゲストのみ） */}
 						{userRole === 'guest' && (
-							<>
-								<Button asChild className="w-full">
-									<Link href={ROUTES.CASTS.LIST}>キャスト一覧を見る</Link>
-								</Button>
-								<Button asChild variant="secondary" className="w-full">
-									<Link href={ROUTES.GROUP_MATCHING.OFFER}>呼ぶ</Link>
-								</Button>
-							</>
-						)}
-
-						{userRole === 'cast' && (
-							<Button asChild className="w-full">
-								<Link href={ROUTES.PROFILE.EDIT}>プロフィールを編集</Link>
+							<Button asChild variant="secondary" className="w-full">
+								<Link href={ROUTES.GROUP_MATCHING.OFFER}>呼ぶ</Link>
 							</Button>
 						)}
 
