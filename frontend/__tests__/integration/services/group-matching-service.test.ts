@@ -183,9 +183,9 @@ describe('groupMatchingService Integration', () => {
 			expect(result.matching!.proposedLocation).toBe('六本木')
 			expect(result.matching!.requestedCastCount).toBe(2)
 
-			// proposedDateが設定されていることを確認
+			// proposedDateが設定されていることを確認（ISO文字列形式）
 			expect(result.matching!.proposedDate).toBeDefined()
-			expect(result.matching!.proposedDate instanceof Date).toBe(true)
+			expect(typeof result.matching!.proposedDate).toBe('string')
 
 			// クリーンアップ
 			await markForCleanup(result.matching!.id)
@@ -966,8 +966,12 @@ describe('groupMatchingService Integration', () => {
 			expect(result2.participantStatus).toBe('joined')
 			// マッチングのステータスと開始時刻は変わらない
 			expect(result2.status).toBe('in_progress')
-			expect(result2.startedAt?.getTime()).toBe(startedAt1?.getTime())
-			expect(result2.scheduledEndAt?.getTime()).toBe(scheduledEndAt1?.getTime())
+			expect(new Date(result2.startedAt!).getTime()).toBe(
+				new Date(startedAt1!).getTime(),
+			)
+			expect(new Date(result2.scheduledEndAt!).getTime()).toBe(
+				new Date(scheduledEndAt1!).getTime(),
+			)
 
 			// 参加者サマリーのjoinedCountが2になる
 			expect(result2.participantSummary.joinedCount).toBe(2)
@@ -1555,9 +1559,11 @@ describe('groupMatchingService Integration', () => {
 
 			// scheduledEndAtが30分延長されていることを確認
 			const expectedEndAt = new Date(
-				originalScheduledEndAt!.getTime() + 30 * 60 * 1000,
+				new Date(originalScheduledEndAt!).getTime() + 30 * 60 * 1000,
 			)
-			expect(result.scheduledEndAt?.getTime()).toBe(expectedEndAt.getTime())
+			expect(new Date(result.scheduledEndAt!).getTime()).toBe(
+				expectedEndAt.getTime(),
+			)
 
 			// DBが更新されていることを確認
 			const [afterExtend] = await db
@@ -1567,7 +1573,7 @@ describe('groupMatchingService Integration', () => {
 
 			expect(afterExtend.extensionMinutes).toBe(30)
 			expect(afterExtend.extensionPoints).toBeGreaterThan(0)
-			expect(afterExtend.scheduledEndAt?.getTime()).toBe(
+			expect(new Date(afterExtend.scheduledEndAt!).getTime()).toBe(
 				expectedEndAt.getTime(),
 			)
 
@@ -1821,7 +1827,7 @@ describe('groupMatchingService Integration', () => {
 				.update(matchings)
 				.set({
 					status: 'in_progress',
-					scheduledEndAt: new Date(Date.now() + 7200000), // 2時間後
+					scheduledEndAt: new Date(Date.now() + 7200000).toISOString(), // 2時間後
 				})
 				.where(eq(matchings.id, createResult.matching!.id))
 

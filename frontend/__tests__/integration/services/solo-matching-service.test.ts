@@ -219,8 +219,8 @@ describe('soloMatchingService Integration', () => {
 
 			// 作成日時の降順でソートされていることを確認
 			for (let i = 0; i < results.length - 1; i++) {
-				expect(results[i].createdAt.getTime()).toBeGreaterThanOrEqual(
-					results[i + 1].createdAt.getTime(),
+				expect(new Date(results[i].createdAt).getTime()).toBeGreaterThanOrEqual(
+					new Date(results[i + 1].createdAt).getTime(),
 				)
 			}
 		})
@@ -271,7 +271,7 @@ describe('soloMatchingService Integration', () => {
 			// ステータスが承認に更新されていることを確認
 			expect(result.status).toBe('accepted')
 			expect(result.castRespondedAt).toBeDefined()
-			expect(result.castRespondedAt).toBeInstanceOf(Date)
+			expect(typeof result.castRespondedAt).toBe('string')
 
 			// DBに実際に更新されているか検証
 			const [dbMatching] = await db
@@ -427,7 +427,8 @@ describe('soloMatchingService Integration', () => {
 			// startedAtとscheduledEndAtの差が120分（proposedDuration）であることを確認
 			if (result.startedAt && result.scheduledEndAt) {
 				const diffMinutes = Math.round(
-					(result.scheduledEndAt.getTime() - result.startedAt.getTime()) /
+					(new Date(result.scheduledEndAt).getTime() -
+						new Date(result.startedAt).getTime()) /
 						(1000 * 60),
 				)
 				expect(diffMinutes).toBe(120)
@@ -697,8 +698,8 @@ describe('soloMatchingService Integration', () => {
 			// 予定終了時刻が30分延長されていることを確認
 			if (startedMatching.scheduledEndAt && result.scheduledEndAt) {
 				const diffMinutes = Math.round(
-					(result.scheduledEndAt.getTime() -
-						startedMatching.scheduledEndAt.getTime()) /
+					(new Date(result.scheduledEndAt).getTime() -
+						new Date(startedMatching.scheduledEndAt).getTime()) /
 						(1000 * 60),
 				)
 				expect(diffMinutes).toBe(30)

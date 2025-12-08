@@ -227,7 +227,7 @@ describe('POST /api/solo-matchings', () => {
 				castId: 'cast-123',
 				chatRoomId: null,
 				status: 'pending' as const,
-				proposedDate: new Date(Date.now() + 86400000),
+				proposedDate: new Date(Date.now() + 86400000).toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				totalPoints: 6000,
@@ -276,7 +276,7 @@ const mockMatching: SoloMatching = {
 	castId: 'cast-1',
 	chatRoomId: null,
 	status: 'pending',
-	proposedDate: new Date('2025-12-01T19:00:00Z'),
+	proposedDate: '2025-12-01T19:00:00.000Z',
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
 	totalPoints: 10000,
@@ -286,8 +286,8 @@ const mockMatching: SoloMatching = {
 	extensionMinutes: 0,
 	extensionPoints: 0,
 	castRespondedAt: null,
-	createdAt: new Date('2025-11-24T10:00:00Z'),
-	updatedAt: new Date('2025-11-24T10:00:00Z'),
+	createdAt: '2025-11-24T10:00:00.000Z',
+	updatedAt: '2025-11-24T10:00:00.000Z',
 }
 
 describe('GET /api/solo-matchings', () => {
@@ -494,18 +494,18 @@ const mockInProgressMatching: SoloMatching = {
 	castId: 'cast-1',
 	chatRoomId: null,
 	status: 'in_progress',
-	proposedDate: new Date('2025-11-28T17:00:00Z'),
+	proposedDate: '2025-11-28T17:00:00.000Z',
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
 	totalPoints: 10000,
-	startedAt: new Date('2025-11-28T17:00:00Z'),
-	scheduledEndAt: new Date('2025-11-28T19:00:00Z'),
+	startedAt: '2025-11-28T17:00:00.000Z',
+	scheduledEndAt: '2025-11-28T19:00:00.000Z',
 	actualEndAt: null,
 	extensionMinutes: 0,
 	extensionPoints: 0,
-	castRespondedAt: new Date('2025-11-28T16:30:00Z'),
-	createdAt: new Date('2025-11-28T10:00:00Z'),
-	updatedAt: new Date('2025-11-28T17:00:00Z'),
+	castRespondedAt: '2025-11-28T16:30:00.000Z',
+	createdAt: '2025-11-28T10:00:00.000Z',
+	updatedAt: '2025-11-28T17:00:00.000Z',
 }
 
 describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
@@ -777,7 +777,7 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				extensionMinutes: 30,
 				extensionPoints: 2500,
 				totalPoints: 12500,
-				scheduledEndAt: new Date('2025-11-28T19:30:00Z'),
+				scheduledEndAt: '2025-11-28T19:30:00.000Z',
 			}
 			mockSoloMatchingService.extendSoloMatching.mockResolvedValue(
 				extendedMatching,
@@ -823,7 +823,7 @@ describe('PATCH /api/solo-matchings/guest/:id/extend', () => {
 				extensionMinutes: 60,
 				extensionPoints: 5000,
 				totalPoints: 15000,
-				scheduledEndAt: new Date('2025-11-28T20:00:00Z'),
+				scheduledEndAt: '2025-11-28T20:00:00.000Z',
 			}
 			mockSoloMatchingService.extendSoloMatching.mockResolvedValue(
 				extendedMatching,
@@ -944,7 +944,7 @@ describe('GET /api/solo-matchings/guest/pending/:castId', () => {
 				castId: 'cast-123',
 				chatRoomId: null,
 				status: 'pending',
-				proposedDate: new Date(),
+				proposedDate: new Date().toISOString(),
 				proposedDuration: 120,
 				proposedLocation: '渋谷',
 				totalPoints: 6000,

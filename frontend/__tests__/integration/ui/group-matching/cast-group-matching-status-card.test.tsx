@@ -35,7 +35,7 @@ function createMockMatching(
 		guestId: 'guest-001',
 		chatRoomId: null,
 		status: 'pending',
-		proposedDate: new Date('2025-01-15T18:00:00'),
+		proposedDate: '2025-01-15T18:00:00.000Z',
 		proposedDuration: 120,
 		proposedLocation: '渋谷駅周辺',
 		totalPoints: 18000,

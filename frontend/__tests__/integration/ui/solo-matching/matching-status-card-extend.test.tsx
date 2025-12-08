@@ -74,19 +74,19 @@ function createInProgressMatching(
 		castId: 'cast-1',
 		chatRoomId: null,
 		status: 'in_progress',
-		proposedDate: new Date('2025-11-28T17:00:00Z'),
+		proposedDate: '2025-11-28T17:00:00.000Z',
 		proposedDuration: 120,
 		proposedLocation: '渋谷駅周辺',
 		totalPoints: 10000,
-		startedAt: new Date('2025-11-28T17:00:00Z'),
+		startedAt: '2025-11-28T17:00:00.000Z',
 		// 終了予定時刻を過去に設定
-		scheduledEndAt: new Date('2020-01-01T19:00:00Z'),
+		scheduledEndAt: '2020-01-01T19:00:00.000Z',
 		actualEndAt: null,
 		extensionMinutes: 0,
 		extensionPoints: 0,
-		castRespondedAt: new Date('2025-11-28T16:30:00Z'),
-		createdAt: new Date('2025-11-28T10:00:00Z'),
-		updatedAt: new Date('2025-11-28T17:00:00Z'),
+		castRespondedAt: '2025-11-28T16:30:00.000Z',
+		createdAt: '2025-11-28T10:00:00.000Z',
+		updatedAt: '2025-11-28T17:00:00.000Z',
 		...overrides,
 	}
 }
@@ -139,7 +139,7 @@ describe('MatchingStatusCard 延長機能', () => {
 		it('終了予定時刻が未来の場合は延長ボタンを表示しない', async () => {
 			const matching = createInProgressMatching({
 				// 終了予定時刻を未来に設定
-				scheduledEndAt: new Date(Date.now() + 3600000),
+				scheduledEndAt: new Date(Date.now() + 3600000).toISOString(),
 			})
 
 			render(<MatchingStatusCard matching={matching} isGuestView={true} />, {
@@ -187,12 +187,6 @@ describe('MatchingStatusCard 延長機能', () => {
 					success: true,
 					soloMatching: {
 						...matching,
-						proposedDate: matching.proposedDate.toISOString(),
-						startedAt: matching.startedAt?.toISOString(),
-						scheduledEndAt: matching.scheduledEndAt?.toISOString(),
-						castRespondedAt: matching.castRespondedAt?.toISOString(),
-						createdAt: matching.createdAt.toISOString(),
-						updatedAt: matching.updatedAt.toISOString(),
 						extensionMinutes: 30,
 						extensionPoints: 2500,
 						totalPoints: 12500,

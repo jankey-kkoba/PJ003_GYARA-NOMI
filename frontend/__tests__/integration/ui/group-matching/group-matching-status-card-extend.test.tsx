@@ -72,20 +72,20 @@ function createInProgressGroupMatching(
 		guestId: 'guest-1',
 		chatRoomId: 'chat-1',
 		status: 'in_progress',
-		proposedDate: new Date('2025-11-28T17:00:00Z'),
+		proposedDate: '2025-11-28T17:00:00.000Z',
 		proposedDuration: 120,
 		proposedLocation: '渋谷駅周辺',
 		totalPoints: 18000,
-		startedAt: new Date('2025-11-28T17:00:00Z'),
+		startedAt: '2025-11-28T17:00:00.000Z',
 		// 終了予定時刻を過去に設定
-		scheduledEndAt: new Date('2020-01-01T19:00:00Z'),
+		scheduledEndAt: '2020-01-01T19:00:00.000Z',
 		actualEndAt: null,
 		extensionMinutes: 0,
 		extensionPoints: 0,
-		recruitingEndedAt: new Date('2025-11-28T16:30:00Z'),
+		recruitingEndedAt: '2025-11-28T16:30:00.000Z',
 		requestedCastCount: 3,
-		createdAt: new Date('2025-11-28T10:00:00Z'),
-		updatedAt: new Date('2025-11-28T17:00:00Z'),
+		createdAt: '2025-11-28T10:00:00.000Z',
+		updatedAt: '2025-11-28T17:00:00.000Z',
 		type: 'group',
 		participantSummary: {
 			pendingCount: 0,
@@ -156,7 +156,7 @@ describe('GroupMatchingStatusCard 延長機能', () => {
 		it('終了予定時刻が未来の場合は延長ボタンを表示しない', async () => {
 			const matching = createInProgressGroupMatching({
 				// 終了予定時刻を未来に設定
-				scheduledEndAt: new Date(Date.now() + 3600000),
+				scheduledEndAt: new Date(Date.now() + 3600000).toISOString(),
 			})
 
 			render(<GroupMatchingStatusCard matching={matching} />, {
@@ -205,12 +205,6 @@ describe('GroupMatchingStatusCard 延長機能', () => {
 					success: true,
 					groupMatching: {
 						...matching,
-						proposedDate: matching.proposedDate.toISOString(),
-						startedAt: matching.startedAt?.toISOString(),
-						scheduledEndAt: matching.scheduledEndAt?.toISOString(),
-						recruitingEndedAt: matching.recruitingEndedAt?.toISOString(),
-						createdAt: matching.createdAt.toISOString(),
-						updatedAt: matching.updatedAt.toISOString(),
 						extensionMinutes: 30,
 						extensionPoints: 4500,
 						totalPoints: 22500,

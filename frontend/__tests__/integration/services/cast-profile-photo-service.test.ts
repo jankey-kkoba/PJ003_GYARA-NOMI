@@ -79,8 +79,8 @@ describe('photoService (integration)', () => {
 				displayOrder: 0,
 			})
 			expect(photo.id).toBeDefined()
-			expect(photo.createdAt).toBeInstanceOf(Date)
-			expect(photo.updatedAt).toBeInstanceOf(Date)
+			expect(typeof photo.createdAt).toBe('string')
+			expect(typeof photo.updatedAt).toBe('string')
 		})
 	})
 

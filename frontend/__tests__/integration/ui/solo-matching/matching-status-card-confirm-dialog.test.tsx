@@ -25,7 +25,7 @@ const mockPendingMatching: CastSoloMatching = {
 	castId: 'cast-1',
 	chatRoomId: null,
 	status: 'pending',
-	proposedDate: new Date('2025-12-01T19:00:00Z'),
+	proposedDate: '2025-12-01T19:00:00.000Z',
 	proposedDuration: 120,
 	proposedLocation: '渋谷駅周辺',
 	totalPoints: 10000,
@@ -35,8 +35,8 @@ const mockPendingMatching: CastSoloMatching = {
 	extensionMinutes: 0,
 	extensionPoints: 0,
 	castRespondedAt: null,
-	createdAt: new Date('2025-11-24T10:00:00Z'),
-	updatedAt: new Date('2025-11-24T10:00:00Z'),
+	createdAt: '2025-11-24T10:00:00.000Z',
+	updatedAt: '2025-11-24T10:00:00.000Z',
 	guest: {
 		id: 'guest-1',
 		nickname: 'テストゲスト',
@@ -49,7 +49,7 @@ const mockPendingMatching: CastSoloMatching = {
 const mockAcceptedMatching: CastSoloMatching = {
 	...mockPendingMatching,
 	status: 'accepted',
-	castRespondedAt: new Date('2025-11-24T11:00:00Z'),
+	castRespondedAt: '2025-11-24T11:00:00.000Z',
 }
 
 /**
@@ -58,8 +58,8 @@ const mockAcceptedMatching: CastSoloMatching = {
 const mockInProgressMatching: CastSoloMatching = {
 	...mockPendingMatching,
 	status: 'in_progress',
-	startedAt: new Date(),
-	scheduledEndAt: new Date(Date.now() + 120 * 60 * 1000),
+	startedAt: new Date().toISOString(),
+	scheduledEndAt: new Date(Date.now() + 120 * 60 * 1000).toISOString(),
 }
 
 let queryClient: QueryClient
