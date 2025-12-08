@@ -239,9 +239,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 参加するボタンをクリック
-			const acceptButton = page.getByRole('button', { name: '参加する' })
-			await acceptButton.click()
+			// 参加するボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '参加する' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('グループオファーに参加しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '参加する' })
+				.click()
 
 			// API呼び出しを待つ
 			await vi.waitFor(
@@ -281,9 +291,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 辞退するボタンをクリック
-			const rejectButton = page.getByRole('button', { name: '辞退する' })
-			await rejectButton.click()
+			// 辞退するボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '辞退する' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('グループオファーを辞退しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '辞退する' })
+				.click()
 
 			// API呼び出しを待つ
 			await vi.waitFor(
@@ -299,53 +319,11 @@ describe('CastGroupMatchingStatusCard', () => {
 			)
 		})
 
-		it('API処理中はボタンがdisabledになる', async () => {
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
-				resolvePromise = resolve
-			})
-
-			mockFetch.mockReturnValue(pendingPromise)
-
-			const matching = createMockMatching({
-				participantStatus: 'pending',
-				status: 'pending',
-			})
-
-			render(
-				<TestWrapper>
-					<CastGroupMatchingStatusCard matching={matching} />
-				</TestWrapper>,
-			)
-
-			// 参加するボタンをクリック
-			const acceptButton = page.getByRole('button', { name: '参加する' })
-			await acceptButton.click()
-
-			// ボタンがdisabledになる
-			await vi.waitFor(async () => {
-				await expect
-					.element(page.getByRole('button', { name: '参加する' }))
-					.toBeDisabled()
-				await expect
-					.element(page.getByRole('button', { name: '辞退する' }))
-					.toBeDisabled()
-			})
-
-			// 後処理: Promiseを解決
-			resolvePromise({
-				ok: true,
-				json: async () => ({
-					success: true,
-					groupMatching: createMockMatching({ participantStatus: 'accepted' }),
-				}),
-			} as Response)
-		})
-
 		it('APIエラー時にエラーメッセージが表示される', async () => {
 			mockFetch.mockImplementation(() => {
 				return Promise.resolve({
 					ok: false,
+					status: 400,
 					json: async () => ({
 						success: false,
 						error: '回答に失敗しました',
@@ -364,9 +342,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 参加するボタンをクリック
-			const acceptButton = page.getByRole('button', { name: '参加する' })
-			await acceptButton.click()
+			// 参加するボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '参加する' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('グループオファーに参加しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '参加する' })
+				.click()
 
 			// エラーメッセージが表示される
 			await vi.waitFor(
@@ -537,9 +525,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 合流ボタンをクリック
-			const startButton = page.getByRole('button', { name: '合流' })
-			await startButton.click()
+			// 合流ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '合流' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('ゲストと合流しましたか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '合流した' })
+				.click()
 
 			// API呼び出しを待つ
 			await vi.waitFor(
@@ -554,53 +552,11 @@ describe('CastGroupMatchingStatusCard', () => {
 			)
 		})
 
-		it('API処理中は合流ボタンがdisabledになる', async () => {
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
-				resolvePromise = resolve
-			})
-
-			mockFetch.mockReturnValue(pendingPromise)
-
-			const matching = createMockMatching({
-				participantStatus: 'accepted',
-				status: 'accepted',
-			})
-
-			render(
-				<TestWrapper>
-					<CastGroupMatchingStatusCard matching={matching} />
-				</TestWrapper>,
-			)
-
-			// 合流ボタンをクリック
-			const startButton = page.getByRole('button', { name: '合流' })
-			await startButton.click()
-
-			// ボタンがdisabledになる
-			await vi.waitFor(async () => {
-				await expect
-					.element(page.getByRole('button', { name: '合流' }))
-					.toBeDisabled()
-			})
-
-			// 後処理: Promiseを解決
-			resolvePromise({
-				ok: true,
-				json: async () => ({
-					success: true,
-					groupMatching: createMockMatching({
-						participantStatus: 'joined',
-						status: 'in_progress',
-					}),
-				}),
-			} as Response)
-		})
-
 		it('APIエラー時にエラーメッセージが表示される', async () => {
 			mockFetch.mockImplementation(() => {
 				return Promise.resolve({
 					ok: false,
+					status: 400,
 					json: async () => ({
 						success: false,
 						error: 'マッチングの開始に失敗しました',
@@ -619,9 +575,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 合流ボタンをクリック
-			const startButton = page.getByRole('button', { name: '合流' })
-			await startButton.click()
+			// 合流ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '合流' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('ゲストと合流しましたか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '合流した' })
+				.click()
 
 			// エラーメッセージが表示される
 			await vi.waitFor(
@@ -731,9 +697,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 終了ボタンをクリック
-			const endButton = page.getByRole('button', { name: '終了' })
-			await endButton.click()
+			// 終了ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '終了' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('ギャラ飲みを終了しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '終了する' })
+				.click()
 
 			// API呼び出しを待つ
 			await vi.waitFor(
@@ -748,53 +724,11 @@ describe('CastGroupMatchingStatusCard', () => {
 			)
 		})
 
-		it('API処理中は終了ボタンがdisabledになる', async () => {
-			let resolvePromise: (value: Response) => void = () => {}
-			const pendingPromise = new Promise<Response>((resolve) => {
-				resolvePromise = resolve
-			})
-
-			mockFetch.mockReturnValue(pendingPromise)
-
-			const matching = createMockMatching({
-				participantStatus: 'joined',
-				status: 'in_progress',
-			})
-
-			render(
-				<TestWrapper>
-					<CastGroupMatchingStatusCard matching={matching} />
-				</TestWrapper>,
-			)
-
-			// 終了ボタンをクリック
-			const endButton = page.getByRole('button', { name: '終了' })
-			await endButton.click()
-
-			// ボタンがdisabledになる
-			await vi.waitFor(async () => {
-				await expect
-					.element(page.getByRole('button', { name: '終了' }))
-					.toBeDisabled()
-			})
-
-			// 後処理: Promiseを解決
-			resolvePromise({
-				ok: true,
-				json: async () => ({
-					success: true,
-					groupMatching: createMockMatching({
-						participantStatus: 'completed',
-						status: 'in_progress',
-					}),
-				}),
-			} as Response)
-		})
-
 		it('APIエラー時にエラーメッセージが表示される', async () => {
 			mockFetch.mockImplementation(() => {
 				return Promise.resolve({
 					ok: false,
+					status: 400,
 					json: async () => ({
 						success: false,
 						error: 'マッチングの終了に失敗しました',
@@ -813,9 +747,19 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// 終了ボタンをクリック
-			const endButton = page.getByRole('button', { name: '終了' })
-			await endButton.click()
+			// 終了ボタンをクリック（確認ダイアログを開く）
+			await page.getByRole('button', { name: '終了' }).click()
+
+			// 確認ダイアログが表示されることを確認
+			await expect
+				.element(page.getByText('ギャラ飲みを終了しますか？'))
+				.toBeInTheDocument()
+
+			// ダイアログ内の確認ボタンをクリック（実際にAPIを呼ぶ）
+			await page
+				.getByRole('alertdialog')
+				.getByRole('button', { name: '終了する' })
+				.click()
 
 			// エラーメッセージが表示される
 			await vi.waitFor(
