@@ -1,0 +1,8 @@
+{
+  "name": "plan",
+  "description": "計画・調査フェーズ: コード探索と設計に特化",
+  "enabledMcpjsonServers": [
+    "serena"
+  ],
+  "estimatedTokens": "~13k"
+}

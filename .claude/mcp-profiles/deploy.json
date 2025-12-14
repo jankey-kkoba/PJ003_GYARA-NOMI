@@ -1,0 +1,12 @@
+{
+  "name": "deploy",
+  "description": "デプロイフェーズ: Vercelデプロイと本番確認",
+  "enabledMcpjsonServers": [
+    "serena",
+    "supabase",
+    "next-devtools",
+    "vercel",
+    "playwright"
+  ],
+  "estimatedTokens": "~57k"
+}

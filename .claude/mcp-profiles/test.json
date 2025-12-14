@@ -1,0 +1,11 @@
+{
+  "name": "test",
+  "description": "テストフェーズ: テスト実行とブラウザ確認",
+  "enabledMcpjsonServers": [
+    "serena",
+    "supabase-local",
+    "next-devtools",
+    "playwright"
+  ],
+  "estimatedTokens": "~43k"
+}

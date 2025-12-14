@@ -1,0 +1,10 @@
+{
+  "name": "refactor",
+  "description": "リファクタリングフェーズ: コード改善とDB変更",
+  "enabledMcpjsonServers": [
+    "serena",
+    "supabase-local",
+    "next-devtools"
+  ],
+  "estimatedTokens": "~26k"
+}

@@ -26,4 +26,13 @@ gh project item-list 2 --owner @me --format json --limit 100 --jq '.items[] | se
 ```sh
 gh project item-edit --project-id PVT_kwHODTGhKs4BB5sL --format json --id <item-id> --field-id PVTSSF_lAHODTGhKs4BB5sLzg0RQoA --single-select-option-id 47fc9ee4
 ```
-6. タスクに着手し、@.serena/memories/issue_based_workflow.mdの内容を元に作業を進めていく
+6. タスクの内容から適切なフェーズを推定し、現在のMCPプロファイルと比較する
+   - 推定ルール:
+     - "調査", "設計", "計画", "検討" → plan
+     - "実装", "追加", "修正", "作成" → impl
+     - "リファクタ", "改善", "整理" → refactor
+     - "テスト", "検証", "確認" → test
+     - "デプロイ", "リリース", "公開" → deploy
+   - 現在のMCPプロファイルを `.claude/settings.local.json` から確認
+   - フェーズが異なる場合、`/phase [推定フェーズ]` の実行を提案
+7. タスクに着手し、@.serena/memories/issue_based_workflow.mdの内容を元に作業を進めていく

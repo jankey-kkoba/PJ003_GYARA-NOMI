@@ -1,0 +1,10 @@
+{
+  "name": "implement",
+  "description": "実装フェーズ: コーディングとDB操作",
+  "enabledMcpjsonServers": [
+    "serena",
+    "supabase-local",
+    "next-devtools"
+  ],
+  "estimatedTokens": "~26k"
+}
