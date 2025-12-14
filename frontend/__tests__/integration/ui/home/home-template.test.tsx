@@ -16,11 +16,13 @@ import type { Session } from 'next-auth'
 const mockSoloMatchingsGet = vi.fn()
 const mockCompletedGet = vi.fn()
 const mockGroupMatchingsGet = vi.fn()
+const mockUserProfileGet = vi.fn()
+const mockCastsGet = vi.fn()
 
 vi.mock('@/libs/hono/client', () => ({
-	usersClient: { api: { users: {} } },
-	castsClient: { api: { casts: {} } },
-	favoritesClient: { api: { favorites: {} } },
+	usersClient: { api: { users: { profile: { $get: mockUserProfileGet } } } },
+	castsClient: { api: { casts: { $get: mockCastsGet } } },
+	favoritesClient: { api: { favorites: { $get: vi.fn() } } },
 	photosClient: { api: { casts: { photos: {} } } },
 	castReviewsClient: { api: { 'cast-reviews': {} } },
 	castSoloMatchingsClient: {
@@ -143,6 +145,27 @@ describe('HomeTemplate', () => {
 	describe('マッチング状況の表示', () => {
 		// 各テストで共通のモックセットアップ
 		const setupMocks = (soloResponse: unknown, groupResponse?: unknown) => {
+			// ユーザープロフィール
+			mockUserProfileGet.mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					success: true,
+					profile: {
+						id: 'user-123',
+						name: 'テストユーザー',
+						birthDate: '1990-01-01',
+					},
+				}),
+			})
+			// キャスト一覧
+			mockCastsGet.mockResolvedValue({
+				ok: true,
+				json: async () => ({
+					success: true,
+					data: { casts: [], total: 0, page: 1, limit: 4 },
+				}),
+			})
+			// ソロマッチング
 			mockSoloMatchingsGet.mockResolvedValue(soloResponse)
 			mockCompletedGet.mockResolvedValue({
 				ok: true,
@@ -167,10 +190,10 @@ describe('HomeTemplate', () => {
 
 			render(<HomeTemplate />, { wrapper: TestWrapper })
 
-			// マッチングカードが表示されることを確認
+			// コンパクト表示のマッチングカードが表示されることを確認
 			await expect.element(page.getByText('回答待ち')).toBeInTheDocument()
-			await expect.element(page.getByText('渋谷駅周辺')).toBeInTheDocument()
-			await expect.element(page.getByText('10,000ポイント')).toBeInTheDocument()
+			// ゲストビューではカードタイトルは「ソロマッチング」
+			await expect.element(page.getByText('ソロマッチング')).toBeInTheDocument()
 		})
 
 		it('マッチングが0件の場合、メッセージが表示される', async () => {

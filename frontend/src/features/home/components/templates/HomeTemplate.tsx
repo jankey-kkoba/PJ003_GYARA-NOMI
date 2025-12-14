@@ -3,12 +3,15 @@
 import Link from 'next/link'
 
 import { Button } from '@/components/ui/button'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { ROUTES } from '@/libs/constants/routes'
-import { LogoutButton } from '@/features/auth/components/atoms/LogoutButton'
 import { MatchingStatusList } from '@/features/solo-matching/components/organisms/MatchingStatusList'
 import { CastMatchingStatusList } from '@/features/solo-matching/components/organisms/CastMatchingStatusList'
 import { CompletedMatchingList } from '@/features/solo-matching/components/organisms/CompletedMatchingList'
 import { useAuth } from '@/features/auth/hooks/useAuth'
+import { UserProfileSection } from '@/features/home/components/molecules/UserProfileSection'
+import { HowToSection } from '@/features/home/components/molecules/HowToSection'
+import { AvailableCastsSection } from '@/features/home/components/organisms/AvailableCastsSection'
 
 /**
  * ホームページのテンプレート
@@ -19,50 +22,62 @@ export function HomeTemplate() {
 	const userRole = user?.role
 
 	return (
-		<div className="flex min-h-screen flex-col bg-background px-4 py-8">
-			<div className="mx-auto w-full max-w-md space-y-6">
-				<div className="rounded-lg bg-card p-6 shadow">
-					<h1 className="mb-4 text-2xl font-bold text-foreground">
-						ギャラ飲みプラットフォーム
-					</h1>
-					<p className="mb-4 text-muted-foreground">ようこそ</p>
+		<div className="flex min-h-screen flex-col bg-background px-4 py-4 md:py-8">
+			<div className="mx-auto w-full max-w-md md:max-w-4xl space-y-4 md:space-y-6">
+				{/* プロフィールセクション */}
+				<UserProfileSection />
 
-					<div className="space-y-3">
-						{/* グループマッチングへのショートカット（ゲストのみ） */}
-						{userRole === 'guest' && (
-							<Button asChild variant="secondary" className="w-full">
-								<Link href={ROUTES.GROUP_MATCHING.OFFER}>呼ぶ</Link>
-							</Button>
-						)}
+				{/* CTAボタン（ゲストのみ） */}
+				{userRole === 'guest' && (
+					<Button
+						asChild
+						size="lg"
+						className="w-full text-base md:text-lg font-bold py-6"
+					>
+						<Link href={ROUTES.GROUP_MATCHING.OFFER}>キャストを呼ぶ</Link>
+					</Button>
+				)}
 
-						<LogoutButton variant="outline" className="w-full" />
-					</div>
-				</div>
+				{/* 使い方セクション（ゲストのみ） */}
+				{userRole === 'guest' && <HowToSection />}
+
+				{/* キャスト一覧（ゲストのみ） */}
+				{userRole === 'guest' && <AvailableCastsSection />}
 
 				{/* マッチング状況 */}
-				<div className="rounded-lg bg-card p-6 shadow">
-					<h2 className="mb-4 text-lg font-semibold text-foreground">
-						マッチング状況
-					</h2>
-					{userRole === 'guest' ? (
-						<MatchingStatusList />
-					) : userRole === 'cast' ? (
-						<CastMatchingStatusList />
-					) : (
-						<div className="flex min-h-[200px] items-center justify-center">
-							<p className="text-muted-foreground">ロールを確認しています...</p>
-						</div>
-					)}
-				</div>
+				<Card>
+					<CardHeader className="pb-2 md:pb-4">
+						<CardTitle className="text-base md:text-lg">
+							マッチング状況
+						</CardTitle>
+					</CardHeader>
+					<CardContent>
+						{userRole === 'guest' ? (
+							<MatchingStatusList />
+						) : userRole === 'cast' ? (
+							<CastMatchingStatusList />
+						) : (
+							<div className="flex min-h-[100px] items-center justify-center">
+								<p className="text-muted-foreground">
+									ロールを確認しています...
+								</p>
+							</div>
+						)}
+					</CardContent>
+				</Card>
 
 				{/* 完了済みマッチング（ゲストのみ） */}
 				{userRole === 'guest' && (
-					<div className="rounded-lg bg-card p-6 shadow">
-						<h2 className="mb-4 text-lg font-semibold text-foreground">
-							完了済みマッチング
-						</h2>
-						<CompletedMatchingList />
-					</div>
+					<Card>
+						<CardHeader className="pb-2 md:pb-4">
+							<CardTitle className="text-base md:text-lg">
+								完了済みマッチング
+							</CardTitle>
+						</CardHeader>
+						<CardContent>
+							<CompletedMatchingList />
+						</CardContent>
+					</Card>
 				)}
 			</div>
 		</div>
