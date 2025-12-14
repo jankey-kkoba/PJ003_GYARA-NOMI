@@ -1,14 +1,14 @@
 'use client'
 
-import {
-	Card,
-	CardContent,
-	CardHeader,
-	CardTitle,
-	CardFooter,
-} from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import {
+	Dialog,
+	DialogContent,
+	DialogHeader,
+	DialogTitle,
+	DialogFooter,
+} from '@/components/ui/dialog'
 import type {
 	SoloMatching,
 	CastSoloMatching,
@@ -29,6 +29,7 @@ import {
 	SelectValue,
 } from '@/components/ui/select'
 import { ConfirmActionDialog } from '@/components/molecules/ConfirmActionDialog'
+import { ChevronRight } from 'lucide-react'
 
 /**
  * マッチングステータスのラベルと色を取得
@@ -66,10 +67,6 @@ type MatchingStatusCardProps = {
 }
 
 /**
- * マッチング状況カード
- * 個々のマッチング情報を表示
- */
-/**
  * 延長時間の選択肢（30分単位）
  */
 const EXTENSION_OPTIONS = [
@@ -88,6 +85,10 @@ function isCastSoloMatching(
 	return 'guest' in matching
 }
 
+/**
+ * マッチング状況カード
+ * コンパクト表示でタップするとモーダルで詳細を表示
+ */
 export function MatchingStatusCard({
 	matching,
 	showActions = false,
@@ -104,6 +105,9 @@ export function MatchingStatusCard({
 		useExtendSoloMatching()
 	const [error, setError] = useState<string | null>(null)
 	const [selectedExtension, setSelectedExtension] = useState<string>('30')
+
+	// 詳細モーダルの状態管理
+	const [isDetailOpen, setIsDetailOpen] = useState(false)
 
 	// 確認ダイアログの状態管理
 	const [dialogState, setDialogState] = useState<{
@@ -128,6 +132,7 @@ export function MatchingStatusCard({
 			{
 				onSuccess: () => {
 					closeDialog()
+					setIsDetailOpen(false)
 				},
 				onError: (err) => {
 					setError(err instanceof Error ? err.message : '回答に失敗しました')
@@ -144,6 +149,7 @@ export function MatchingStatusCard({
 			{
 				onSuccess: () => {
 					closeDialog()
+					setIsDetailOpen(false)
 				},
 				onError: (err) => {
 					setError(
@@ -164,6 +170,7 @@ export function MatchingStatusCard({
 			{
 				onSuccess: () => {
 					closeDialog()
+					setIsDetailOpen(false)
 				},
 				onError: (err) => {
 					setError(
@@ -187,6 +194,7 @@ export function MatchingStatusCard({
 			{
 				onSuccess: () => {
 					closeDialog()
+					setIsDetailOpen(false)
 				},
 				onError: (err) => {
 					setError(
@@ -228,133 +236,165 @@ export function MatchingStatusCard({
 		)
 	}
 
+	// コンパクトカードに表示するタイトル
+	const cardTitle = guestInfo ? `${guestInfo.nickname}さん` : `ソロマッチング`
+
 	return (
 		<>
-			<Card>
-				<CardHeader>
-					<div className="flex items-center justify-between">
-						<CardTitle className="text-base">
+			{/* コンパクト表示カード */}
+			<button
+				type="button"
+				onClick={() => setIsDetailOpen(true)}
+				className="w-full rounded-lg border bg-card p-3 text-left transition-colors hover:bg-accent"
+			>
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-3 min-w-0">
+						<Badge variant={statusInfo.variant} className="shrink-0">
+							{statusInfo.label}
+						</Badge>
+						<span className="text-sm font-medium truncate">{cardTitle}</span>
+					</div>
+					<ChevronRight className="h-4 w-4 text-muted-foreground shrink-0" />
+				</div>
+			</button>
+
+			{/* 詳細モーダル */}
+			<Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
+				<DialogContent>
+					<DialogHeader>
+						<DialogTitle>
 							{guestInfo ? (
 								<span>{guestInfo.nickname}さんからのオファー</span>
 							) : (
-								<span>マッチングID: {matching.id.slice(0, 8)}</span>
+								<span>ソロマッチング</span>
 							)}
-						</CardTitle>
-						<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+						</DialogTitle>
+					</DialogHeader>
+
+					<div className="space-y-4">
+						{/* ステータス */}
+						<div className="flex items-center gap-2">
+							<span className="text-sm text-muted-foreground">ステータス:</span>
+							<Badge variant={statusInfo.variant}>{statusInfo.label}</Badge>
+						</div>
+
+						{/* 詳細情報 */}
+						<div className="grid grid-cols-2 gap-2 text-sm">
+							<div>
+								<span className="text-muted-foreground">希望日時:</span>
+							</div>
+							<div className="text-right">
+								{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
+									locale: ja,
+								})}
+							</div>
+
+							<div>
+								<span className="text-muted-foreground">時間:</span>
+							</div>
+							<div className="text-right">{matching.proposedDuration}分</div>
+
+							<div>
+								<span className="text-muted-foreground">場所:</span>
+							</div>
+							<div className="text-right truncate">
+								{matching.proposedLocation}
+							</div>
+
+							<div>
+								<span className="text-muted-foreground">合計:</span>
+							</div>
+							<div className="text-right font-semibold">
+								{matching.totalPoints.toLocaleString()}ポイント
+							</div>
+						</div>
+
+						{/* エラー表示 */}
+						{error && <div className="text-sm text-destructive">{error}</div>}
+
+						{/* 延長UI */}
+						{showExtendButton && isScheduledEndPassed && (
+							<div className="pt-3 border-t space-y-2">
+								<div className="flex gap-2">
+									<Select
+										value={selectedExtension}
+										onValueChange={setSelectedExtension}
+									>
+										<SelectTrigger className="w-[140px]">
+											<SelectValue placeholder="延長時間" />
+										</SelectTrigger>
+										<SelectContent>
+											{EXTENSION_OPTIONS.map((option) => (
+												<SelectItem key={option.value} value={option.value}>
+													{option.label}
+												</SelectItem>
+											))}
+										</SelectContent>
+									</Select>
+									<Button
+										variant="default"
+										className="flex-1"
+										onClick={() => openDialog('extend')}
+										disabled={isExtendPending}
+									>
+										延長する
+									</Button>
+								</div>
+								<p className="text-xs text-muted-foreground">
+									延長ポイント: {calculateExtensionPoints().toLocaleString()}
+									ポイント
+								</p>
+							</div>
+						)}
 					</div>
-				</CardHeader>
-				<CardContent className="space-y-2">
-					<div className="grid grid-cols-2 gap-2 text-sm">
-						<div>
-							<span className="text-muted-foreground">希望日時:</span>
-						</div>
-						<div className="text-right">
-							{format(new Date(matching.proposedDate), 'M月d日(E) HH:mm', {
-								locale: ja,
-							})}
-						</div>
 
-						<div>
-							<span className="text-muted-foreground">時間:</span>
-						</div>
-						<div className="text-right">{matching.proposedDuration}分</div>
-
-						<div>
-							<span className="text-muted-foreground">場所:</span>
-						</div>
-						<div className="text-right truncate">
-							{matching.proposedLocation}
-						</div>
-
-						<div>
-							<span className="text-muted-foreground">合計:</span>
-						</div>
-						<div className="text-right font-semibold">
-							{matching.totalPoints.toLocaleString()}ポイント
-						</div>
-					</div>
-					{error && (
-						<div className="mt-2 text-sm text-destructive">{error}</div>
+					{/* アクションボタン */}
+					{showActions && (
+						<DialogFooter className="mt-4">
+							{matching.status === 'pending' && (
+								<div className="flex gap-2 w-full">
+									<Button
+										variant="default"
+										className="flex-1"
+										onClick={() => openDialog('accept')}
+										disabled={isRespondPending}
+									>
+										承認
+									</Button>
+									<Button
+										variant="outline"
+										className="flex-1"
+										onClick={() => openDialog('reject')}
+										disabled={isRespondPending}
+									>
+										拒否
+									</Button>
+								</div>
+							)}
+							{matching.status === 'accepted' && (
+								<Button
+									variant="default"
+									className="w-full"
+									onClick={() => openDialog('start')}
+									disabled={isStartPending}
+								>
+									合流
+								</Button>
+							)}
+							{matching.status === 'in_progress' && (
+								<Button
+									variant="destructive"
+									className="w-full"
+									onClick={() => openDialog('complete')}
+									disabled={isCompletePending}
+								>
+									終了
+								</Button>
+							)}
+						</DialogFooter>
 					)}
-				</CardContent>
-				{showActions && matching.status === 'pending' && (
-					<CardFooter className="flex gap-2">
-						<Button
-							variant="default"
-							className="flex-1"
-							onClick={() => openDialog('accept')}
-							disabled={isRespondPending}
-						>
-							承認
-						</Button>
-						<Button
-							variant="outline"
-							className="flex-1"
-							onClick={() => openDialog('reject')}
-							disabled={isRespondPending}
-						>
-							拒否
-						</Button>
-					</CardFooter>
-				)}
-				{showActions && matching.status === 'accepted' && (
-					<CardFooter>
-						<Button
-							variant="default"
-							className="w-full"
-							onClick={() => openDialog('start')}
-							disabled={isStartPending}
-						>
-							合流
-						</Button>
-					</CardFooter>
-				)}
-				{showActions && matching.status === 'in_progress' && (
-					<CardFooter>
-						<Button
-							variant="destructive"
-							className="w-full"
-							onClick={() => openDialog('complete')}
-							disabled={isCompletePending}
-						>
-							終了
-						</Button>
-					</CardFooter>
-				)}
-				{showExtendButton && isScheduledEndPassed && (
-					<CardFooter className="flex flex-col gap-2">
-						<div className="flex w-full gap-2">
-							<Select
-								value={selectedExtension}
-								onValueChange={setSelectedExtension}
-							>
-								<SelectTrigger className="w-[140px]">
-									<SelectValue placeholder="延長時間" />
-								</SelectTrigger>
-								<SelectContent>
-									{EXTENSION_OPTIONS.map((option) => (
-										<SelectItem key={option.value} value={option.value}>
-											{option.label}
-										</SelectItem>
-									))}
-								</SelectContent>
-							</Select>
-							<Button
-								variant="default"
-								className="flex-1"
-								onClick={() => openDialog('extend')}
-								disabled={isExtendPending}
-							>
-								延長する
-							</Button>
-						</div>
-						<p className="text-xs text-muted-foreground">
-							延長ポイント: {calculateExtensionPoints().toLocaleString()}
-							ポイント
-						</p>
-					</CardFooter>
-				)}
-			</Card>
+				</DialogContent>
+			</Dialog>
 
 			{/* 承認確認ダイアログ */}
 			<ConfirmActionDialog
