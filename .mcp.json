@@ -36,7 +36,7 @@
         "--context",
         "ide-assistant",
         "--project",
-        "/Users/kentaroukoba/Documents/JANKEY/code/PJ003_GYARA-NOMI"
+        "/Users/kentaroukoba/Documents/JANKEY/code.nosync/PJ003_GYARA-NOMI"
       ],
       "env": {}
     }
