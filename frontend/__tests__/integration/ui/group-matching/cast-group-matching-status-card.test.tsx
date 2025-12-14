@@ -84,11 +84,15 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
-			// ゲスト名
+			// コンパクト表示でゲスト名が表示される
 			await expect
 				.element(page.getByText('テストゲストさん'))
 				.toBeInTheDocument()
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
+			// モーダル内の詳細情報を確認
 			// オファータイトル
 			await expect
 				.element(page.getByText('グループオファー'))
@@ -153,6 +157,9 @@ describe('CastGroupMatchingStatusCard', () => {
 					<CastGroupMatchingStatusCard matching={matching} />
 				</TestWrapper>,
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			await expect
 				.element(page.getByRole('button', { name: '参加する' }))
@@ -239,6 +246,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 参加するボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '参加する' }).click()
 
@@ -291,6 +301,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 辞退するボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '辞退する' }).click()
 
@@ -342,6 +355,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 参加するボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '参加する' }).click()
 
@@ -384,6 +400,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			await expect.element(page.getByText('参加予定: 2人')).toBeInTheDocument()
 		})
 
@@ -402,6 +421,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			await expect.element(page.getByText('合流済み: 1人')).toBeInTheDocument()
 		})
 
@@ -419,6 +441,9 @@ describe('CastGroupMatchingStatusCard', () => {
 					<CastGroupMatchingStatusCard matching={matching} />
 				</TestWrapper>,
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 募集人数のみ表示される
 			await expect.element(page.getByText('募集: 3人')).toBeInTheDocument()
@@ -441,6 +466,9 @@ describe('CastGroupMatchingStatusCard', () => {
 					<CastGroupMatchingStatusCard matching={matching} />
 				</TestWrapper>,
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			await expect
 				.element(page.getByRole('button', { name: '合流' }))
@@ -525,6 +553,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 合流ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '合流' }).click()
 
@@ -575,6 +606,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 合流ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '合流' }).click()
 
@@ -613,6 +647,9 @@ describe('CastGroupMatchingStatusCard', () => {
 					<CastGroupMatchingStatusCard matching={matching} />
 				</TestWrapper>,
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			await expect
 				.element(page.getByRole('button', { name: '終了' }))
@@ -697,6 +734,9 @@ describe('CastGroupMatchingStatusCard', () => {
 				</TestWrapper>,
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 終了ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '終了' }).click()
 
@@ -746,6 +786,9 @@ describe('CastGroupMatchingStatusCard', () => {
 					<CastGroupMatchingStatusCard matching={matching} />
 				</TestWrapper>,
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 終了ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '終了' }).click()

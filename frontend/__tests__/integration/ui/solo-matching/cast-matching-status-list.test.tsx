@@ -209,22 +209,25 @@ describe('CastMatchingStatusList', () => {
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
 
-			// ソロマッチングカードが表示されることを確認
-			await expect.element(page.getByText('渋谷駅周辺')).toBeInTheDocument()
-			await expect.element(page.getByText('新宿駅周辺')).toBeInTheDocument()
-
-			// グループマッチングカードが表示されることを確認
-			await expect.element(page.getByText('六本木')).toBeInTheDocument()
+			// コンパクト表示でステータスバッジが表示されることを確認
+			// ソロマッチングのステータス（ソロとグループ両方にpendingがあるため複数存在）
 			await expect
-				.element(page.getByText('テストゲストさん'))
+				.element(page.getByText('回答待ち').first())
 				.toBeInTheDocument()
+			await expect.element(page.getByText('成立')).toBeInTheDocument()
+
+			// グループマッチングカードが表示されることを確認（コンパクト表示でゲスト名が見える）
+			// ソロとグループ両方にゲスト名が表示されるため複数存在
 			await expect
-				.element(page.getByText('グループオファー'))
+				.element(page.getByText('テストゲストさん').first())
 				.toBeInTheDocument()
 
-			// ソロマッチングの合計ポイントが表示されることを確認
-			await expect.element(page.getByText('10,000ポイント')).toBeInTheDocument()
-			await expect.element(page.getByText('9,000ポイント')).toBeInTheDocument()
+			// カードをクリックしてモーダルで詳細を確認
+			const cards = page.getByRole('button')
+			await cards.first().click()
+
+			// モーダルが開いていることを確認（ダイアログが表示される）
+			await expect.element(page.getByRole('dialog')).toBeInTheDocument()
 		})
 
 		it('ソロマッチングのみ存在する場合は表示する', async () => {
@@ -240,9 +243,9 @@ describe('CastMatchingStatusList', () => {
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
 
-			// ソロマッチングが表示されることを確認
-			await expect.element(page.getByText('渋谷駅周辺')).toBeInTheDocument()
-			await expect.element(page.getByText('新宿駅周辺')).toBeInTheDocument()
+			// コンパクト表示でステータスバッジが表示されることを確認
+			await expect.element(page.getByText('回答待ち')).toBeInTheDocument()
+			await expect.element(page.getByText('成立')).toBeInTheDocument()
 
 			// 「マッチングはありません」は表示されない
 			await expect
@@ -263,8 +266,7 @@ describe('CastMatchingStatusList', () => {
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
 
-			// グループマッチングが表示されることを確認
-			await expect.element(page.getByText('六本木')).toBeInTheDocument()
+			// グループマッチングが表示されることを確認（コンパクト表示でゲスト名が見える）
 			await expect
 				.element(page.getByText('テストゲストさん'))
 				.toBeInTheDocument()
@@ -311,6 +313,9 @@ describe('CastMatchingStatusList', () => {
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
 
+			// カードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 「合流」ボタンが表示されることを確認
 			await expect
 				.element(page.getByRole('button', { name: '合流' }))
@@ -334,6 +339,9 @@ describe('CastMatchingStatusList', () => {
 			)
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+			// カードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 「承認」「拒否」ボタンが表示されることを確認
 			await expect
@@ -363,6 +371,9 @@ describe('CastMatchingStatusList', () => {
 			)
 
 			render(<CastMatchingStatusList />, { wrapper: TestWrapper })
+
+			// カードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 「終了」ボタンが表示されることを確認
 			await expect

@@ -93,6 +93,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				{ wrapper: TestWrapper },
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 承認ボタンをクリック
 			const acceptButton = page.getByRole('button', { name: '承認' })
 			await userEvent.click(acceptButton)
@@ -117,6 +120,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				{ wrapper: TestWrapper },
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 拒否ボタンをクリック
 			const rejectButton = page.getByRole('button', { name: '拒否' })
 			await userEvent.click(rejectButton)
@@ -137,6 +143,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				<MatchingStatusCard matching={mockPendingMatching} showActions />,
 				{ wrapper: TestWrapper },
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 承認ボタンをクリックしてダイアログを開く
 			const acceptButton = page.getByRole('button', { name: '承認' })
@@ -171,6 +180,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				{ wrapper: TestWrapper },
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 承認ボタンをクリック
 			await userEvent.click(page.getByRole('button', { name: '承認' }))
 
@@ -193,6 +205,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				<MatchingStatusCard matching={mockAcceptedMatching} showActions />,
 				{ wrapper: TestWrapper },
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 合流ボタンをクリック
 			const startButton = page.getByRole('button', { name: '合流' })
@@ -223,6 +238,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				{ wrapper: TestWrapper },
 			)
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 合流ボタンをクリック
 			await userEvent.click(page.getByRole('button', { name: '合流' }))
 
@@ -245,6 +263,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				<MatchingStatusCard matching={mockInProgressMatching} showActions />,
 				{ wrapper: TestWrapper },
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 終了ボタンをクリック
 			const completeButton = page.getByRole('button', { name: '終了' })
@@ -274,6 +295,9 @@ describe('MatchingStatusCard 確認ダイアログ', () => {
 				<MatchingStatusCard matching={mockInProgressMatching} showActions />,
 				{ wrapper: TestWrapper },
 			)
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 終了ボタンをクリック
 			await userEvent.click(page.getByRole('button', { name: '終了' }))

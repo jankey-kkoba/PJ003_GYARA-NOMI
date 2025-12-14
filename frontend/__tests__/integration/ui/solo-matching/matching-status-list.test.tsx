@@ -205,18 +205,19 @@ describe('MatchingStatusList', () => {
 
 			render(<MatchingStatusList />, { wrapper: TestWrapper })
 
-			// ソロマッチングカードが表示されることを確認
-			await expect.element(page.getByText('渋谷駅周辺')).toBeInTheDocument()
-			await expect.element(page.getByText('新宿駅周辺')).toBeInTheDocument()
+			// コンパクト表示でステータスバッジが表示されることを確認
+			// ソロとグループの両方にpendingがあるため、複数の「回答待ち」が存在する
+			await expect
+				.element(page.getByText('回答待ち').first())
+				.toBeInTheDocument()
+			await expect.element(page.getByText('成立')).toBeInTheDocument()
 
-			// グループマッチングカードが表示されることを確認
-			await expect.element(page.getByText('六本木')).toBeInTheDocument()
-			await expect.element(page.getByText('3人募集')).toBeInTheDocument()
+			// カードをクリックしてモーダルで詳細を確認
+			const cards = page.getByRole('button')
+			await cards.first().click()
 
-			// 合計ポイントが表示されることを確認
-			await expect.element(page.getByText('10,000ポイント')).toBeInTheDocument()
-			await expect.element(page.getByText('9,000ポイント')).toBeInTheDocument()
-			await expect.element(page.getByText('27,000ポイント')).toBeInTheDocument()
+			// モーダルが開いていることを確認（ダイアログが表示される）
+			await expect.element(page.getByRole('dialog')).toBeInTheDocument()
 		})
 
 		it('ソロマッチングのみ存在する場合は表示する', async () => {
@@ -232,9 +233,9 @@ describe('MatchingStatusList', () => {
 
 			render(<MatchingStatusList />, { wrapper: TestWrapper })
 
-			// ソロマッチングが表示されることを確認
-			await expect.element(page.getByText('渋谷駅周辺')).toBeInTheDocument()
-			await expect.element(page.getByText('新宿駅周辺')).toBeInTheDocument()
+			// コンパクト表示でステータスバッジが表示されることを確認
+			await expect.element(page.getByText('回答待ち')).toBeInTheDocument()
+			await expect.element(page.getByText('成立')).toBeInTheDocument()
 
 			// 「マッチングはありません」は表示されない
 			await expect
@@ -255,9 +256,8 @@ describe('MatchingStatusList', () => {
 
 			render(<MatchingStatusList />, { wrapper: TestWrapper })
 
-			// グループマッチングが表示されることを確認
-			await expect.element(page.getByText('六本木')).toBeInTheDocument()
-			await expect.element(page.getByText('3人募集')).toBeInTheDocument()
+			// コンパクト表示でステータスバッジが表示されることを確認
+			await expect.element(page.getByText('回答待ち')).toBeInTheDocument()
 
 			// 「マッチングはありません」は表示されない
 			await expect

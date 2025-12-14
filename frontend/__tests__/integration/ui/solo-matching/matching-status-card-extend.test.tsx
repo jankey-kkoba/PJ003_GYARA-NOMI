@@ -110,6 +110,9 @@ describe('MatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 延長ボタンが表示されることを確認
 			await expect.element(page.getByText('延長する')).toBeInTheDocument()
 		})
@@ -121,6 +124,9 @@ describe('MatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 延長ボタンが表示されないことを確認
 			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
 		})
@@ -131,6 +137,9 @@ describe('MatchingStatusCard 延長機能', () => {
 			render(<MatchingStatusCard matching={matching} isGuestView={true} />, {
 				wrapper: TestWrapper,
 			})
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 延長ボタンが表示されないことを確認
 			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
@@ -146,6 +155,9 @@ describe('MatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// 延長ボタンが表示されないことを確認
 			await expect.element(page.getByText('延長する')).not.toBeInTheDocument()
 		})
@@ -159,6 +171,9 @@ describe('MatchingStatusCard 延長機能', () => {
 				wrapper: TestWrapper,
 			})
 
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
+
 			// セレクトトリガーが表示されることを確認
 			await expect.element(page.getByText('30分')).toBeInTheDocument()
 		})
@@ -169,6 +184,9 @@ describe('MatchingStatusCard 延長機能', () => {
 			render(<MatchingStatusCard matching={matching} isGuestView={true} />, {
 				wrapper: TestWrapper,
 			})
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 延長ポイント（30分 × 5000円/時 = 2500ポイント）が表示されることを確認
 			await expect
@@ -197,6 +215,9 @@ describe('MatchingStatusCard 延長機能', () => {
 			render(<MatchingStatusCard matching={matching} isGuestView={true} />, {
 				wrapper: TestWrapper,
 			})
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 延長ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '延長する' }).click()
@@ -235,6 +256,9 @@ describe('MatchingStatusCard 延長機能', () => {
 			render(<MatchingStatusCard matching={matching} isGuestView={true} />, {
 				wrapper: TestWrapper,
 			})
+
+			// コンパクト表示のカードをクリックしてモーダルを開く
+			await page.getByRole('button').first().click()
 
 			// 延長ボタンをクリック（確認ダイアログを開く）
 			await page.getByRole('button', { name: '延長する' }).click()
