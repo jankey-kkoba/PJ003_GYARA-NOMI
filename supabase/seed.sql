@@ -215,6 +215,17 @@ INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, 
 
 -- seed-user-cast-003: 写真なし（テスト用）
 
+-- ページネーション用キャスト: 各1枚の写真
+INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, created_at, updated_at)
+SELECT
+  'seed-photo-page-' || LPAD(n::text, 3, '0') || '-1',
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0'),
+  'seed-user-cast-page-' || LPAD(n::text, 3, '0') || '/photo1.jpg',
+  0,
+  NOW(),
+  NOW()
+FROM generate_series(1, 20) AS n;
+
 -- ================================================================================
 -- 完了
 -- ================================================================================
@@ -224,7 +235,7 @@ INSERT INTO cast_profile_photos (id, cast_profile_id, photo_url, display_order, 
 -- - キャストユーザー: 27件（アクティブ25件、非アクティブ1件、未登録1件）
 -- - エリア: 4件
 -- - ページネーション用キャスト: 20件
--- - キャストプロフィール写真: 4件
+-- - キャストプロフィール写真: 24件（メイン4件 + ページネーション20件）
 
 -- ================================================================================
 -- マッチング (matchings + matching_participants)

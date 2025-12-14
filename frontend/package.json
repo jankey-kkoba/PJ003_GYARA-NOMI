@@ -17,6 +17,9 @@
 		"db:migrate": "drizzle-kit migrate",
 		"db:push": "drizzle-kit push",
 		"db:studio": "drizzle-kit studio",
+		"db:reset": "cd ../supabase && supabase db reset",
+		"db:seed-storage": "npx tsx scripts/seed-storage.ts",
+		"db:reset-full": "npm run db:reset && npm run db:seed-storage",
 		"prepare": "husky"
 	},
 	"dependencies": {
@@ -69,6 +72,7 @@
 		"@vitejs/plugin-react": "^5.1.1",
 		"@vitest/browser": "^4.0.10",
 		"@vitest/browser-playwright": "^4.0.10",
+		"dotenv": "^17.2.3",
 		"drizzle-kit": "^0.31.7",
 		"eslint": "^9",
 		"eslint-config-next": "16.0.7",
