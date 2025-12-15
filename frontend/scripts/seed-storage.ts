@@ -23,7 +23,10 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY!
 if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
 	console.error('❌ 環境変数が設定されていません')
 	console.error('NEXT_PUBLIC_SUPABASE_URL:', SUPABASE_URL ? '✓' : '✗')
-	console.error('SUPABASE_SERVICE_ROLE_KEY:', SUPABASE_SERVICE_ROLE_KEY ? '✓' : '✗')
+	console.error(
+		'SUPABASE_SERVICE_ROLE_KEY:',
+		SUPABASE_SERVICE_ROLE_KEY ? '✓' : '✗',
+	)
 	process.exit(1)
 }
 
@@ -36,7 +39,11 @@ const BUCKET_NAME = 'cast-profile-photos'
 const TEST_IMAGES_DIR = path.resolve(__dirname, '../__tests__/test-data/images')
 
 // テスト画像ファイル（ローテーションで使用）
-const TEST_IMAGES = ['cast-profile-test.png', 'cast-profile-test2.png', 'cast-profile-test3.png']
+const TEST_IMAGES = [
+	'cast-profile-test.png',
+	'cast-profile-test2.png',
+	'cast-profile-test3.png',
+]
 
 // アップロードする画像のマッピングを生成
 function generateUploadMappings() {
@@ -44,13 +51,25 @@ function generateUploadMappings() {
 
 	// seed-user-cast-001: 3枚の写真
 	mappings.push(
-		{ sourceFile: 'cast-profile-test.png', targetPath: 'seed-user-cast-001/photo1.jpg' },
-		{ sourceFile: 'cast-profile-test2.png', targetPath: 'seed-user-cast-001/photo2.jpg' },
-		{ sourceFile: 'cast-profile-test3.png', targetPath: 'seed-user-cast-001/photo3.jpg' },
+		{
+			sourceFile: 'cast-profile-test.png',
+			targetPath: 'seed-user-cast-001/photo1.jpg',
+		},
+		{
+			sourceFile: 'cast-profile-test2.png',
+			targetPath: 'seed-user-cast-001/photo2.jpg',
+		},
+		{
+			sourceFile: 'cast-profile-test3.png',
+			targetPath: 'seed-user-cast-001/photo3.jpg',
+		},
 	)
 
 	// seed-user-cast-002: 1枚の写真
-	mappings.push({ sourceFile: 'cast-profile-test.png', targetPath: 'seed-user-cast-002/photo1.jpg' })
+	mappings.push({
+		sourceFile: 'cast-profile-test.png',
+		targetPath: 'seed-user-cast-002/photo1.jpg',
+	})
 
 	// pagination用キャスト（20件）: 各1枚の写真
 	for (let n = 1; n <= 20; n++) {
@@ -76,13 +95,18 @@ async function clearBucket(): Promise<void> {
 		'seed-user-cast-001',
 		'seed-user-cast-002',
 		// pagination用キャスト（20件）
-		...Array.from({ length: 20 }, (_, i) => `seed-user-cast-page-${(i + 1).toString().padStart(3, '0')}`),
+		...Array.from(
+			{ length: 20 },
+			(_, i) => `seed-user-cast-page-${(i + 1).toString().padStart(3, '0')}`,
+		),
 	]
 
 	let totalDeleted = 0
 
 	for (const folder of seedFolders) {
-		const { data: files, error } = await supabase.storage.from(BUCKET_NAME).list(folder)
+		const { data: files, error } = await supabase.storage
+			.from(BUCKET_NAME)
+			.list(folder)
 
 		if (error) {
 			// フォルダが存在しない場合はスキップ
@@ -91,7 +115,9 @@ async function clearBucket(): Promise<void> {
 
 		if (files && files.length > 0) {
 			const filesToDelete = files.map((file) => `${folder}/${file.name}`)
-			const { error: deleteError } = await supabase.storage.from(BUCKET_NAME).remove(filesToDelete)
+			const { error: deleteError } = await supabase.storage
+				.from(BUCKET_NAME)
+				.remove(filesToDelete)
 
 			if (deleteError) {
 				console.warn(`⚠️  ファイル削除に失敗: ${deleteError.message}`)
@@ -123,10 +149,12 @@ async function uploadImages(): Promise<void> {
 		const contentType = 'image/png'
 
 		// アップロード
-		const { error } = await supabase.storage.from(BUCKET_NAME).upload(mapping.targetPath, fileBuffer, {
-			contentType,
-			upsert: true, // 既存ファイルを上書き
-		})
+		const { error } = await supabase.storage
+			.from(BUCKET_NAME)
+			.upload(mapping.targetPath, fileBuffer, {
+				contentType,
+				upsert: true, // 既存ファイルを上書き
+			})
 
 		if (error) {
 			console.error(`❌ アップロード失敗: ${mapping.targetPath}`)
