@@ -13,7 +13,6 @@ import {
 	FormMessage,
 	FormDescription,
 } from '@/components/ui/form'
-import { AgeRangeInput } from '@/components/molecules/AgeRangeInput'
 import {
 	Select,
 	SelectContent,
@@ -145,16 +144,6 @@ export function GroupMatchingOfferForm({
 		)
 	}, [proposedDuration, requestedCastCount, baseHourlyRate])
 
-	// 年齢フィルタの値をuseWatchで監視（再レンダリング最適化）
-	const minAge = useWatch({
-		control: form.control,
-		name: 'minAge',
-	})
-	const maxAge = useWatch({
-		control: form.control,
-		name: 'maxAge',
-	})
-
 	const onSubmit = (data: CreateGroupMatchingInput) => {
 		mutate(data, {
 			onSuccess: (result) => {
@@ -209,25 +198,6 @@ export function GroupMatchingOfferForm({
 							</FormItem>
 						)}
 					/>
-
-					{/* 年齢フィルター */}
-					<div className="space-y-2">
-						<FormLabel>年齢（任意）</FormLabel>
-						<AgeRangeInput
-							minAge={minAge}
-							maxAge={maxAge}
-							onMinAgeChange={(value) => form.setValue('minAge', value)}
-							onMaxAgeChange={(value) => form.setValue('maxAge', value)}
-						/>
-						<FormField
-							control={form.control}
-							name="minAge"
-							render={() => <FormMessage />}
-						/>
-						<p className="text-xs text-muted-foreground">
-							オファーを送るキャストの年齢を絞り込めます
-						</p>
-					</div>
 
 					{/* 開始時刻選択モード */}
 					<div className="space-y-2">

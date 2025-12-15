@@ -7,22 +7,18 @@ import type {
 	CreateGroupMatchingResult,
 	GuestGroupMatching,
 } from '@/features/group-matching/types/groupMatching'
-import {
-	addMinutesToDate,
-	subtractYears,
-	addDaysToDate,
-	formatDateOnly,
-} from '@/utils/date'
+import { addMinutesToDate } from '@/utils/date'
 import { calculatePoints } from '@/utils/points'
 import {
 	RANK_HOURLY_RATES,
 	getHourlyRateByRank,
 } from '@/features/cast/constants'
-import { eq, and, gte, lte, desc, type SQL } from 'drizzle-orm'
+import { eq, and, desc } from 'drizzle-orm'
 
 /**
  * グループマッチング作成の入力パラメータ
  * 時給はブロンズランク（ランク1）の時給を基準に計算
+ * 全キャストにオファーを送信するため、絞り込み条件は不要
  */
 export type CreateGroupMatchingParams = {
 	guestId: string
@@ -31,10 +27,6 @@ export type CreateGroupMatchingParams = {
 	proposedTimeOffsetMinutes?: number
 	proposedDuration: number
 	proposedLocation: string
-	/** 最小年齢（絞り込み条件） */
-	minAge?: number
-	/** 最大年齢（絞り込み条件） */
-	maxAge?: number
 }
 
 /**
@@ -58,8 +50,6 @@ export const groupMatchingService = {
 			proposedTimeOffsetMinutes,
 			proposedDuration,
 			proposedLocation,
-			minAge,
-			maxAge,
 		} = params
 
 		// proposedDateを決定（proposedTimeOffsetMinutesが指定されている場合はサーバー時刻で計算）
@@ -73,30 +63,11 @@ export const groupMatchingService = {
 		const totalPoints =
 			calculatePoints(proposedDuration, baseHourlyRate) * requestedCastCount
 
-		// WHERE条件を構築
-		const conditions: SQL[] = [eq(castProfiles.isActive, true)]
-
-		// 年齢フィルタリング（生年月日から計算）
-		// minAge歳以上 = 生年月日がminAge年前の今日以前
-		// maxAge歳以下 = 生年月日がmaxAge+1年前の今日より後
-		const today = new Date()
-		if (minAge !== undefined) {
-			const maxBirthDate = subtractYears(today, minAge)
-			conditions.push(lte(userProfiles.birthDate, formatDateOnly(maxBirthDate)))
-		}
-		if (maxAge !== undefined) {
-			const minBirthDate = addDaysToDate(subtractYears(today, maxAge + 1), 1)
-			conditions.push(gte(userProfiles.birthDate, formatDateOnly(minBirthDate)))
-		}
-
-		const whereClause = and(...conditions)
-
-		// 条件に合うアクティブキャストを取得
+		// 全アクティブキャストを取得（絞り込みなし）
 		const activeCasts = await db
 			.select({ id: castProfiles.id })
 			.from(castProfiles)
-			.innerJoin(userProfiles, eq(castProfiles.id, userProfiles.id))
-			.where(whereClause)
+			.where(eq(castProfiles.isActive, true))
 
 		// 条件に合うキャストが0人の場合
 		if (activeCasts.length === 0) {

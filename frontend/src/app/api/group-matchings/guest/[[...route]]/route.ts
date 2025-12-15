@@ -117,7 +117,7 @@ export function createGuestGroupMatchingsApp(
 					proposedDate = new Date(data.proposedDate)
 				}
 
-				// グループマッチングを作成
+				// グループマッチングを作成（全キャストにオファー送信）
 				const result = await groupMatchingService.createGroupMatching({
 					guestId: userId,
 					requestedCastCount: data.requestedCastCount,
@@ -125,8 +125,6 @@ export function createGuestGroupMatchingsApp(
 					proposedTimeOffsetMinutes,
 					proposedDuration: data.proposedDuration,
 					proposedLocation: data.proposedLocation,
-					minAge: data.minAge,
-					maxAge: data.maxAge,
 				})
 
 				// 条件に合うキャストが0人の場合は200、成功の場合は201を返す
