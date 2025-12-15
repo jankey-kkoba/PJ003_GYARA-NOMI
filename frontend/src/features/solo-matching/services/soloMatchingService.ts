@@ -135,7 +135,8 @@ export const soloMatchingService = {
 	/**
 	 * ゲストのソロマッチング一覧を取得
 	 * @param guestId - ゲストID
-	 * @returns ゲストのソロマッチング一覧（pending, accepted, rejected, cancelled, in_progress）
+	 * @returns ゲストのソロマッチング一覧（pending, accepted, rejected, cancelled）
+	 * @remarks ISSUE #95: ゲストに時間を意識させないため in_progress は除外
 	 */
 	async getGuestSoloMatchings(guestId: string): Promise<SoloMatching[]> {
 		const results = await db
@@ -151,14 +152,14 @@ export const soloMatchingService = {
 			.where(and(eq(matchings.guestId, guestId), eq(matchings.type, 'solo')))
 			.orderBy(desc(matchings.createdAt))
 
-		// フィルタリング: pending, accepted, rejected, cancelled, in_progress
+		// フィルタリング: pending, accepted, rejected, cancelled
+		// ※ in_progressはゲストに時間を意識させないため非表示 (ISSUE #95)
 		const filteredResults = results.filter(
 			(result) =>
 				result.matching.status === 'pending' ||
 				result.matching.status === 'accepted' ||
 				result.matching.status === 'rejected' ||
-				result.matching.status === 'cancelled' ||
-				result.matching.status === 'in_progress',
+				result.matching.status === 'cancelled',
 		)
 
 		return filteredResults.map((result) =>

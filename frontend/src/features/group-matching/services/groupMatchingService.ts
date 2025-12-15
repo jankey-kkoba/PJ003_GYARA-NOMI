@@ -157,7 +157,8 @@ export const groupMatchingService = {
 	/**
 	 * ゲストのグループマッチング一覧を取得
 	 * @param guestId - ゲストID
-	 * @returns ゲストのグループマッチング一覧（pending, accepted, rejected, cancelled, in_progress）
+	 * @returns ゲストのグループマッチング一覧（pending, accepted, rejected, cancelled）
+	 * @remarks ISSUE #95: ゲストに時間を意識させないため in_progress は除外
 	 */
 	async getGuestGroupMatchings(guestId: string): Promise<GuestGroupMatching[]> {
 		// グループマッチングを取得
@@ -169,14 +170,14 @@ export const groupMatchingService = {
 			.where(and(eq(matchings.guestId, guestId), eq(matchings.type, 'group')))
 			.orderBy(desc(matchings.createdAt))
 
-		// フィルタリング: pending, accepted, rejected, cancelled, in_progress
+		// フィルタリング: pending, accepted, rejected, cancelled
+		// ※ in_progressはゲストに時間を意識させないため非表示 (ISSUE #95)
 		const filteredResults = results.filter(
 			(result) =>
 				result.matching.status === 'pending' ||
 				result.matching.status === 'accepted' ||
 				result.matching.status === 'rejected' ||
-				result.matching.status === 'cancelled' ||
-				result.matching.status === 'in_progress',
+				result.matching.status === 'cancelled',
 		)
 
 		// 各マッチングの参加者サマリーを取得

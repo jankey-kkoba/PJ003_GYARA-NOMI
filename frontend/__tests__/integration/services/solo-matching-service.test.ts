@@ -183,16 +183,16 @@ describe('soloMatchingService Integration', () => {
 				expect(result.guestId).toBe('seed-user-guest-001')
 			})
 
-			// ステータスが pending, accepted, rejected, cancelled, in_progress のみであることを確認
+			// ISSUE #95: ゲスト側では in_progress は表示されない
+			// ステータスが pending, accepted, rejected, cancelled のみであることを確認
 			results.forEach((result) => {
-				expect([
-					'pending',
-					'accepted',
-					'rejected',
-					'cancelled',
-					'in_progress',
-				]).toContain(result.status)
+				expect(['pending', 'accepted', 'rejected', 'cancelled']).toContain(
+					result.status,
+				)
 			})
+
+			// in_progress が含まれていないことを明示的に確認
+			expect(results.some((r) => r.status === 'in_progress')).toBe(false)
 
 			// seed.sqlで定義した各ステータスのマッチングが含まれていることを確認
 			const statuses = results.map((r) => r.status)
