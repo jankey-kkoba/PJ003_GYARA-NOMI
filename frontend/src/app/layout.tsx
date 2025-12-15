@@ -5,7 +5,7 @@ import { ReactQueryProvider } from '@/libs/react-query/provider'
 import { Toaster } from '@/components/ui/sonner'
 
 export const metadata: Metadata = {
-	title: 'ギャラ飲みプラットフォーム',
+	title: 'Kurumee',
 	description: 'キャストとゲストをつなぐギャラ飲みプラットフォーム',
 }
 

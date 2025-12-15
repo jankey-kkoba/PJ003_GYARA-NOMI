@@ -27,7 +27,9 @@ export default auth((req) => {
  * API routes、静的ファイル、画像は除外
  */
 export const config = {
-	matcher: ['/((?!api|_next/static|_next/image|favicon.ico).*)'],
+	matcher: [
+		'/((?!api|_next/static|_next/image|favicon.ico|.*\\.png$|.*\\.jpg$|.*\\.jpeg$|.*\\.gif$|.*\\.svg$|.*\\.ico$).*)',
+	],
 }
 
 // Node.jsランタイムを使用（postgres.jsがEdgeランタイムで動作しないため）
